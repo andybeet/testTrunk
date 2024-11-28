@@ -1,0 +1,2 @@
+C:\WINDOWS\Microsoft.NET\Framework\v2.0.50727\msbuild.exe atlantis_2005.sln /t:CLEAN
+C:\WINDOWS\Microsoft.NET\Framework\v2.0.50727\msbuild.exe atlantis_2005.sln /v:d /l:FileLogger,Microsoft.Build.Engine;logfile=VS2005_output.log

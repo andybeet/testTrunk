@@ -1,0 +1,20 @@
+include ../Makefile.inc
+#WARN +=-Werror
+
+OBJECTS = ateconhelp.o  ateconindicator.o ateconomic.o ateconomicsetup.o \
+	ateconresponse.o ateconts.o atquota.o ateconeffort.o \
+	ateconio.o ateconParamIO.o ateconIOCheck.o outputEconomicArrays.o \
+	atEconomicModule.o
+
+SOURCES = $(OBJECTS:.o=.c)
+
+all: libateconomic.a
+
+libateconomic.a: $(OBJECTS)
+	ar cr libateconomic.a $(OBJECTS)
+	ranlib libateconomic.a
+	# get rid of the .o files.
+	#rm -f *.o
+
+clean:
+	rm -f *.o *.a

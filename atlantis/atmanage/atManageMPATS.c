@@ -1,0 +1,283 @@
+/**
+ * \ingroup atManageLib
+ * \file		atManageMPATS.c
+ * \author      Beth Fulton 8/8/2004
+ * \brief 		Functions to handle the setup of MPA lists.
+ * 				Based on work by Ouyang and Fulton for Port Phillip Bay
+ *
+ *	<b>Revisions</b>
+ *
+ *
+ *	10/8/2004 Created from the msebiolsetup.c file
+ *
+ *	19/03/2008 Bec Gorton
+ *
+ *	Changed the atmpats code to use the standard allocInit functions.
+ *	Moved the data read code into loops.
+ *
+ *	28-10-2009 Bec Gorton
+ *	Started removing references to K_num_fished_sp and K_num_impacted_sp.
+ * 	Change references to arrays that have been moved into a module structure.
+ * 	Change the input parsing code to use the new XML parsing code.
+ * 	Changed the arrays that are allocated to use the K_num_tot_sp value instead
+ * 	of the K_num_fished_sp or K_num_impacted_sp value.
+ *
+ */
+
+/*  Open library routines */
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <math.h>
+#include "atManage.h"
+#include "atHarvestLib.h"
+
+/**
+ * Prototypes for static 'private' functions only defined in this file.
+ */
+static void Load_MPAlist_From_File(MSEBoxModel *bm, FILE *llogfp);
+
+/**
+ * \brief Basic MPA list setup
+ *
+ * Values are loaded with the rest of the management values.
+ *	This function just sets array values.
+ *
+ *
+ */
+void Setup_MPA_Lists(MSEBoxModel *bm, FILE *llogfp) {
+	int nfleets = bm->K_num_fisheries;
+	int ncells = bm->nbox;
+	int fishery_id, flagfcmpa, thisday, ij, nyr, nyears, loading_done;
+    int startyr = 0;
+    int endyr, orig_endyr;
+
+	//if(verbose > 0)
+		printf("Allocating MPA arrays");
+
+	nyears = (int) (ceil((bm->tstop - bm->tstart) / (365.0 * 86400.0)));
+    endyr = nyears;
+
+	/* Allocate and init memory for default MPAs and read-in MPA arrays */
+	bm->MPAlist = Util_Alloc_Init_4D_Double(nfleets, ncells, 365, nyears, 1.0);
+	MPAKeyMap = Util_Alloc_Init_1D_Int(ncells, -1);
+
+	if(verbose > 0)
+		printf("Array allocated has size %d, %d, %d, %d\n", nfleets, ncells, 365, nyears);
+
+	/* Find out if there are rolling MPAs */
+	bm->flagrollingmpa = 0;
+	for (fishery_id = 0; fishery_id < bm->K_num_fisheries; fishery_id++) {
+		flagfcmpa = (int) (bm->FISHERYprms[fishery_id][flagmpa_id]);
+		switch (flagfcmpa) {
+		case no_mpa: /* No spatial management - do nothing as set = 1.0 daily */
+		case fix_mpa: /* Spatial management fixed at initial distribution - use default MPA setup */
+		case stock_mpa: /* Spatial management responds to the size of the target species for this fishery
+		 (using fixed MPA locations set at default set of MPAs) */
+		case pet_mpa: /* Spatial management responds to the size of charismatic species population
+		 (using fixed MPA locations set at default set of MPAs) */
+		case stock_pet_mpa: /* Spatial management responds to the size of the target species for this
+		 fishery and the charismatic species populations (using default MPA locations) */
+		case depth_stock_mpa: /* US-like depth closures triggered when TAC exceeded */
+		case council_stock_mpa: /* US-like closures (but based on biom distrib of groups) triggered when TAC exceeded */
+        case catch_mpa: /* Catch based spatal closures */
+			/* Nothing to do so go on */
+			break;
+		case cycle_mpa: /* Rotational or rolling spatial management - read in from MPAts file */
+		case cycle_stock_mpa: /* Spatial management responds to the size of the target species for this fishery
+		 (using changing MPA locations) */
+		case cycle_pet_mpa: /* Spatial management responds to the size of charismatic species population
+		 (using changing MPA locations) */
+		case cycle_stock_pet_mpa: /* Spatial management responds to the size of the target species for this
+		 fishery and the charismatic species populations (using changing MPA locations) */
+		case mix_fix_rolling_mpa: /* Mix of fixed and rolling spatial management */
+		case mix_f_r_spawn_mpa: /* Mix of fixed, rolling and seasonal spawning closures used in management */
+			/* Load data from timeseries files */
+			bm->flagrollingmpa = 1;
+			break;
+		default:
+			quit("No such mpa case defined (%d) - value must be between %d and %d currently\n", flagfcmpa, no_mpa, cycle_stock_pet_mpa);
+			break;
+		}
+	}
+    
+    /* In case of simple start-stop durartion definition */
+    orig_endyr = endyr;
+    if (bm->flagSimpleStartStopMPAs ) {
+        startyr = bm->MPAstartyr;
+        endyr = bm->MPAendyr;
+    }
+    if (endyr > orig_endyr)
+        endyr = orig_endyr;  // So don't try and read in a set of values larger than array size.
+
+
+    /* Populate full lists of MPAs */
+	loading_done = 0;
+	for (fishery_id = 0; fishery_id < bm->K_num_fisheries; fishery_id++) {
+		flagfcmpa = (int) (bm->FISHERYprms[fishery_id][flagmpa_id]);
+
+		/* Old code - now done explicitly in Manage_Visit_Council()
+		 flagmanage = (int)(bm->FISHERYprms[fishery_id][flagmanage_id]);
+		 if(flagmanage == cumTACclosure_mgmt)
+		 flagtriptrigger = 1;
+
+		 if(flagtriptrigger)
+		 flagfcmpa = stock_mpa;
+		 */
+
+		/* Set up MPA list */
+		switch (flagfcmpa) {
+		case no_mpa: /* No spatial management - do nothing as set = 1.0 daily */
+		case fix_mpa: /* Spatial management fixed at initial distribution - use default MPA setup */
+		case stock_mpa: /* Spatial management responds to the size of the target species for this fishery
+		 (using fixed MPA locations set at default set of MPAs) */
+		case pet_mpa: /* Spatial management responds to the size of charismatic species population
+		 (using fixed MPA locations set at default set of MPAs) */
+		case stock_pet_mpa: /* Spatial management responds to the size of the target species for this
+		 fishery and the charismatic species populations (using default MPA locations) */
+		case depth_stock_mpa: /* US-like depth closures triggered when TAC exceeded (so use general MPAs
+		 through bulk of year until management action tripped and use another list) */
+		case council_stock_mpa: /* US-like closures (but based on biom distrib of groups) triggered when TAC exceeded
+		 (so use general MPAs through bulk of year until management action tripped and use another list) */
+        case catch_mpa: /* Catch based spatal closures */
+			for (nyr = startyr; nyr < endyr; nyr++) {
+				for (thisday = 0; thisday < 365; thisday++) {
+					for (ij = 0; ij < bm->nbox; ij++) {
+						bm->MPAlist[nyr][thisday][ij][fishery_id] = bm->MPA[ij][fishery_id];
+					}
+				}
+			}
+			break;
+		case cycle_mpa: /* Rotational or rolling spatial management - read in from MPAts file */
+		case cycle_stock_mpa: /* Spatial management responds to the size of the target species for this fishery
+		 (using changing MPA locations) */
+		case cycle_pet_mpa: /* Spatial management responds to the size of charismatic species population
+		 (using changing MPA locations) */
+		case cycle_stock_pet_mpa: /* Spatial management responds to the size of the target species for this
+		 fishery and the charismatic species populations (using changing MPA locations) */
+			/* Load data from timeseries files */
+			if (!loading_done) {
+				Load_MPAlist_From_File(bm, llogfp);
+				loading_done = 1;
+			}
+			break;
+		case mix_fix_rolling_mpa: /* Rolling and fixed closure mix */
+		case mix_f_r_spawn_mpa: /* Mix of fixed, rolling and seasonal spawning closures used in management */
+			for (nyr = startyr; nyr < endyr; nyr++) {
+				for (thisday = 0; thisday < 365; thisday++) {
+					for (ij = 0; ij < bm->nbox; ij++) {
+						bm->MPAlist[nyr][thisday][ij][fishery_id] = bm->MPA[ij][fishery_id];
+					}
+				}
+			}
+			/* Load data from timeseries files */
+			if (!loading_done) {
+				Load_MPAlist_From_File(bm, llogfp);
+				loading_done = 1;
+			}
+			break;
+		default:
+			quit("No such mpa case defined (%d) - value must be between %d and %d currently\n", flagfcmpa, no_mpa, cycle_stock_pet_mpa);
+			break;
+		}
+
+	}
+
+	return;
+}
+
+/**
+ * \brief Set up explicit MPA lists for rolling MPAs
+ */
+void Load_MPAlist_From_File(MSEBoxModel *bm, FILE *llogfp) {
+	int nfleets = bm->K_num_fisheries;
+	int ncells = bm->nbox;
+	int nyr, ij, b, fishery_id, list_needed, nyears, boxkey_id, ts_id;
+	double this_t, tsEvaled;
+
+	nyears = (int) (ceil((bm->tstop - bm->tstart) / (365.0 * 86400.0)));
+
+	/* Read the MPA time series */
+	list_needed = 0;
+	if (bm->flagrollingmpa) {
+		Harvest_Read_Time_Series(bm->inputFolder, bm->forceIfname, "MPA", bm->t_units, &bm->tsMPA, &bm->ntsMPA, &bm->tsMPAtype);
+
+		if (bm->ntsMPA) {
+			FisheryTimeSeries *this_ts = &bm->tsMPA[0];
+
+			/* Assign species ids */
+			for (fishery_id = 0; fishery_id < bm->K_num_fisheries; fishery_id++) {
+				bm->tsMPAid[fishery_id] = -1;
+				for (b = 0; b < this_ts->ts.nv; b++) {
+					if (bm->debug == debug_mpa) {
+						fprintf(llogfp, "mpa_loading checking %s vs %s (fishery_id = %d b = %d)\n", FisheryArray[fishery_id].fisheryCode,
+								this_ts->ts.varname[b], fishery_id, b);
+					}
+
+					if (strcmp(FisheryArray[fishery_id].fisheryCode, this_ts->ts.varname[b]) == 0) {
+						bm->tsMPAid[fishery_id] = b;
+						if (bm->debug == debug_mpa) {
+							fprintf(llogfp, "tsMPA for %s is %d\n", FisheryArray[fishery_id].fisheryCode, bm->tsMPAid[fishery_id]);
+						}
+						break;
+					}
+				}
+				if (bm->tsMPAid[fishery_id] < 0)
+					quit("Did not find time series of MPAs for %s - check catch ts files contain it\n", FisheryArray[fishery_id].fisheryCode);
+			}
+
+			/* Assign box map ids */
+			for (b = 0; b < bm->nbox; b++) {
+				for (ij = 0; ij < bm->ntsMPA; ij++) {
+					if (b == bm->tsMPA[ij].b) {
+						MPAKeyMap[b] = ij;
+					}
+				}
+			}
+		} else {
+			quit("Expecting MPA time series but didn't find any\n");
+		}
+
+		list_needed = 1;
+	} else {
+		bm->tsMPA = NULL;
+		list_needed = 0;
+	}
+
+	/* Assign the value */
+	if (list_needed) {
+		for (nyr = 0; nyr < nyears; nyr++) {
+			for (ij = 0; ij < 365; ij++) {
+				for (b = 0; b < ncells; b++) {
+					boxkey_id = MPAKeyMap[b];
+					if (boxkey_id > -1) {
+						for (fishery_id = 0; fishery_id < nfleets; fishery_id++) {
+							/* Determine time series */
+							FisheryTimeSeries *this_tsMPA = &bm->tsMPA[boxkey_id];
+							ts_id = bm->tsMPAid[fishery_id];
+
+							/* Initialise the value */
+							bm->MPAlist[nyr][ij][b][fishery_id] = 1.0;
+
+							/* Get the time series value */
+							this_t = (nyr * 365.0 + ij) * 86400.0;
+							if (bm->tsMPAtype == interpolate_id)
+								tsEvaled = tsEval(&this_tsMPA->ts, ts_id, this_t);
+							else
+								tsEvaled = tsEvalEx(&this_tsMPA->ts, ts_id, this_t);
+
+							bm->MPAlist[nyr][ij][b][fishery_id] = tsEvaled;
+						}
+					}
+				}
+			}
+		}
+
+		/* Zero the tsMPA */
+		Harvest_Free_Time_Series(bm->tsMPA, bm->ntsMPA);
+		bm->ntsMPA = 0;
+	}
+
+	return;
+}
+

@@ -1,0 +1,773 @@
+/*********************************************************************
+
+    File:           atvertgeom.c
+
+    Created:        Wed Jun 14 12:40:34 EST 1995
+
+    Author:         Stephen Walker
+                    CSIRO Division of Oceanography
+
+    Purpose:        This file contains routines which
+					calculate various values associated
+					with the model vertical geometry
+
+    Arguments:      See below
+
+    Returns:        void
+
+    Revisions:      8/8/2004 EA Fulton
+					Ported across the code from the southeast (sephys) model
+
+					17/11/2004 EA Fulton
+					Converted original routine definitions from
+					void
+					routine_name(blah,blahblah)
+					int blah;
+					double blahblah;
+
+					to
+
+					void routine_name(int blah, double blahblah)
+
+
+					17-06-2009 Bec Gorton
+					Uncommented a check to see if the number of layers calculated makes sense.
+
+					27-08-2009 Bec Gorton
+					Added code to set the numLayers value after the nz has been calculated. This means that from then
+					on in the numLayers values should be correct and the numlayers value written to the output netcdf file
+					will be correct. This is important as cdfDistiller (which can be used to create a new input netcdf file from
+					an output file) will use the numLayers value that is read in to slide the nz values.
+
+
+*********************************************************************/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <sjwlib.h>
+#include <atlantisboxmodel.h>
+
+/* Local prototypes */
+void check_wc_dz(MSEBoxModel *bm, FILE *llogfp);
+void check_sed_dz(MSEBoxModel *bm, FILE *llogfp);
+void check_ice_dz(MSEBoxModel *bm, FILE *llogfp);
+
+void insert_sed_layer(SedModel *sm, int k);
+void delete_sed_layer(SedModel *sm, int k);
+void copy_sed_layer(SedModel *sm, int src_k, int dst_k);
+void clear_sed_layer(SedModel *sm, int k);
+void insert_ice_layer(IceModel *ice, int k);
+void delete_ice_layer(IceModel *ice, int k);
+void copy_ice_layer(IceModel *ice, int src_k, int dst_k);
+void clear_ice_layer(IceModel *ice, int k);
+
+
+void vertgeom(MSEBoxModel *bm, FILE *llogfp)
+{
+    /* Check water column dz values and reset if necessary */
+    check_wc_dz(bm, llogfp);
+    /* Check sediment dz values and re-grid if necessary */
+    check_sed_dz(bm, llogfp);
+
+    if(bm->ice_on == TRUE){
+    	/* Check ice dz values and re-grid if necessary */
+    	check_ice_dz(bm, llogfp);
+    }
+
+    /* Adjust layer coordinates to reflect changes in cell thicknesses */
+    layer_coords(bm, llogfp);
+    /* Re-calculate cell volumes */
+    volume_from_dz(bm);
+}
+
+/* Routine to calculate layer thicknesses from layer volumes */
+void dz_from_volume(MSEBoxModel *bm)
+{
+    int b = 0;
+    int k = 0;
+
+    /* Loop over each box */
+    for(b=0; b<bm->nbox; b++) {
+		Box *bp = &bm->boxes[b];
+		SedModel *sm = &bm->boxes[b].sm;
+		IceModel *ice = &bm->boxes[b].ice;
+
+		double a = bp->area;
+
+		/* Loop over each water column layer */
+		for( k=0; k<bp->nz; k++)
+			bp->dz[k] = bp->volume[k]/a;
+
+		/* Loop over each sediment layer */
+		for( k=sm->topk; k<sm->nz; k++)
+			sm->dz[k] = sm->volume[k]/a;
+
+		/* No Loop over each ice layer */
+		for( k=0; k<ice->currentnz; k++){
+			ice->dz[k] = ice->volume[k]/a;
+		}
+    }
+}
+
+/* Routine to calculate the number of water column layers in
+ * each box. This is done by adding up the nominal_dz values
+ * until we reach a thickness of 0-botz.
+ */
+void nz_from_nomdz(MSEBoxModel *bm)
+{
+    int b = 0;
+    double diff;
+    int done_warn = 0;
+
+    /* Loop over each box */
+    for(b=0; b<bm->nbox; b++) {
+		Box *bp = &bm->boxes[b];
+		double z = bp->botz;
+		int k = 0;
+		double totdz = 0.0;
+		double totnomdz = 0.0;
+
+		/* Check if bottom depth greater than allowed */
+		if(z < bm->maxwcbotz){
+			warn("Box %d has a depth %e greater than the maxwcbotz. Please adjust your bgm file and try again\n", b, z);
+			z = bm->maxwcbotz;
+		}
+        
+        if ((bm->terrestrial_on) && (z > 0)) {
+            /** For land assume one layer **/
+            bp->numlayers = 1;
+            bp->nz = 1;
+            
+            if(!done_warn) {
+                warn("Acting on land layers - will assume one layer for land only at present\n");
+                done_warn++;
+            }
+        } else {
+            /** Check layers the water boxes only **/
+        
+            /* Loop over the nominal_dz values until we reach the surface */
+            while( z < -0.001 && k < bm->wcnz ) {
+                z += bm->nom_dz[b][k];
+                k++;
+            }
+            bp->nz = k;
+
+            if(z < -0.001){
+                fprintf(stderr, "Box %d botz is %e\n", b, bp->botz);
+                for(k = 0; k < bp->nz; k++){
+                    fprintf(stderr, "Nominal_dz for layer %d is %e\n", k, bm->nom_dz[b][k]);
+                }
+                quit("box %d doesn't have enough layers. The sum of your nominal_dz (diff = %e) values should be greater than botz. Check your initial conditions netcdf file.\n", b, z);
+            }
+
+            totdz = 0.0;
+            totnomdz = 0.0;
+
+            /* Check whether sum of dz > maxwcbotz */
+            for(k=0; k<bp->nz; k++){
+                totdz += bp->dz[k];
+                totnomdz += bm->nom_dz[b][k];
+            }
+            if(fabs(totdz - (- 1.0 * bp->botz)) > buffer_rounding){
+                diff = totdz - (- 1.0 * bp->botz);
+
+                warn("Sum of dz (%e) in box %d is greater than botz (%e) for that box in bgm file. Difference = %e - correct and retry\n", totdz, b, - 1.0 * bp->botz, diff);
+                fprintf(bm->logFile, "WARNING - Sum of dz (%e) in box %d is greater than botz (%e) for that box in bgm file. Difference = %e - correct and retry\n", totdz, b, - 1.0 * bp->botz, diff);
+
+            }
+            if(fabs(totnomdz - (- 1.0 * bp->botz)) > buffer_rounding){
+                warn("Sum of nominal_dz (%e) in box %d is greater than botz (%e) for that box in bgm file - this will impact number of layers calculated for the box - correct and retry\n", totnomdz, b, - 1.0 * bp->botz);
+                fprintf(bm->logFile, "WARNING - Sum of nominal_dz (%e) in box %d is greater than botz (%e) for that box in bgm file - this will impact number of layers calculated for the box - correct and retry\n", totnomdz, b, - 1.0 * bp->botz);
+            }
+
+            if(bp->nz != bp->numlayers){
+                warn("The numLayers value for box %d is %d but the number of layers calculated based on nominal_dz is %d - check and retry.\n", b, bp->numlayers, bp->nz);
+                fprintf(bm->logFile, "WARNING - The numLayers value for box %d is %d but the number of layers calculated based on nominal_dz is %d - check and retry.\n", b, bp->numlayers, bp->nz);
+            }
+            bp->numlayers = bp->nz;
+
+            /* 
+             // Check whether sum of dz > maxwcbotz
+             for(k=0; k<bp->nz; k++){
+                totdz += bp->dz[k];
+                totnomdz += bm->nom_dz[b][k];
+             }
+             if(totdz > (- 1.0 * bp->botz))
+                quit("Sum of dz in box %d is greater than botz for that box in bgm file - correct and retry\n", b);
+
+             if(totnomdz > (- 1.0 * bp->botz))
+                quit("Sum of nominal_dz in box %d is greater than botz for that box in bgm file - this will impact number of layers calculated for the box - correct and retry\n", b);
+
+             */
+        }
+    }
+
+//    for(b=0; b<bm->nbox; b++) {
+//    	Box *bp = &bm->boxes[b];
+//    	fprintf(bm->logFile, "%d ", bp->numlayers );
+//    }
+//    fprintf(bm->logFile, "\n");
+//    abort();
+}
+
+/* Routine to calculate layer volumes from layer thicknesses */
+void volume_from_dz(MSEBoxModel *bm)
+{
+    int b = 0;
+    int k = 0;
+
+    /* Loop over each box */
+    for(b=0; b<bm->nbox; b++) {
+		Box *bp = &bm->boxes[b];
+		SedModel *sm = &bm->boxes[b].sm;
+		IceModel *ice = &bm->boxes[b].ice;
+
+		double a = bp->area;
+
+		/* Loop over each water column layer */
+		for( k=0; k<bp->nz; k++){
+			bp->volume[k] = bp->dz[k]*a;
+         }
+
+		/* Loop over each sediment layer */
+		for( k=sm->topk; k<sm->nz; k++){
+			sm->volume[k] = sm->dz[k]*a;
+        }
+		if(bm->ice_on){
+			/* Loop over each sediment layer */
+			for( k=0; k<ice->currentnz; k++){
+				ice->volume[k] = ice->dz[k]*a;
+			}
+		}
+
+    }
+}
+
+/* Routine to calculate layer coordinates */
+void layer_coords(MSEBoxModel *bm, FILE *llogfp)
+{
+    int b = 0;
+    int k = 0;
+
+    /* Loop over each box */
+    for(b=0; b<bm->nbox; b++) {
+		Box *bp = &bm->boxes[b];
+		SedModel *sm = &bm->boxes[b].sm;
+		IceModel *ice = &bm->boxes[b].ice;
+
+		/* Water column values */
+		bp->gridz[0] = bp->botz;
+		for(k=0; k<bp->nz; k++) {
+			bp->gridz[k+1] = bp->gridz[k] + bp->dz[k];
+			bp->cellz[k] = (bp->gridz[k] + bp->gridz[k+1])/2.0;
+		}
+
+        fprintf(bm->logFile, "box: %d ", b);
+        
+		/* Sediment values */
+		sed_layer_coords(sm, llogfp);
+
+		if(bm->ice_on){
+			/* Ice values */
+			ice_layer_coords(bp, ice);
+		}
+
+    }
+}
+
+void sed_layer_coords(SedModel *sm, FILE *llogfp)
+{
+    int k = 0;
+    
+    fprintf(llogfp, "topk: %d sm->dz[0]: %e ", sm->topk, sm->dz[0]);
+    
+    for(k=0; k<sm->topk; k++) {
+    	sm->gridz[k] = 0.0;
+    	sm->dz[k] = 0.0;
+    }
+    sm->gridz[sm->topk] = 0.0;
+    for(k=sm->topk; k<sm->nz; k++) {
+    	sm->gridz[k+1] = sm->gridz[k] - sm->dz[k];
+    	sm->cellz[k] = (sm->gridz[k] + sm->gridz[k+1])/2.0;
+    }
+    
+    fprintf(llogfp, "but ends sm->dz[0] %e \n", sm->dz[0]);
+
+}
+
+
+void ice_layer_coords(Box *bp, IceModel *ice)
+{
+    int k = 0;
+
+    ice->gridz[0] = ice->max_ice_depth;
+    for(k=0; k<ice->currentnz; k++) {
+    	ice->gridz[k+1] = ice->gridz[k] + ice->dz[k];
+    	ice->cellz[k] = (ice->gridz[k] + ice->gridz[k+1])/2.0;
+    }
+}
+
+/* Routine to check water column dz values and reset
+ * to nominal values if outside tolerance
+ */
+void check_wc_dz(MSEBoxModel *bm, FILE *llogfp)
+{
+    int b = 0;
+    int k = 0;
+
+    /* Loop over each box */
+    for(b=0; b<bm->nbox; b++) {
+		Box *bp = &bm->boxes[b];
+		for(k=0; k<bp->nz; k++) {
+			if( bp->dz[k] > bm->nom_dz[b][k]*(1.0+bm->wc_dz_tol) || bp->dz[k] < bm->nom_dz[b][k]*(1.0-bm->wc_dz_tol) ) {
+				if( verbose > 1 )
+					fprintf(stderr,"check_wc_dz: Resetting dz in box %d, layer %d from %g to %g\n",b,k,bp->dz[k],bm->nom_dz[b][k]);
+				fprintf(bm->logFile,"check_wc_dz: Resetting dz in box %d, layer %d from %g to %g\n",b,k,bp->dz[k],bm->nom_dz[b][k]);
+				bp->dz[k] = bm->nom_dz[b][k];
+			}
+		}
+    }
+}
+
+/* Routine to check sediment dz values.
+ * Sediment layers will be re-distributed if necessary
+ */
+void check_sed_dz(MSEBoxModel *bm, FILE *llogfp)
+{
+    int b = 0;
+    int k = 0;
+
+    /* Loop over each box */
+    for(b=0; b<bm->nbox; b++) {
+	SedModel *sm = &bm->boxes[b].sm;
+
+	/* Check for very thin layers (except surface layer) */
+	for(k=sm->topk+1; k<sm->nz; k++) {
+	    if( sm->dz[k] < sm->mindz ) {
+		/* Merge with next layer down or up */
+	    	fprintf(bm->logFile,"check_sed_dz: Merge with next layer down or up\n");
+
+		if( k < sm->nz-1 )
+		    transfer_sed(sm,k,k+1,sm->dz[k]);
+		else
+		    transfer_sed(sm,k,k-1,sm->dz[k]);
+	    }
+	}
+
+	/* Check for surface layer becoming too thick */
+	if( sm->nz > 1 ) {
+	    while( sm->dz[sm->topk] > sm->maxdz ) {
+		/* Are any empty layers available */
+		if( sm->topk > 0 ) {
+		    /* Use up an empty layer, inserting an empty layer
+		     * below the current top layer, and then transferring
+		     * sediment into it
+		     */
+			fprintf(bm->logFile,"check_sed_dz: Use up empty layer\n");
+		    insert_sed_layer(sm,sm->topk);
+		    transfer_sed(sm,sm->topk,sm->topk+1,sm->maxdz-sm->mindz);
+		}
+		else {
+			fprintf(bm->logFile,"check_sed_dz: Create extra layer\n");
+		    /* Special case for 2 layers */
+		    if( sm->nz == 2 ) {
+			transfer_sed(sm,sm->topk,sm->topk+1,sm->dz[0]-sm->mindz);
+		    }
+		    else {
+			/* No empty layers - merge the bottom two layers */
+			transfer_sed(sm,sm->nz-2,sm->nz-1,sm->dz[sm->nz-2]);
+			/* Now insert an empty layer below the current top layer,
+			 * and then transfer sediment into it
+			 */
+			insert_sed_layer(sm,sm->topk);
+			transfer_sed(sm,sm->topk,sm->topk+1,sm->maxdz-sm->mindz);
+		    }
+		}
+	    }
+	}
+    }
+}
+
+/* This subroutine transfers sediment from one
+ * layer to another layer. The source layer must be non-empty.
+ * The destination layer may be empty, but must be adjacent
+ * to a non-empty layer. If the entire contents of the source
+ * layer are transferred, it is deleted.
+ */
+void transfer_sed(SedModel *sm, int src_k, int dst_k, double a)
+/* SedModel *sm   pointer to sdiment model
+   src_k          index of source layer
+   dst_k          index of destination layer
+   a              thickness of material to transfer */
+{
+    int n = 0;
+    double ddz = sm->dz[dst_k];
+
+    if( src_k < sm->topk || src_k >= sm->nz )
+	quit("transfer_sed: Invalid source index (%d)\n",src_k);
+    if( a > sm->dz[src_k] )
+	quit("transfer_sed: Too much material to transfer\n");
+    if( dst_k < 0 || dst_k >= sm->nz )
+	quit("transfer_sed: Invalid destination index (%d)\n",dst_k);
+
+    sm->dz[src_k] -= a;
+    sm->dz[dst_k] += a;
+    for(n=0; n<sm->ntr; n++)
+	sm->tr[dst_k][n] = (sm->tr[src_k][n]*a+sm->tr[dst_k][n]*ddz)/(a+ddz);
+
+    /* In general, we don't need to worry about other
+     * variables here - they get re-calculated elsewhere.
+     * However, if the destination cell is initially
+     * empty, we might as well transfer sensible values
+     * across.
+     */
+    if( ddz == 0.0 ) {
+	sm->filltime[dst_k] = sm->filltime[src_k];
+	sm->css[dst_k] = sm->css[src_k];
+	sm->porosity[dst_k] = sm->porosity[src_k];
+	sm->dissol_kz[dst_k] = sm->dissol_kz[src_k];
+	sm->partic_kz[dst_k] = sm->partic_kz[src_k];
+    }
+
+    /* If we transferred the entire contents of the source layer,
+     * delete it
+     */
+    if( sm->dz[src_k] <= 0.0 )
+	delete_sed_layer(sm,src_k);
+}
+
+/* This subroutine inserts an empty sediment layer
+ * making the new layer the kth layer. You cannot insert
+ * a layer above the current surface layer
+ * or if the maximum number of layers are already present.
+ * After a new layer is inserted, you should immediately
+ * transfer some sediment into it. Zero thickness layers
+ * in the middle of the sediment are very undesirable!
+ */
+void insert_sed_layer(SedModel *sm, int k)
+/* SedModel *sm   pointer to sediment model
+   k              index  of layer to be created */
+{
+    int kk = 0;
+
+    if( k < sm->topk || k >= sm->nz )
+	quit("insert_sed_layer: invalid layer number (%d)\n",k);
+    if( sm->topk == 0 )
+	quit("insert_sed_layer: too many layers\n");
+
+    /* Move overlying layers up */
+    for(kk=sm->topk; kk<=k; kk++)
+	copy_sed_layer(sm,kk,kk-1);
+
+    /* Clear new layer */
+    clear_sed_layer(sm,k);
+    /* Adjust top index */
+    sm->topk -= 1;
+}
+
+/* This subroutine deletes the kth sediment layer. It will
+ * not allow you to delete the surface layer,
+ * or a layer with non-zero thickness. Thus,
+ * to delete an intermediate layer, it is first necessary
+ * to transfer its contents to some other layer,
+ * leaving it empty (zero dz).
+ */
+void delete_sed_layer(SedModel *sm, int k)
+/* SedModel *sm    pointer to sediment model
+   k               index  of layer to be deleted */
+{
+    int kk = 0;
+
+    if( k <= sm->topk || k >= sm->nz )
+	quit("delete_sed_layer: invalid layer number (%d)\n",k);
+    if( sm->dz[k] > 0.0 )
+	quit("delete_sed_layer: Cannot delete non-empty layer (%d)\n",k);
+
+    /* Layer is empty, so all we need to do is
+     * shift overlying layers down
+     */
+    for(kk=k-1; kk>=sm->topk; kk--)
+	copy_sed_layer(sm,kk,kk+1);
+
+    /* Clear old top layer, and point to new one */
+    clear_sed_layer(sm,sm->topk);
+    sm->topk += 1;
+}
+
+/* This routine copys the contents of one sediment layer
+ * to another
+ */
+void copy_sed_layer(SedModel *sm, int src_k, int dst_k)
+{
+    int n = 0;
+
+    if( src_k < 0 || src_k >= sm->nz ||
+	dst_k < 0 || dst_k >= sm->nz )
+	quit("copy_sed_layer: Invalid index (src=%d, dst=%d)\n",src_k,dst_k);
+
+    for(n=0; n<sm->ntr; n++)
+	sm->tr[dst_k][n] = sm->tr[src_k][n];
+    sm->volume[dst_k] = sm->volume[src_k];
+    sm->dz[dst_k] = sm->dz[src_k];
+    sm->gridz[dst_k] = sm->gridz[src_k];
+    sm->cellz[dst_k] = sm->cellz[src_k];
+    sm->filltime[dst_k] = sm->filltime[src_k];
+    sm->css[dst_k] = sm->css[src_k];
+    sm->porosity[dst_k] = sm->porosity[src_k];
+    sm->dissol_kz[dst_k] = sm->dissol_kz[src_k];
+    sm->partic_kz[dst_k] = sm->partic_kz[src_k];
+    /*sm->partic_kz[dst_k] = sm->partic_kz[src_k]; - duplicate, remove ?*/
+}
+
+
+/* This routine clears the contents of one sediment layer */
+void clear_sed_layer(SedModel *sm, int k)
+{
+    int n = 0;
+
+    if( k < 0 || k >= sm->nz )
+	quit("clear_sed_layer: Invalid index (%d)\n",k);
+
+    for(n=0; n<sm->ntr; n++)
+	sm->tr[k][n] = 0.0;
+    sm->volume[k] = 0.0;
+    sm->dz[k] = 0.0;
+    sm->gridz[k] = 0.0;
+    sm->cellz[k] = 0.0;
+    sm->filltime[k] = 0.0;
+    sm->css[k] = 0.0;
+    sm->porosity[k] = 0.0;
+    sm->dissol_kz[k] = 0.0;
+    sm->partic_kz[k] = 0.0;
+    /* sm->partic_kz[k] = 0.0;	- duplicate, remove ? */
+}
+
+
+
+/********************************************** Routines to handle ice layers *****************************************/
+/* Routine to check ice dz values.
+ * Ice layers will be re-distributed if necessary - so can deal with melt and expansion
+ * Ice starts with zero layer on top and work down vertically
+ */
+void check_ice_dz(MSEBoxModel *bm, FILE *llogfp)
+{
+    int b = 0;
+    int k = 0;
+
+    /* Loop over each box */
+    for(b=0; b<bm->nbox; b++) {
+		IceModel *ice = &bm->boxes[b].ice;
+		ice->n_ice_types = bm->K_num_ice_classes;
+
+		//Reinitialise maximum ice depth
+		ice->max_ice_depth = 0;
+		ice->is_freezing = 0;
+
+		/* Check for very thin layers */
+		for(k=0; k<ice->currentnz; k++) {
+			if( ice->dz[k] < ice->mindz ) {
+			/* Merge with next layer closer to surface */
+				fprintf(bm->logFile,"check_ice_dz: Merge with next layer down or up\n");
+
+				if( k > 0 ) {
+					// Shrink into layer closer to the surface
+					transfer_ice(ice,k,k-1,ice->dz[k],shrinking);
+					k--; // As now need to redo k as have sucked all the rest of ice layers up a layer
+				} else {
+					// Ice free now
+					ice->currentnz = 0;
+				}
+				ice->is_freezing = -1;
+			}
+		}
+
+		/* Check for layers becoming too thick */
+		if( ice->nz > 1 ) {
+			for(k=0; k<ice->currentnz; k++) {
+				if( ice->dz[k] > ice->maxdz ) {
+					/* Are any empty layers available */
+					if( ice->currentnz < ice->nz ) {
+						/* Use up an empty layer, inserting an empty layer
+						 * below the current layer, and then transferring
+						 * ice into it and also shuffle the rest of the layers along
+						 */
+						fprintf(bm->logFile,"check_ice_dz: Add ice layer - splitting thick layer\n");
+						insert_ice_layer(ice,k);
+						transfer_ice(ice,k,k+1,ice->maxdz-ice->mindz,expanding);
+						k++; // As don't want to check the next layer immediately as only just created it;
+					}
+					else {
+						fprintf(bm->logFile,"check_iced_dz: Could not create extra layer so thick layer remains\n");
+					}
+					ice->is_freezing = 1;
+				}
+			}
+		}
+		/* Update the max_ice_depth value */
+		for(k=0; k<ice->currentnz; k++) {
+			ice->max_ice_depth += ice->dz[k];
+		}
+
+		/* Check to see if we have fast ice in this box */
+		if(bm->boxes[b].nz == 0){
+			ice->fast_ice = TRUE;
+		}else{
+			ice->fast_ice = FALSE;
+
+		}
+    }
+}
+
+/* This subroutine transfers ice properties from one
+ * layer to another layer and tidies up the array.
+ * The source layer must be non-empty.
+ * The destination layer may be empty, but must be adjacent
+ * to a non-empty layer. If the entire contents of the source
+ * layer are transferred, it is deleted.
+ */
+void transfer_ice(IceModel *ice, int src_k, int dst_k, double a, int change_type)
+/* IcedModel *ice   pointer to ice model
+   src_k          index of source layer
+   dst_k          index of destination layer
+   a              thickness of material to transfer
+   change_type    whether shrinking or expanding */
+{
+    int n = 0;
+    double ddz = ice->dz[dst_k];
+
+    if( src_k < 0 || src_k >= ice->nz )
+    	quit("transfer_ice: Invalid source index (%d)\n",src_k);
+    if( a > ice->dz[src_k] )
+    	quit("transfer_ice: Too much material to transfer\n");  // Just a sanity check that something hasn't gone astray in the call
+    if( dst_k < 0 || dst_k >= ice->nz )
+    	quit("transfer_sed: Invalid destination index (%d)\n",dst_k);
+
+    ice->dz[src_k] -= a;
+    ice->dz[dst_k] += a;
+    // Draw in tracers by averaging over what's there and what's coming in
+    for(n=0; n<ice->ntr; n++)
+    	ice->tr[dst_k][n] = (ice->tr[src_k][n]*a+ice->tr[dst_k][n]*ddz)/(a+ddz);
+
+    // Specify classes of ice present
+    for(n=0; n<ice->n_ice_types; n++){
+    	ice->ice_classes[dst_k][n] = (ice->ice_classes[src_k][n]*a+ice->ice_classes[dst_k][n]*ddz)/(a+ddz);
+    }
+
+    /* In general, we don't need to worry about other
+     * variables here - they get re-calculated elsewhere.
+     * However, if the destination cell is initially
+     * empty, we might as well transfer sensible values
+     * across.
+     */
+    if( ddz == 0.0 ) {
+		ice->porosity[dst_k] = ice->porosity[src_k];
+       	for(n=0; n<ice->ntr; n++)
+			ice->tr[dst_k][n] = ice->tr[src_k][n];
+		for(n=0; n<ice->n_ice_types; n++)
+			ice->ice_classes[dst_k][n] = ice->ice_classes[src_k][n];
+	}
+
+    /* If we transferred the entire contents of the source layer,
+     * delete it
+     */
+	if( change_type < 0 )
+    	delete_ice_layer(ice,src_k);
+}
+
+/* This subroutine inserts an empty ice layer
+ * making the new layer the kth layer. You cannot insert
+ * a layer above the surface (i.e. id can't be < 0)
+ * or if the maximum number of possible layers are already
+ * present (or blow past the end of the allocated array).
+ * After a new layer is inserted, you need to shuffle things out of the way.
+ * Need to immediately insert attributes to the new layer so not
+ * removed in next iteration as empty.
+ */
+void insert_ice_layer(IceModel *ice, int k)
+/* IceModel *ice   pointer to sediment model
+   k              index  of layer to be created */
+{
+    int kk = 0;
+
+    if( k < 0 || k >= ice->nz )
+    	quit("insert_ice_layer: invalid layer number (%d)\n",k);
+    if( ice->currentnz == ice->nz)
+    	quit("insert_ice_layer: no room for insertion (%d)\n",k);
+
+    /* Move deeper layers down a slot */
+    for(kk=k; kk<ice->currentnz; kk++)
+    	copy_ice_layer(ice,kk,kk+1);
+    ice->currentnz++;
+
+    /* Clear new layer */
+    clear_ice_layer(ice,k);
+}
+
+/* This subroutine deletes the kth ice layer. Need to
+ * shuffle layers so all empty (non existent) layers = at deeper end of the list
+ */
+void delete_ice_layer(IceModel *ice, int k)
+/* IcedModel *ice    pointer to sediment model
+   k               index  of layer to be deleted */
+{
+    int kk = 0;
+
+    if( k <= 0 || k >= ice->nz )
+    	quit("delete_ice_layer: invalid layer number (%d)\n",k);
+    if( ice->dz[k] > ice->mindz )
+    	quit("delete_ice_layer: Cannot delete non-trivial layer (%d)\n",k);
+
+    /* Layer is empty, so all we need to do is clean up and
+     * shift any deeper layers up
+     */
+    for(kk=k+1; kk<ice->currentnz; kk++)
+       	copy_ice_layer(ice,kk,kk-1);
+
+    /* Clear old deepest layer, and point to new one */
+    clear_ice_layer(ice,ice->currentnz);
+    ice->currentnz--;
+}
+
+/* This routine copies the contents of one ice layer
+ * to another
+ */
+void copy_ice_layer(IceModel *ice, int src_k, int dst_k)
+{
+    int n = 0;
+
+    if( src_k < 0 || src_k >= ice->nz ||
+	dst_k < 0 || dst_k >= ice->nz )
+    	quit("copy_ice_layer: Invalid index (src=%d, dst=%d)\n",src_k,dst_k);
+
+    for(n=0; n<ice->ntr; n++)
+		ice->tr[dst_k][n] = ice->tr[src_k][n];
+	for(n=0; n<ice->n_ice_types; n++)
+		ice->ice_classes[dst_k][n] = ice->ice_classes[src_k][n];
+    ice->volume[dst_k] = ice->volume[src_k];
+    ice->dz[dst_k] = ice->dz[src_k];
+    ice->gridz[dst_k] = ice->gridz[src_k];
+    ice->cellz[dst_k] = ice->cellz[src_k];
+    ice->porosity[dst_k] = ice->porosity[src_k];
+}
+
+
+/* This routine clears the contents of one ice layer */
+void clear_ice_layer(IceModel *ice, int k)
+{
+    int n = 0;
+
+    if( k < 0 || k >= ice->nz )
+	quit("clear_sed_layer: Invalid index (%d)\n",k);
+
+    for(n=0; n<ice->ntr; n++)
+    	ice->tr[k][n] = 0.0;
+    for(n=0; n<ice->n_ice_types; n++)
+		ice->ice_classes[k][n] = 0.0;
+	ice->volume[k] = 0.0;
+    ice->dz[k] = 0.0;
+    ice->gridz[k] = 0.0;
+    ice->cellz[k] = 0.0;
+    ice->porosity[k] = 0.0;
+
+}

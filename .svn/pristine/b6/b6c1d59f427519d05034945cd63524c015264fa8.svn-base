@@ -1,0 +1,692 @@
+/**
+ * \file atmigration.c
+ * \brief Processes for representing migration outside the model domain
+ * \ingroup atEcology
+ * \author Beth Fulton 	18/12/2016 CSIRO Marine Laboratories,  2005
+ *
+ *
+ * 	Determines timing of migration that will execute in main biological code
+ *
+ * <b>Revisions:</b>
+ */
+/*  Open library routines */
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <math.h>
+#include <atecology.h>
+
+/*
+* prototypes for static functions that are only defined in this file.
+*/
+static void Check_For_Mature_Away(MSEBoxModel *bm, FILE *llogfp, int species, int time_away, int YearsAway, int migrationID, int currentID);
+
+/**
+ *	\brief This routine resets annual or multiyear migration processes (done 1st day of the year)
+ *	It is called by main() in the transport module.
+ *
+ *	For each active vertebrate and immigrating invert:<br>
+ *	<ul>
+ *	<li>Populate the MigrateAway and MigrateReturn arrays.</li>
+ *	</ul>
+ *	@param t  current time  (seconds)
+ *	@param dt time range
+ *	@param llogfp The model log file
+ *
+ *  Outputs :
+ *  New migration times
+ *
+ * Calculate the migration dates of the given species, cohort and migrationID combination.
+ * The resulting values are stored in the Leave_now and Return_Now arrays (used to be MigrateAway and MigrateBack).
+ * If the species is the bm->which_Check species and we are debuging this code messages
+ * are written to the log file.
+ *
+ *
+ 
+ */
+
+void Init_Migration(MSEBoxModel *bm, FILE *llogfp, int do_debug, int sp) {
+    int startyr = 0;
+    int endyr = (int) (ceil((bm->tstop - bm->tstart) / (365.0 * 86400.0)));
+    double temp3, temp4, real_mig_length;
+    int yr, migrationID, currentID, stage, sp_migrate, sp_Migrate_Time, sp_Migrate_Return, this_stage,
+        start_with_return, sp_Migrate_Years, this_YearsAway, mig_window, counter, this_currentID, potential_end_time,
+        time_return, VarTime3, VarTime4, max_Return_Now, time_away, cohort, flagmother, motherstage;
+    int b;
+    int *last_return = Util_Alloc_Init_1D_Int(FunctGroupArray[sp].speciesParams[num_migrate_id], -1);
+    
+    //if ( verbose > 0 )
+    //    printf("Doing Init_Migration for %s with num_mig: %d\n", FunctGroupArray[sp].groupCode, (int)(FunctGroupArray[sp].speciesParams[num_migrate_id]));
+    
+    fprintf(llogfp, "Doing Init_Migration for %s with num_mig: %d\n", FunctGroupArray[sp].groupCode, (int)(FunctGroupArray[sp].speciesParams[num_migrate_id]));
+    
+    /* Pre-plan all migrations */
+    for (stage = 0; stage < FunctGroupArray[sp].numStages; stage++) {
+        max_Return_Now = -1;
+        for (yr = startyr; yr <= endyr; yr++) {
+            sp_migrate = FALSE;
+            MIGRATION[sp].ActualMigrator[stage] = 0;
+            for(migrationID = 0; migrationID < FunctGroupArray[sp].speciesParams[num_migrate_id]; migrationID++){
+                currentID = (yr * FunctGroupArray[sp].speciesParams[num_migrate_id]) + migrationID;
+
+                for(cohort = 0; cohort < FunctGroupArray[sp].numCohortsXnumGenes; cohort++){
+                    this_stage = FunctGroupArray[sp].cohort_stage[cohort];
+                    if(this_stage == stage)
+                        MIGRATION[sp].migrationID[cohort][currentID] = migrationID;
+                }
+
+                /* If the period of this migration is not positive then move on to the next migration */
+                if (MIGRATION[sp].Period[stage][migrationID] > 0) {
+                    sp_migrate = TRUE;
+                    MIGRATION[sp].ActualMigrator[stage] = 1;
+                }
+                
+                /*
+                if(sp == bm->which_check) {
+                    fprintf(llogfp, "%s-%d migrationID: %d currentID: %d sp_migrate: %d as period: %d\n", FunctGroupArray[sp].groupCode, stage, migrationID, currentID, sp_migrate, MIGRATION[sp].Period[stage][migrationID]);
+                }
+                */
+                sp_Migrate_Time = (int) (MIGRATION[sp].StartDay[stage][migrationID]);
+                sp_Migrate_Return = (int) (MIGRATION[sp].EndDay[stage][migrationID]);
+                
+                if (yr == startyr) {
+                    if ((sp_migrate == TRUE) && (sp_Migrate_Time == 0) && (sp_Migrate_Return == 364)) {
+                        warn("%s stage %d has Migrate_Time of 0 and Migrate_Return of 364 - this will mean that this stage of this group is NEVER in the model. Did you really mean that? If not (i.e. you just don't want that stage to migrate at all) please set Migrate_Period to 0 (zero)\n", FunctGroupArray[sp].groupCode, stage);
+                    }
+                }
+                
+                /* Check for zero length migrations */
+                if (sp_Migrate_Time < sp_Migrate_Return) {
+                    real_mig_length = sp_Migrate_Return - sp_Migrate_Time;
+                    start_with_return = 0;
+                } else if (sp_Migrate_Time > sp_Migrate_Return) {
+                    real_mig_length = sp_Migrate_Return + 364 - sp_Migrate_Time;
+                    start_with_return = 1;
+                } else {
+                    real_mig_length = 0;
+                    start_with_return = 0;
+                }
+
+                /*
+                if(sp == bm->which_check) {
+                    fprintf(llogfp, "%s-%d real_mig_length: %e start_with_return: %d\n", FunctGroupArray[sp].groupCode, stage, real_mig_length, start_with_return);
+                }
+                */
+
+                if(FunctGroupArray[sp].speciesParams[multiyr_mig_id]) {
+                    sp_Migrate_Years = (int) (MIGRATION[sp].YearsAway[stage][migrationID]);
+                    this_YearsAway = sp_Migrate_Years;
+                    if(!this_YearsAway)
+                        this_YearsAway = 1;
+                } else {
+                    sp_Migrate_Years = 0;
+                    this_YearsAway = 1;
+                            
+                    /* If single year migrations and real_mig_length value is not greater than one move onto the next migration */
+                    if (fabs(real_mig_length) <= 1) {
+                        sp_migrate = FALSE;
+                        MIGRATION[sp].ActualMigrator[stage] = 0;
+                    }
+                }
+                
+                /* Update check on real_mig_length and start_with_return */
+                if (sp_Migrate_Years) {
+                    start_with_return = 1;
+                }
+                    
+                if (sp_migrate == TRUE) {
+                    mig_window = 14;
+
+                    /* Add wobble to dates if required */
+                    if (bm->flagrandom) {
+                        temp3 = drandom(-mig_window, mig_window);
+                        if (temp3 < 0.0)
+                            VarTime3 = (int) (ceil(temp3 - 0.5));
+                        else
+                            VarTime3 = (int) (floor(temp3 + 0.5));
+                        
+                        temp4 = drandom(-mig_window, mig_window);
+                        if (temp4 < 0.0)
+                            VarTime4 = (int) (ceil(temp4 - 0.5));
+                        else
+                            VarTime4 = (int) (floor(temp4 + 0.5));
+                    } else {
+                        VarTime3 = 0;
+                        VarTime4 = 0;
+                    }
+                    
+                    if (start_with_return && !yr) {
+                        // Start with returns so have those come in first then proceed as normal
+                        for (counter = 0; counter < this_YearsAway; counter++) {
+                            this_currentID = currentID + counter * ((int)(FunctGroupArray[sp].speciesParams[num_migrate_id]));
+                            MIGRATION[sp].Leave_Now[stage][this_currentID] = sp_Migrate_Time - 364; // As already away
+                            MIGRATION[sp].Return_Now[stage][this_currentID] = sp_Migrate_Return + VarTime4 + counter * 365; // Assume all the initial multi-yr ones come in on same day of year but with additional years
+
+                            if (MIGRATION[sp].Return_Now[stage][this_currentID] > max_Return_Now )
+                                max_Return_Now = MIGRATION[sp].Return_Now[stage][this_currentID];
+
+                            /**/
+                            //fprintf(bm->logFile, "CHECK A sp: %s-%d, counter: %d yr = %d, this_currentID = %d as multiyr with num_mig: %d\n", FunctGroupArray[sp].groupCode, stage, counter, yr, this_currentID, ((int)(FunctGroupArray[sp].speciesParams[num_migrate_id])));
+                            //fprintf(llogfp, "CHECK A sp: %s-%d, yr: %d leave_now = %d, return_now = %d, this_currentID = %d, start_with_return = %d, multiyr_mig: %e, VarTime4: %d, sp_Migrate_Time: %d, sp_Migrate_Return: %d\n", FunctGroupArray[sp].groupCode, stage, yr, MIGRATION[sp].Leave_Now[stage][this_currentID], MIGRATION[sp].Return_Now[stage][this_currentID], this_currentID, start_with_return, FunctGroupArray[sp].speciesParams[multiyr_mig_id], VarTime4, sp_Migrate_Time, sp_Migrate_Return);
+                                
+                            //if ((do_debug && (sp == bm->which_check)) || (bm->debug == debug_prey_biology_process && bm->dayt >= bm->checkstart && bm->dayt < bm->checkstop)) {
+                                fprintf(llogfp, "VERSION 0 Time: %e, sp: %s-%d, LeaveNow%d: %d, ReturnNow%d: %d (sp_Migrate_Time: %d, VarTime4: %d, counter: %d)\n", bm->dayt, FunctGroupArray[sp].groupCode, stage, this_currentID, MIGRATION[sp].Leave_Now[stage][this_currentID], this_currentID, MIGRATION[sp].Return_Now[stage][this_currentID], sp_Migrate_Time, VarTime4, counter);
+                            //}
+                            /**/
+                        }
+                    } else {
+                        //this_currentID = currentID;
+                        if (start_with_return ) {
+                            this_currentID = currentID + FunctGroupArray[sp].speciesParams[num_migrate_id] * (this_YearsAway - 1); // So have made room for the returns in first year (-1 to correct for 0 start index)
+                        } else {
+                            this_currentID = currentID;
+
+                        }
+                        //this_currentID = currentID;
+                                
+                        MIGRATION[sp].Leave_Now[stage][this_currentID] = sp_Migrate_Time + VarTime3 + yr * 365;  // So start day for year being dealt with
+
+                        if( FunctGroupArray[sp].speciesParams[multiyr_mig_id] ) {
+                            potential_end_time = sp_Migrate_Time + VarTime3 + yr * 365 + sp_Migrate_Years * 365;
+                            time_return = (int)(365 * floor(potential_end_time/365)) + sp_Migrate_Return + VarTime4;  // So get year return and then add on the return day of year to get the final return date
+                            
+                            fprintf(llogfp,"VERSION 1 Time: %e %s-%d potential_end_time: %d sp_Migrate_Time: %d VarTime3: %d yr: %d sp_Migrate_Years: %d time_return: %d  sp_Migrate_Return: %d VarTime4: %d\n", bm->dayt, FunctGroupArray[sp].groupCode, stage, potential_end_time, sp_Migrate_Time, VarTime3, yr, sp_Migrate_Years, time_return, sp_Migrate_Return, VarTime4);
+                            
+                        } else {
+                            //time_return = sp_Migrate_Time + VarTime3 + yr * 365 + real_mig_length; // Annual migrations so its start time + period away
+                            time_return = sp_Migrate_Return + VarTime3 + yr * 365;
+
+//                               if (start_with_return){
+//                               	time_return = time_return - 366;
+//                               }
+                            
+                            fprintf(llogfp,"VERSION 2 Time: %e %s-%d time_return: %d  sp_Migrate_Return: %d VarTime3: %d yr: %d\n", bm->dayt, FunctGroupArray[sp].groupCode, stage, time_return, sp_Migrate_Return, VarTime3, yr);
+
+                        }
+                        MIGRATION[sp].Return_Now[stage][this_currentID] = time_return;
+
+
+                        if (start_with_return){
+                            MIGRATION[sp].Leave_Now[stage][this_currentID] = MIGRATION[sp].Leave_Now[stage][this_currentID] - 365;
+                            MIGRATION[sp].Return_Now[stage][this_currentID] = MIGRATION[sp].Return_Now[stage][this_currentID] - 365;
+                        }
+
+                        if (MIGRATION[sp].Return_Now[stage][this_currentID] > max_Return_Now )
+                            max_Return_Now = MIGRATION[sp].Return_Now[stage][this_currentID];
+                        
+                        if ( MIGRATION[sp].Leave_Now[stage][this_currentID] > MIGRATION[sp].Return_Now[stage][this_currentID])  // Sanity check so come back
+                            MIGRATION[sp].Return_Now[stage][this_currentID] += (365 * this_YearsAway);
+                        
+                        /**
+                        fprintf(llogfp, "CHECK B sp: %s-%d, yr: %d leave_now = %d, return_now = %d, this_currentID = %d, start_with_return = %d, multiyr_mig: %e, this_YearsAway: %d, VarTime3: %d, sp_Migrate_Time: %d, sp_Migrate_Return: %d, VarTime4: %d, return_term1: %d\n",
+                                FunctGroupArray[sp].groupCode, stage, yr, MIGRATION[sp].Leave_Now[stage][this_currentID], MIGRATION[sp].Return_Now[stage][this_currentID], this_currentID, start_with_return, FunctGroupArray[sp].speciesParams[multiyr_mig_id], this_YearsAway, VarTime3, sp_Migrate_Time, sp_Migrate_Return, VarTime4, (int)(365 * floor(potential_end_time/365)));
+                        **/
+
+
+                    }
+                        
+                    // Check for aging-migration interaction madness
+                    if(!MIGRATION[sp].AgeMigrationCheckDone[stage][migrationID]) {
+                        time_away = MIGRATION[sp].Return_Now[stage][this_currentID] - MIGRATION[sp].Leave_Now[stage][this_currentID];
+                        Check_For_Mature_Away(bm, llogfp, sp, time_away, this_YearsAway, migrationID, currentID);
+                        MIGRATION[sp].AgeMigrationCheckDone[stage][migrationID] = 1;
+
+                    }
+                }
+            }
+        }
+
+        /* Reinitialise */
+        for(migrationID = 0; migrationID < FunctGroupArray[sp].speciesParams[num_migrate_id]; migrationID++){
+            last_return[migrationID] = -1;
+        }
+        
+        /* Final checks */
+        for (counter = 0; counter < MIGRATION[sp].num_in_queue; counter++) {
+            for(cohort = 0; cohort < FunctGroupArray[sp].numCohortsXnumGenes; cohort++){
+                this_stage = FunctGroupArray[sp].cohort_stage[cohort];
+                if(this_stage == stage) {
+                    migrationID = MIGRATION[sp].migrationID[cohort][counter];
+                    break;
+                }
+            }
+
+            if(MIGRATION[sp].Return_Now[stage][counter] > (MAXINT - 1)) {
+                MIGRATION[sp].Return_Now[stage][counter] = max_Return_Now + 1;  // Needed for purposes of record keeping, never executed
+            }
+            if( MIGRATION[sp].Return_Now[stage][counter] < last_return[migrationID]) {
+                MIGRATION[sp].Return_Now[stage][counter] = max_Return_Now + 1;  // Needed for purposes of record keeping, never executed
+            }
+            last_return[migrationID] = MIGRATION[sp].Return_Now[stage][counter];
+
+            if(( MIGRATION[sp].Return_Now[stage][counter] < MAXINT) && (MIGRATION[sp].Leave_Now[stage][counter] > (MAXINT - 1)))
+                MIGRATION[sp].Leave_Now[stage][counter] = MIGRATION[sp].Return_Now[stage][counter]; // Needed for purposes of record keeping, never executed
+            
+        }
+    }
+    
+    
+    /* Check for maternal care species */
+    flagmother = (int) (FunctGroupArray[sp].speciesParams[flagmother_id]);
+    motherstage = (FunctGroupArray[sp].numStages - 1);
+    if (flagmother > 0) {
+        for (counter = 0; counter < MIGRATION[sp].num_in_queue; counter++) {
+            for (stage = 0; stage < (FunctGroupArray[sp].numStages - 1); stage++) {
+                MIGRATION[sp].Leave_Now[stage][counter] = MIGRATION[sp].Leave_Now[motherstage][counter];
+                MIGRATION[sp].Return_Now[stage][counter] = MIGRATION[sp].Return_Now[motherstage][counter];
+            }
+        }
+    }
+
+    /* Output timing */
+    for (stage = 0; stage < FunctGroupArray[sp].numStages; stage++) {
+        for (yr = startyr; yr <= endyr; yr++) {
+            /**/
+            //if(sp == bm->which_check) {
+            fprintf(llogfp, "Counter: %d, sp: %s-%d, MigrateAway: %d, MigrateBack: %d migwindow: %d, sp_Migrate_Time: %d, sp_Migrate_Return: %d, startDay: %d, endDay: %d, num_migrate: %d multiyr_mig: %d\n", counter, FunctGroupArray[sp].groupCode, stage, MIGRATION[sp].Leave_Now[stage][counter], MIGRATION[sp].Return_Now[stage][counter], mig_window, sp_Migrate_Time, sp_Migrate_Return, ((int)(MIGRATION[sp].StartDay[stage][migrationID])), ((int)(MIGRATION[sp].EndDay[stage][migrationID])), ((int)FunctGroupArray[sp].speciesParams[num_migrate_id]), ((int)(FunctGroupArray[sp].speciesParams[multiyr_mig_id])));
+            
+                /**/
+                for(b = 0; b < FunctGroupArray[sp].numCohortsXnumGenes; b++){
+                    //this_stage = FunctGroupArray[sp].cohort_stage[b];
+                   //fprintf(llogfp, "Counter: %d, sp: %s-%d migID: %d return_stage: %d leave_stage: %d YearsAway: %d\n", counter, FunctGroupArray[sp].groupCode, b, migrationID, ((int)MIGRATION[sp].return_stage_prm[b][migrationID]), ((int)MIGRATION[sp].leave_stage_prm[b][migrationID]), ((int)MIGRATION[sp].YearsAway[this_stage][migrationID]));
+                    
+                    fprintf(llogfp, "Counter: %d, sp: %s-%d migID: %d start_return_chrt: %d end_return_chrt: %d YearsAway: %d\n", counter, FunctGroupArray[sp].groupCode, b, migrationID, ((int)(MIGRATION[sp].start_return_chrt[b][counter])), ((int)(MIGRATION[sp].end_return_chrt[b][counter])), ((int)(MIGRATION[sp].YearsAway[this_stage][migrationID])));
+                }
+                /**/
+            //}
+            /**/
+        }
+    }
+    
+    i_free1d(last_return);
+    return;
+
+}
+
+/**
+ *    \brief This routine updates count of how many migrations have been completed so don't have to search the whole queue each time (ignore ones already finished).
+ *
+ **/
+void Update_Migration_Index(MSEBoxModel *bm, FILE *llogfp){
+    int species, stage, counter, migID, cohort, return_stage, check_day;
+    int migdone = 0;
+    
+    for (species = 0; species < bm->K_num_tot_sp; species++) {
+        for (counter = MIGRATION[species].num_in_queue_done; counter < MIGRATION[species].num_in_queue; counter++) {
+            migdone = 0;
+            for (stage = 0; stage < FunctGroupArray[species].numStages; stage++) {
+                for(cohort = 0; cohort < FunctGroupArray[species].numCohortsXnumGenes; cohort++){
+                    return_stage = MIGRATION[species].return_stage_prm[cohort][migID];
+                    if (return_stage == stage) {
+                        migID = MIGRATION[species].migrationID[cohort][counter];
+                        check_day = (int)(bm->dayt);
+                        if (check_day > (MIGRATION[species].Return_Now[return_stage][counter] +  MIGRATION[species].Return_Period[return_stage][migID])) {
+                            migdone++;
+                    
+                            //fprintf(llogfp, "Time: %e %s stage %d Migdone %d as dayt: %e vs Return_Now: %d Period: %d\n", bm->dayt, FunctGroupArray[species].groupCode, return_stage, migdone, bm->dayt, MIGRATION[species].Return_Now[return_stage][counter], MIGRATION[species].Return_Period[return_stage][migID]);
+                            break;
+                        }
+                    }
+                }
+            }
+            if (migdone > (FunctGroupArray[species].numStages - 1)) {  // Checking for equality with FunctGroupArray[species].numStages - this is faster than == check
+                MIGRATION[species].num_in_queue_done++;  // All stages have done with this entry so can truncate searchable list
+                
+                //fprintf(llogfp, "Time: %e %s-%d updated num_in_queue_done (now %d) as migdone: %d and numStages: %d\n", bm->dayt, FunctGroupArray[species].groupCode, stage, MIGRATION[species].num_in_queue_done, migdone, FunctGroupArray[species].numStages);
+
+            }
+        }
+    }
+    return;
+}
+
+/**
+ *    \brief This routine checks to see if will mature while away
+ *
+ *    Logical way woudl be to check for the number of aging events that would occur at while away and see if that sees you change stage.
+ *    However the easy hack is to say that if you stay away for more than 365 days (one aging event) then default to use same stage as left for return dates.
+ *    TODO: Fix this hack and make more elegant.
+ *
+ **/
+void Check_For_Mature_Away(MSEBoxModel *bm, FILE *llogfp, int species, int time_away, int YearsAway, int migrationID, int currentID){
+    int cohort, cohort_return, stage, stage_return, counter, ngene, basecohort;
+    int age_mat = (int) (FunctGroupArray[species].speciesParams[age_mat_id]);
+    double sp_num_spawns = (double)(FunctGroupArray[species].numSpawns);
+    double sp_AgeCLassSize = (double)(FunctGroupArray[species].ageClassSize);
+    double time_between_aging = 0.0;
+    double time_in_cohort = 0.0;
+    double time_mature = 0;
+    double this_time_away = (double)(time_away);
+    int use_leave_cohort = 0;
+    int num_aging_events_away = 0;
+    int age_events_mat = FunctGroupArray[species].ageClassSize * age_mat;
+    
+    //if(verbose > 0)
+    //    printf("Doing Check_For_Mature_Away for %s\n", FunctGroupArray[species].groupCode);
+
+    /* Initlaise values */
+    for(cohort = 0; cohort < FunctGroupArray[species].numCohortsXnumGenes; cohort++){
+        stage = FunctGroupArray[species].cohort_stage[cohort];
+        MIGRATION[species].return_stage_prm[cohort][migrationID] = stage;
+        MIGRATION[species].leave_stage_prm[cohort][migrationID] = stage;
+        MIGRATION[species].Leave_Period[stage][migrationID] = MIGRATION[species].Period[stage][migrationID];
+        MIGRATION[species].Return_Period[stage][migrationID] = MIGRATION[species].Period[stage][migrationID];
+    }
+    
+    if (!bm->flag_multiyr_migs || (YearsAway <= 1)) {  /* TODO: This may need to change if spawn more than once per year */
+        // So the same way it always was so no more to do
+    } else {
+        // Use stage left as, not based on age currently are, to look at return times etc
+        use_leave_cohort = 0;
+        
+        // Check A - based on aging events
+        time_between_aging = 365.0 / sp_num_spawns;
+        num_aging_events_away = (int) ceil(this_time_away / time_between_aging);
+        if (num_aging_events_away >= age_events_mat)
+            use_leave_cohort = 1;
+        
+        // Check B - based on days away
+        time_in_cohort = sp_AgeCLassSize * time_between_aging;   // Assumes if num_spawns = 1 (usual case) that ageCLassSize = a year
+        time_mature = FunctGroupArray[species].speciesParams[age_mat_id] * time_in_cohort;
+        if (this_time_away > time_mature)
+            use_leave_cohort = 1;
+        
+        //fprintf(llogfp, "%s time_between_aging: %f time_away: %d age_events_mat: %d num_aging_events_away: %d this_time_away: %f (vs YearsAway: %d) time_mature: %f use_leave_cohort: %d\n", FunctGroupArray[species].groupCode, time_between_aging, time_away, age_events_mat, num_aging_events_away, this_time_away, YearsAway, time_mature, use_leave_cohort);
+
+        for(cohort = 0; cohort < FunctGroupArray[species].numCohortsXnumGenes; cohort++){
+            basecohort = (int)floor(cohort / FunctGroupArray[species].numGeneTypes);
+            ngene = cohort - basecohort;
+            stage = FunctGroupArray[species].cohort_stage[cohort];
+            
+            for (counter = currentID; counter < MIGRATION[species].num_in_queue; counter++) {
+                MIGRATION[species].num_aging_event[cohort][counter] = num_aging_events_away;
+                MIGRATION[species].start_return_chrt[cohort][counter] = ((int) floor(num_aging_events_away / FunctGroupArray[species].ageClassSize)) + cohort;
+                MIGRATION[species].end_return_chrt[cohort][counter] = ((int) ceil(num_aging_events_away / FunctGroupArray[species].ageClassSize)) + cohort + 1;  // As test when applied is "<"
+            
+                if (MIGRATION[species].start_return_chrt[cohort][counter] > (FunctGroupArray[species].numCohortsXnumGenes - 1))
+                    MIGRATION[species].start_return_chrt[cohort][counter] = ((FunctGroupArray[species].numCohorts - 1) * FunctGroupArray[species].numGeneTypes + ngene);
+                if (MIGRATION[species].end_return_chrt[cohort][counter] > (FunctGroupArray[species].numCohortsXnumGenes - 1))
+                    MIGRATION[species].end_return_chrt[cohort][counter] = (FunctGroupArray[species].numCohortsXnumGenes - 1);  // TODO: This may need a fix for multi-gene type cases
+            }
+            
+            if (use_leave_cohort) {
+                if(!MIGRATION[species].use_stage_prm_done[cohort][migrationID]) {
+                    cohort_return = cohort + num_aging_events_away;
+                    if (cohort_return > (FunctGroupArray[species].numCohortsXnumGenes - 1))
+                        cohort_return = FunctGroupArray[species].numCohortsXnumGenes - 1;
+                    
+                    //fprintf(llogfp,"%s-%d has mig!D: %d has cohort_return: %d num_aging_events_away: %d\n", FunctGroupArray[species].groupCode, cohort, migrationID, cohort_return, num_aging_events_away);
+                    
+                    for (counter=cohort; counter < cohort_return; counter++) {
+                        stage_return = FunctGroupArray[species].cohort_stage[counter];
+                        MIGRATION[species].return_stage_prm[counter][migrationID] = stage;
+                        MIGRATION[species].leave_stage_prm[counter][migrationID] = stage;
+                        MIGRATION[species].use_stage_prm_done[counter][migrationID] = 1;
+                        MIGRATION[species].AgeMigrationCheckDone[stage_return][migrationID] = 1;
+                        MIGRATION[species].Leave_Period[stage][migrationID] = MIGRATION[species].Period[stage][migrationID];
+                        MIGRATION[species].Return_Period[stage][migrationID] = MIGRATION[species].Period[stage][migrationID];
+
+                        //fprintf(llogfp, "sp: %s stage %d (counter: %d), MigID: %d return_stage_prm: %d, leave_stage_prm: %d\n", FunctGroupArray[species].groupCode, stage_return, counter, migrationID, MIGRATION[species].return_stage_prm[counter][migrationID], MIGRATION[species].leave_stage_prm[counter][migrationID]);
+                    }
+                }
+            }
+        }
+    }
+    return;
+}
+
+/**
+ *     Check the migration data for each group. This must be called after the cohort stages are calculated.
+ *
+ */
+void Check_Migration(MSEBoxModel *bm){
+    //int endyr = 1 + (int) (ceil((bm->tstop - bm->tstart) / (365.0 * 86400.0)));
+    int sp, cohort, stage, done_it, qid, b, spmigrate, num_away, num_mig, max_years, this_num_migs, do_debug, counter,
+    migID, leave_stage, leave_day, return_stage, return_day;
+    //int kmig_check;
+    //int age_mat;
+    int nyears = (int) (ceil((bm->tstop - bm->tstart) / (365.0 * 86400.0))) + 1;
+    double ngenes;
+    
+    for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
+        if (FunctGroupArray[sp].isVertebrate == FALSE && FunctGroupArray[sp].isMobile == TRUE)
+            for (cohort = 0; cohort < FunctGroupArray[sp].numCohorts; cohort++){
+                stage = FunctGroupArray[sp].cohort_stage[cohort];
+                Check_Migration_Data(bm, sp, stage);
+            }
+    }
+    
+    /* Set up Migration matrices for those starting outside model domain */
+    // Removed if(FunctGroupArray[sp].isVertebrate == TRUE) check as apply for all species
+    for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
+        do_debug = 0;
+        //if(sp == bm->which_check)
+        //    do_debug = 1;
+
+        MIGRATION[sp].num_in_yr = (int)FunctGroupArray[sp].speciesParams[num_migrate_id];
+        this_num_migs = 0;
+        if(FunctGroupArray[sp].speciesParams[num_migrate_id] > 0){
+            this_num_migs = nyears * (int)FunctGroupArray[sp].speciesParams[num_migrate_id] + 1;
+            
+            //fprintf(logfp,"%s has this_num_migs: %d nyears: %d num_migrate: %d\n", FunctGroupArray[sp].groupCode, this_num_migs, nyears, ((int)FunctGroupArray[sp].speciesParams[num_migrate_id]));
+            
+            if(FunctGroupArray[sp].speciesParams[multiyr_mig_id]) {
+                this_num_migs = (nyears * ((int)(FunctGroupArray[sp].speciesParams[multiyr_mig_id])) * ((int)FunctGroupArray[sp].speciesParams[num_migrate_id]) + 1);
+                // fprintf(logfp,"%s has this_num_migs: %d nyears: %d multiyr_mig: %d\n", FunctGroupArray[sp].groupCode, this_num_migs, nyears, ((int)FunctGroupArray[sp].speciesParams[multiyr_mig_id]));
+                
+            }
+        }
+        MIGRATION[sp].num_in_queue = this_num_migs;
+        MIGRATION[sp].num_in_queue_done = 0;
+        
+        //fprintf(logfp,"%s has num_in_queue = %d\n", FunctGroupArray[sp].groupCode, MIGRATION[sp].num_in_queue);
+        
+        done_it = 0;
+        spmigrate = (int) (FunctGroupArray[sp].speciesParams[num_migrate_id]);
+        ngenes = (double) (FunctGroupArray[sp].numGeneTypes);
+        num_mig = (int)(FunctGroupArray[sp].speciesParams[num_migrate_id]);
+        //age_mat = (int) (FunctGroupArray[sp].speciesParams[age_mat_id]);
+        
+        if (!spmigrate)
+            continue;
+
+        Init_Migration(bm, bm->logFile, do_debug, sp); // Inialise timing so can do appropriate density mapping below given potential for multiyr migrations
+
+        for (b = 0; b < FunctGroupArray[sp].numCohortsXnumGenes; b++) {
+            num_away = (int)(FunctGroupArray[sp].speciesParams[num_migrate_id]);
+            stage = FunctGroupArray[sp].cohort_stage[b];
+            cohort = (int)floor (b / FunctGroupArray[sp].numGeneTypes);
+            
+            /* Check to make sure that the period is 1 if kmigslow is 0 */
+            if(k_migslow == 0){
+                for(qid = 0; qid < FunctGroupArray[sp].speciesParams[num_migrate_id]; qid++){
+                    if( MIGRATION[sp].Period[stage][qid] > 1){
+                        quit("Error: You have set the k_migslow to 0 indicating you want all your groups to migrate in a single day but the migration period for %s (ID %d), stage %d migration %d, is greater than 1 day (%d)\n", FunctGroupArray[sp].groupCode, sp, stage, qid, MIGRATION[sp].Period[stage][qid]);
+                    }
+                }
+            }
+            
+            if (FunctGroupArray[sp].speciesParams[multiyr_mig_id]){
+                max_years = 0;
+                for(qid = 0; qid < num_mig; qid++){
+                    if (max_years < MIGRATION[sp].YearsAway[stage][qid])
+                        max_years = MIGRATION[sp].YearsAway[stage][qid];
+                }
+                num_away *= max_years;
+                
+                if (!num_away && (MIGRATION[sp].InitDEN[b][0] > 0.0)) {
+                    if (!max_years)
+                        quit("Something is not right with multi yr migrations -  for %s you have MultiyrMigrate set to %d, with %d migration(s) per year, you also have %e as the KMIGa entry for age class %d, but for this life history stage (%d) for YearsAway you have 0 for all entries given\n", FunctGroupArray[sp].groupCode, (int)(FunctGroupArray[sp].speciesParams[multiyr_mig_id]), num_mig, MIGRATION[sp].InitDEN[b][0], b, stage);
+                }
+            }
+            
+            //fprintf(bm->logFile, "Doing %s-%d (stage: %d, age_mat: %d, spmigrate: %d, num_away: %d, num_mig: %d)\n", FunctGroupArray[sp].groupCode, b, stage, age_mat, spmigrate, num_away, num_mig);
+
+            /* Deal migrations spanning years end - assume flat numbers returning per year for those outside the system */
+            //kmig_check = 0;
+            for (counter = 0; counter < MIGRATION[sp].num_in_queue; counter++) {
+                migID = MIGRATION[sp].migrationID[b][counter];
+                leave_stage = MIGRATION[sp].leave_stage_prm[b][migID];
+                leave_day = MIGRATION[sp].Leave_Now[leave_stage][counter];
+                return_stage = MIGRATION[sp].return_stage_prm[b][migID];
+                return_day = MIGRATION[sp].Return_Now[return_stage][counter];
+                
+                // Load in KMIG values if (a) starting outside model as migrating in from previous migraiton events or because accidentally loaded in KMIG array instead of nc
+                if (( leave_day <= 0 ) && ( return_day > 0 )){
+                    
+                    // TODO: Think if this is the best way of handling all the migration options - all away or only a cohort at a time
+                    MIGRATION[sp].SN[b][counter] = MIGRATION[sp].InitSN[b][0] / ngenes;   // As all KMIG saved Init [0] entry on read in
+                    MIGRATION[sp].RN[b][counter] = MIGRATION[sp].InitRN[b][0] / ngenes;
+                    MIGRATION[sp].DEN[b][counter] = MIGRATION[sp].InitDEN[b][0] / ngenes;
+
+                    /**
+                    if (bm->debug && (bm->which_check == sp)) {
+                        fprintf(bm->logFile, "%s-%d Migration array [counter %d] num set to %e (SN: %e RN: %e)\n", FunctGroupArray[sp].groupCode, b, counter,
+                            MIGRATION[sp].DEN[b][counter], MIGRATION[sp].SN[b][counter], MIGRATION[sp].RN[b][counter]);
+                    }
+                    **/
+                    
+                    done_it++;
+                } else {
+                    //kmig_check = 1;
+                    for(qid = 0; qid < num_away; qid++){
+                        if (!FunctGroupArray[sp].speciesParams[multiyr_mig_id] && (MIGRATION[sp].InitDEN[b][qid] > 0) && (MIGRATION[sp].StartDay[stage][qid] <= MIGRATION[sp].EndDay[stage][qid])) {
+                            warn("%s-%d had %e migrants in KMIG array but its migration (%d) dates (T: %d R: %d) say that it shouldn't be away at the start of the model run\n",
+                                 FunctGroupArray[sp].groupCode, b, MIGRATION[sp].InitDEN[b][qid], qid, MIGRATION[sp].StartDay[stage][qid], MIGRATION[sp].EndDay[stage][qid]);
+                            fprintf(bm->logFile, "%s-%d had %e migrants in KMIG array but its migration (%d) dates (T: %d R: %d) say that it shouldn't be away at the start of the model run\n", FunctGroupArray[sp].groupCode, b, MIGRATION[sp].InitDEN[b][qid], qid, MIGRATION[sp].StartDay[stage][qid], MIGRATION[sp].EndDay[stage][qid]);
+                        }
+                    }
+                }
+            }
+            
+        }
+        
+        /** Output the results **/
+        if(sp == bm->which_check) {
+            for (counter = 0; counter < MIGRATION[sp].num_in_queue; counter++) {
+                for (b = 0; b < FunctGroupArray[sp].numCohortsXnumGenes; b++) {
+                    migID = MIGRATION[sp].migrationID[b][counter];
+                    leave_stage = MIGRATION[sp].leave_stage_prm[b][migID];
+                    leave_day = MIGRATION[sp].Leave_Now[leave_stage][counter];
+                    return_stage = MIGRATION[sp].return_stage_prm[b][migID];
+                    return_day = MIGRATION[sp].Return_Now[return_stage][counter];
+            
+                    fprintf(bm->logFile, "Counter: %d, sp: %s-%d counter: %d DEN: %e SN: %e RN: %e migID: %d leave_stage: %d, leave_day: %d return_stage: %d return_day: %d\n", counter, FunctGroupArray[sp].groupCode, b, counter, MIGRATION[sp].DEN[b][counter], MIGRATION[sp].SN[b][counter], MIGRATION[sp].RN[b][counter], migID, leave_stage, leave_day, return_stage, return_day);
+                }
+            }
+        }
+        /**/
+    }
+    
+    return;
+}
+
+/* Routine to determine which cohort animals return to */
+void Init_Migration_Age_Check(MSEBoxModel *bm, FILE *llogfp, int do_debug, int sp) {
+    int cohort, return_stage, leave_stage, migID, age_away, basecohort, ngene, qid, aid, ageing_time, start_return_chrt, end_return_chrt, qqid, nc, pid, ls,
+        ij, chrt, not_all_gone, this_start_return_chrt;
+    int spmigrate = (int)(FunctGroupArray[sp].speciesParams[num_migrate_id]);
+    int this_stagger_return = (int)(FunctGroupArray[sp].speciesParams[flag_multiyr_type_id]);
+    
+    if (!spmigrate)
+        return;
+
+    for(cohort = 0; cohort < FunctGroupArray[sp].numCohortsXnumGenes; cohort++){
+        basecohort = (int)floor(cohort / FunctGroupArray[sp].numGeneTypes);
+        ngene = cohort - basecohort;
+        
+        // For each migration check how many aging events occur while away
+        for (qid = 0; qid < MIGRATION[sp].num_in_queue; qid++) {
+            migID = MIGRATION[sp].migrationID[cohort][qid];
+            return_stage = MIGRATION[sp].return_stage_prm[cohort][migID];
+            leave_stage = MIGRATION[sp].leave_stage_prm[cohort][migID];
+
+            age_away = 0;
+            for (aid = 0; aid < EMBRYO[sp].num_in_aging_queue; aid++) {
+                ageing_time = EMBRYO[sp].Age_Now[cohort][aid];
+                if ((ageing_time >= MIGRATION[sp].Leave_Now[leave_stage][qid]) && (ageing_time < (MIGRATION[sp].Return_Now[return_stage][qid] + MIGRATION[sp].Return_Period[return_stage][migID]))){
+                    age_away++;
+                }
+            }
+            
+            //fprintf(llogfp,"%s-%d age_away: %d vs num_aging_event: %f\n", FunctGroupArray[sp].groupCode, cohort, age_away, MIGRATION[sp].num_aging_event[cohort][qid]);
+
+            if (age_away > MIGRATION[sp].num_aging_event[cohort][qid])
+                MIGRATION[sp].num_aging_event[cohort][qid] = age_away;
+            
+            
+        // Then depending on ageclasssize determine how split up recruits will be
+            start_return_chrt = ((int) floor(MIGRATION[sp].num_aging_event[cohort][qid] / FunctGroupArray[sp].ageClassSize)) + cohort;
+            end_return_chrt = ((int) ceil(MIGRATION[sp].num_aging_event[cohort][qid] / FunctGroupArray[sp].ageClassSize)) + cohort + 1;  // As test when applied is "<"
+            
+            if (start_return_chrt > MIGRATION[sp].start_return_chrt[cohort][qid]) {
+                MIGRATION[sp].start_return_chrt[cohort][qid] = start_return_chrt;
+                if (MIGRATION[sp].start_return_chrt[cohort][qid] > (FunctGroupArray[sp].numCohortsXnumGenes - 1))
+                    MIGRATION[sp].start_return_chrt[cohort][qid] = ((FunctGroupArray[sp].numCohorts - 1) * FunctGroupArray[sp].numGeneTypes + ngene);
+            }
+            
+            if (end_return_chrt > MIGRATION[sp].end_return_chrt[cohort][qid]) {
+                MIGRATION[sp].end_return_chrt[cohort][qid] = end_return_chrt;
+                if (MIGRATION[sp].end_return_chrt[cohort][qid] > (FunctGroupArray[sp].numCohortsXnumGenes - 1))
+                    MIGRATION[sp].end_return_chrt[cohort][qid] = (FunctGroupArray[sp].numCohortsXnumGenes - 1);  // TODO: This may need a fix for multi-gene type cases
+            }
+
+            //fprintf(llogfp,"%s-%d start_return_chrt: %d end_return_chrt: %d numCohortsXnumGenes: %d numCohorts: %d numGeneTypes: %d ngene: %d\n", FunctGroupArray[sp].groupCode, cohort, MIGRATION[sp].start_return_chrt[cohort][qid], MIGRATION[sp].end_return_chrt[cohort][qid], FunctGroupArray[sp].numCohortsXnumGenes, FunctGroupArray[sp].numCohorts, FunctGroupArray[sp].numGeneTypes, ngene);
+            
+        // Now check that any of return chrt need to leave the day these migrants return
+            start_return_chrt = MIGRATION[sp].start_return_chrt[cohort][qid];
+            end_return_chrt = MIGRATION[sp].end_return_chrt[cohort][qid];
+
+            for (qqid = 0; qqid < MIGRATION[sp].num_in_queue; qqid++) {
+                for (nc=start_return_chrt; nc < end_return_chrt; nc++) {
+                    pid = MIGRATION[sp].migrationID[nc][qqid];
+                    ls = MIGRATION[sp].leave_stage_prm[nc][pid];
+                    
+                    //fprintf(llogfp,"%s-%d return: %d vs when returning cohort (%d) must leave: %d\n", FunctGroupArray[sp].groupCode, cohort, MIGRATION[sp].Return_Now[return_stage][qid], nc, MIGRATION[sp].Leave_Now[ls][qqid]);
+                    
+                    if ((MIGRATION[sp].Leave_Now[ls][qqid] >= MIGRATION[sp].Return_Now[return_stage][qid]) && (MIGRATION[sp].Leave_Now[ls][qqid] <= (MIGRATION[sp].Return_Now[return_stage][qid] + MIGRATION[sp].Return_Period[return_stage][migID]))){
+                        MIGRATION[sp].Leave_Now[ls][qqid] += 1;  // So have returned before leave again
+                        fprintf(llogfp, "%s leave_stage %d qqid %d had clash of one group returning as next group leaves so pushing out leaving so there and ready to go (now day %d)\n", FunctGroupArray[sp].groupCode, ls, qqid, MIGRATION[sp].Leave_Now[ls][qqid]);
+                        warn("%s had clash of one group returning as next group leaves so pushing out leaving so there and ready to go\n", FunctGroupArray[sp].groupCode);
+                    }
+                }
+            }
+        }
+    }
+    
+    // Now check that if all leave at age x and don't return until age y that don't have in proper return_chrt set
+    for(cohort = 0; cohort < FunctGroupArray[sp].numCohortsXnumGenes; cohort++){
+        for (qid = 0; qid < MIGRATION[sp].num_in_queue; qid++) {
+            migID = MIGRATION[sp].migrationID[cohort][qid];
+            return_stage = MIGRATION[sp].return_stage_prm[cohort][migID];
+            leave_stage = MIGRATION[sp].leave_stage_prm[cohort][migID];
+
+            // Prop away check
+            not_all_gone = 0;
+            for(ij=0; ij<bm->nbox; ij++) {
+                if (bm->boxes[ij].type != BOUNDARY) {
+                    if (MIGRATION[sp].Box[ij][leave_stage][migID] < 1.0)
+                        not_all_gone = 1;
+                }
+            }
+            
+            if(!not_all_gone)  // Nothing to do as some could leave later
+                continue;
+            
+            // Ok all have left so should return based on start_return_chrt and end_return_chrt based on youngest relevant cohort
+            if(!this_stagger_return) {
+                for(chrt = 0; chrt < cohort; chrt++){
+                    this_start_return_chrt = MIGRATION[sp].start_return_chrt[chrt][qid];
+                    
+                    if(cohort <= this_start_return_chrt) {
+                        MIGRATION[sp].start_return_chrt[cohort][qid] = MIGRATION[sp].start_return_chrt[chrt][qid];
+                        MIGRATION[sp].end_return_chrt[cohort][qid] = MIGRATION[sp].end_return_chrt[chrt][qid];
+                    }
+                }
+            }
+        }
+    }
+    
+    
+    return;
+}

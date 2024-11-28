@@ -1,0 +1,59 @@
+/*
+ * atGroupTypes.h
+ *
+ *  Created on: 03/08/2011
+ *      Author: bec
+ */
+
+#ifndef ATGROUPTYPES_H_
+#define ATGROUPTYPES_H_
+
+
+typedef struct {
+	GROUP_TYPES group_type;
+    char *str;
+}GroupTypesStruct;
+
+
+/**
+ * Structure linking the names of the GroupType values in the input XML file and the
+ * definitions in the code.
+ */
+GroupTypesStruct groupTypes[] =
+{
+		{ BIRD, "BIRD" },
+		{ MAMMAL, "MAMMAL" },
+		{ SHARK, "SHARK" },
+		{ FISH, "FISH" },
+        { FISH_INVERT, "FISH_INVERT" },
+		{ LG_PHY, "LG_PHY" },
+		{ SM_PHY, "SM_PHY" },
+		{ SM_ZOO, "SM_ZOO" },
+		{ MED_ZOO, "MED_ZOO" },
+		{ LG_ZOO, "LG_ZOO" },
+		{ CEP, "CEP" },
+		{ PWN, "PWN" },
+		{ PL_BACT, "PL_BACT" },
+		{ SED_BACT, "SED_BACT" },
+		{ ICE_BACT, "ICE_BACT" },
+		{ SM_INF, "SM_INF" },
+		{ LG_INF, "LG_INF" },
+		{ SED_EP_FF, "SED_EP_FF" },
+		{ SED_EP_OTHER, "SED_EP_OTHER" },
+		{ MOB_EP_OTHER, "MOB_EP_OTHER" },
+		{ MICROPHTYBENTHOS, "MICROPHTYBENTHOS" },
+		{ CORAL, "CORAL" },
+        { SPONGE, "SPONGE" },
+		{ PHYTOBEN, "PHYTOBEN" },
+		{ LAB_DET, "LAB_DET" },
+		{ REF_DET, "REF_DET" },
+		{ CARRION, "CARRION" },
+		{ DINOFLAG, "DINOFLAG" },
+		{ ICE_DIATOMS, "ICE_DIATOMS" },
+		{ ICE_MIXOTROPHS, "ICE_MIXOTROPHS" },
+		{ ICE_ZOOBIOTA, "ICE_ZOOBIOTA" },
+		{ SEAGRASS, "SEAGRASS" },
+		{ TURF, "TURF" }
+};
+
+#endif /* ATGROUPTYPES_H_ */

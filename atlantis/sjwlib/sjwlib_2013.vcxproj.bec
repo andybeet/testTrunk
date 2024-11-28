@@ -1,0 +1,140 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>sjwlib</ProjectName>
+    <ProjectGuid>{3DA42E62-3B74-43A3-885B-42AA9975903F}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Debug\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Release\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(SolutionDir)\atCLAMLink\include;$(SolutionDir)\ConvertAtlantis\include;$(SolutionDir)\externalLibs\;$(SolutionDir)\externalLibs\libiconv\include;$(SolutionDir)\externalLibs\proj4;$(SolutionDir)\externalLibs\include;$(SolutionDir)\externalLibs\tre\include;$(SolutionDir)\atlantismain\include;$(SolutionDir)\atlantisUtil\include;$(SolutionDir)\ateconomic\include;$(SolutionDir)\atecology\include;$(SolutionDir)\netcdf\include;$(SolutionDir)\atlink\include;$(SolutionDir)\atimplementation\include;$(SolutionDir)\atharvest\include;$(SolutionDir)\atmanage\include;$(SolutionDir)\atassess\include;$(SolutionDir)\sjwlib\include;$(SolutionDir)\atphysics\include;$(SolutionDir)\atSS3Link\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;PROJ4;DLL_NETCDF;%(PreprocessorDefinitions); _CRT_SECURE_NO_DEPRECATE</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <AdditionalOptions>/wd4100  /wd4244 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(OutDir)sjwlib.lib</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(OutDir)sjwlib.lib</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="include\colourtable.h" />
+    <ClInclude Include="include\datafile.h" />
+    <ClInclude Include="include\gridlib.h" />
+    <ClInclude Include="include\mapproj.h" />
+    <ClInclude Include="include\nrcdflib.h" />
+    <ClInclude Include="include\pointsourcesink.h" />
+    <ClInclude Include="include\polyline.h" />
+    <ClInclude Include="include\ptrack.h" />
+    <ClInclude Include="include\sjwalloc.h" />
+    <ClInclude Include="include\sjwconfig.h" />
+    <ClInclude Include="include\sjwlib.h" />
+    <ClInclude Include="include\timeseries.h" />
+    <ClInclude Include="include\txt_param.h" />
+    <ClInclude Include="include\win32.h" />
+    <ClInclude Include="include\xytoij.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="cfft.c" />
+    <ClCompile Include="colourtable.c" />
+    <ClCompile Include="contour.c" />
+    <ClCompile Include="convertFileFormats.c" />
+    <ClCompile Include="datafile.c" />
+    <ClCompile Include="decay.c" />
+    <ClCompile Include="dfcoords.c" />
+    <ClCompile Include="dfeval.c" />
+    <ClCompile Include="diffusion.c" />
+    <ClCompile Include="drandom.c" />
+    <ClCompile Include="ellipt_coord.c" />
+    <ClCompile Include="erfc.c" />
+    <ClCompile Include="geodetic.c" />
+    <ClCompile Include="gridangle.c" />
+    <ClCompile Include="gridmetric.c" />
+    <ClCompile Include="gridmisc.c" />
+    <ClCompile Include="keyfile.c" />
+    <ClCompile Include="mapproj.c" />
+    <ClCompile Include="memory.c" />
+    <ClCompile Include="netcdf.c" />
+    <ClCompile Include="nrcdflib.c" />
+    <ClCompile Include="pointsourcesink.c" />
+    <ClCompile Include="polar_coord.c" />
+    <ClCompile Include="polyline.c" />
+    <ClCompile Include="ppbfetch.c" />
+    <ClCompile Include="ptrack.c" />
+    <ClCompile Include="quit.c" />
+    <ClCompile Include="rect_coord.c" />
+    <ClCompile Include="spline.c" />
+    <ClCompile Include="text_input.c" />
+    <ClCompile Include="time.c" />
+    <ClCompile Include="timeseries.c" />
+    <ClCompile Include="txt_param.c" />
+    <ClCompile Include="vgrid.c" />
+    <ClCompile Include="warn.c" />
+    <ClCompile Include="waterprops.c" />
+    <ClCompile Include="weight_fn.c" />
+    <ClCompile Include="win32.c" />
+    <ClCompile Include="xytoij.c" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

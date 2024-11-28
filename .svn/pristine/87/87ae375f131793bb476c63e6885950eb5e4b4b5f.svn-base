@@ -1,0 +1,19 @@
+IMAGE=atlantis_docker
+USER=$(id -u)
+GROUP=$(id -g)
+
+run: build
+<<<<<<< .mine
+	 docker run -v /Users/ful083/AtlantisRepository/AtlantisCurrentTrunk/example:/app/model --user $(id -u):$(id -g) atlantis_docker
+||||||| .r6610
+	 docker run -v /Users/ful083/runs/run_area/Hawaii/Hawaii_2021:/app/model --user $(id -u):$(id -g) atlantis_docker
+=======
+	 docker run -v $(PWD)/example:/app/model --user $(USER):$(GROUP) atlantis_docker
+>>>>>>> .r6613
+
+#REGISTRY=docker-registry.it.csiro.au
+build:
+	docker build -t $(IMAGE) .
+
+clean:
+	docker system prune -f

@@ -1,0 +1,21 @@
+README
+
+Please follow the instructions on the Atlantis wiki regarding how to compile and run Atlantis. 
+
+These examples files are provided to allow you to make sure you have successfully compiled Atlantis and it will run on your system. 
+You should not attempt to develop an Atlantis model in isolation. 
+Considerable discussion and advice from Beth Fulton and the wider Atlantis community is required to successfully develop an Atlantis model. 
+
+
+
+
+Base test files:
+
+atlantis -i INIT_VMPA_Jan2015.nc 0 -o outputSETAS.nc -r VMPA_setas_run_fishing_F_Trunk.prm -f VMPA_setas_force_fish_Trunk.prm -p VMPA_setas_physics.prm -b VMPA_setas_biol_fishing_Trunk.prm -h VMPA_setas_harvest_F_Trunk.prm  -s SETasGroupsDem.csv -q SETasFisheries.csv -d OutputFolderTest
+
+On Windows you should be able to use the runsetasNew.bat to run the model after you have sucessfully compiled the executable.
+
+On Linux the runTrunk is a good place to start but will require some editing before it will run. 
+
+
+

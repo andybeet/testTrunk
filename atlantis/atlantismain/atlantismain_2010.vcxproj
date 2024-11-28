@@ -1,0 +1,149 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>atlantismain</ProjectName>
+    <ProjectGuid>{7F4D40AB-A1FB-4E0B-B336-8A4B3D22559D}</ProjectGuid>
+    <RootNamespace>atlantismain</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Debug\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Release\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <PreBuildEvent>
+      <Command>rm DEBUG\atlantismain.obj
+buildSVNHeader.bat</Command>
+    </PreBuildEvent>
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(SolutionDir)\atCLAMLink\include;$(SolutionDir)\ConvertAtlantis\include;$(SolutionDir)\externalLibs\;$(SolutionDir)\externalLibs\libiconv\include;$(SolutionDir)\externalLibs\include;$(SolutionDir)\externalLibs\tre\include;$(SolutionDir)\atlantismain\include;$(SolutionDir)\atlantisUtil\include;$(SolutionDir)\ateconomic\include;$(SolutionDir)\atecology\include;$(SolutionDir)\netcdf\include;$(SolutionDir)\atlink\include;$(SolutionDir)\atimplementation\include;$(SolutionDir)\atharvest\include;$(SolutionDir)\atmanage\include;$(SolutionDir)\atassess\include;$(SolutionDir)\sjwlib\include;$(SolutionDir)\atphysics\include;$(SolutionDir)\atSS3Link\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;E;LIBXML_STATIC;PROJ4;DLL_NETCDF;ATLANTIS_SVN;%(PreprocessorDefinitions); _CRT_SECURE_NO_DEPRECATE;</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <AdditionalOptions>/wd4100  /wd4244 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <AdditionalOptions> /out:"Debug/atlantismain.exe" /nodefaultlib:"libcmt.lib" %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>WSock32.lib;$(SolutionDir)netcdf\lib\netcdf.lib;$(SolutionDir)externalLibs\tre\tre_VS2005.lib;msvcprt.lib;$(SolutionDir)atphysics\Debug\atphysics.lib;$(SolutionDir)atlantisUtil\Debug\atlantisUtil.lib;$(SolutionDir)atSS3Link\Debug\atSS3Link.lib;$(SolutionDir)atmanage\Debug\atmanage.lib;$(SolutionDir)ateconomic\Debug\ateconomic.lib;$(SolutionDir)atecology\Debug\atecology.lib;$(SolutionDir)atassess\Debug\atassess.lib;$(SolutionDir)atharvest\Debug\atharvest.lib;$(SolutionDir)atimplementation\Debug\atimplementation.lib;$(SolutionDir)ConvertAtlantis\Debug\ConvertAtlantis.lib;$(SolutionDir)sjwlib\Debug\sjwlib.lib;$(SolutionDir)externalLibs\libiconv\lib\iconv_a.lib;$(SolutionDir)externalLibs\libcsoap.lib;$(SolutionDir)externalLibs\libxml2_a.lib;$(SolutionDir)externalLibs\zlib.lib;$(SolutionDir)externalLibs\nanohttp.lib;$(SolutionDir)externalLibs\Proj4Static.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ShowProgress>NotSet</ShowProgress>
+      <OutputFile>$(OutDir)atlantismain.exe</OutputFile>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(OutDir)atlantismain.pdb</ProgramDatabaseFile>
+      <SubSystem>Console</SubSystem>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <TargetMachine>NotSet</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <OutputFile>$(OutDir)atlantismain.exe</OutputFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="atlantismain.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\atlantisboxmodel.h" />
+    <ClInclude Include="include\atlantisSVN.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\atassess\atassess_2010.vcxproj">
+      <Project>{ece361a3-c242-41e0-b57a-3f94b51ff16e}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\atecology\atecology_2010.vcxproj">
+      <Project>{d46aac37-4480-42ea-9137-7ea19bbc5ffe}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\ateconomic\ateconomic_2010.vcxproj">
+      <Project>{52b56edb-f5e5-4035-af02-cc01b3ca43a8}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\atharvest\atharvest_2010.vcxproj">
+      <Project>{189e4949-ad6e-4ee1-bb80-fb553421e071}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\atimplementation\atimplementation_2010.vcxproj">
+      <Project>{9847a4b5-3766-4988-9ac9-9731d33fee8a}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\atlantisUtil\atlantisUtil_2010.vcxproj">
+      <Project>{e425ba46-290b-4731-9dd3-334b3412a653}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\atmanage\atmanage_2010.vcxproj">
+      <Project>{5b36266f-1547-45c4-8ecb-ce81851a3448}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\atphysics\atphysics_2010.vcxproj">
+      <Project>{7cfe48a2-09c4-401e-81ae-0e5f67b5d804}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\atSS3Link\atSS3Link.vcxproj">
+      <Project>{0bafe367-ed69-4eb4-8c4c-e0fe59e38b01}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\ConvertAtlantis\ConvertAtlantis_2010.vcxproj">
+      <Project>{334a4410-28d1-46b4-b23b-f651d9d3d873}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\sjwlib\sjwlib_2010.vcxproj">
+      <Project>{3da42e62-3b74-43a3-885b-42aa9975903f}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

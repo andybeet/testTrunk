@@ -1,0 +1,24 @@
+AUTOMAKE_OPTIONS = foreign
+
+SUBDIRS = ConvertAtlantis atassess atecology ateconomic atlantisUtil \
+    atharvest atmanage atimplementation atphysics sjwlib atSS3Link
+
+if BROKER_LINK_ENABLED
+SUBDIRS += atbrokerlink
+endif	 
+
+if LINK_ENABLED
+SUBDIRS += atlink
+endif
+
+if CLAM_LINK_ENABLED
+SUBDIRS += atCLAMLink
+endif
+
+#if SS3_LINK_ENABLED
+#SUBDIRS += atSS3Link
+#endif
+
+SUBDIRS += atlantismain
+
+

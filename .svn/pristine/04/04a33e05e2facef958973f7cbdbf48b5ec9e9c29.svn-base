@@ -1,0 +1,758 @@
+/**
+ * 
+ * Author: Beth Fulton
+ *
+ *  SS Based Multispecies Assessment R calls
+ */
+
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
+#include <sjwlib.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <unistd.h>
+#include <signal.h>
+#include <ctype.h>
+#include <time.h>
+#include <stdarg.h>
+#include <Rinternals.h>
+#include <Rembedded.h>
+#include <R_ext/Parse.h>
+
+/* Wait for Bec to tell about R path steps in Makefile
+#include <Rinternals.h>
+#include <Rembedded.h>
+#include <R_ext/Parse.h>
+#include <R_ext/Utils.h>
+*/
+#include "atManage.h"
+#include "atRlink.h"
+
+
+//static void create_r_object(int numSP, const char** names, int endYear);
+
+/**
+ * Setting an object variable in R - general version
+ *
+void create_r_object(int numSP, const char** names, int endYear)
+{
+
+    
+}
+*/
+
+FILE * initMetierFile(MSEBoxModel *bm) {
+    FILE *fp;
+    char *fname = "Metier.dat";
+
+    /* Create file */
+    if ((fp = Util_fopen(bm, fname, "w")) == NULL)
+        quit("initMetierFile: Can't open %s\n", fname);
+
+    /* File content - nothing yet as added in another routine */
+
+    /* Return file pointer */
+    return (fp);
+}
+
+void writeMetierFile(MSEBoxModel *bm, int year, FILE *fid) {
+    int sp, m, yr, nreg, nf, Nregions;
+
+    fprintf(fid, "# Number of species\n");
+    fprintf(fid, "%d\n", bm->RBCestimation.MULTISPestNspecies);
+    fprintf(fid, "# Key species\n");
+    for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
+        if (FunctGroupArray[sp].isAssessed == TRUE) {
+            fprintf(fid, "%d", (int)(bm->RBCestimation.RBCspeciesParam[sp][mgt_category_id]));
+            if (sp < bm->RBCestimation.Lastsp){
+                fprintf(fid, " ");
+            } else {
+                fprintf(fid, "\n");
+            }
+        }
+    }
+    fprintf(fid, "\n");
+    fprintf(fid, "# Total number of metiers\n");
+    fprintf(fid, "%d\n", bm->RBCestimation.Nmetiers);
+    for (m = 0; m < bm->RBCestimation.Nmetiers; m++){
+        fprintf(fid, "%s ", bm->RBCestimation.metierArray[m].metierCode);
+        if (m < bm->RBCestimation.LastMetier){
+            fprintf(fid, " ");
+        } else {
+            fprintf(fid, "\n");
+        }
+    }
+    fprintf(fid, "\n");
+    fprintf(fid, "# Links between fleet for assessed species\n");
+    for (m = 0; m < bm->RBCestimation.Nmetiers; m++){
+        fprintf(fid, "%d ", bm->RBCestimation.metierArray[m].PGMSYlinks);  // Is this a 1D or 2D array?
+        if (m < bm->RBCestimation.LastMetier){
+            fprintf(fid, " ");
+        } else {
+            fprintf(fid, "\n");
+        }
+    }
+    fprintf(fid, "\n");
+    fprintf(fid, "# Last data year\n");
+    for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
+        if (FunctGroupArray[sp].isAssessed == TRUE) {
+            fprintf(fid, "%d ", bm->RBCestimation.RBCspeciesArray[sp].mgt_dataYear);
+            if (sp < bm->RBCestimation.Lastsp){
+                fprintf(fid, " ");
+            } else {
+                fprintf(fid, "\n");
+            }
+        }
+    }
+    fprintf(fid, "# Assessment year\n");
+    for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
+        if (FunctGroupArray[sp].isAssessed == TRUE) {
+            fprintf(fid, "%d ", bm->RBCestimation.RBCspeciesArray[sp].mgt_assessYear);  // Is this the same as bm->RBCestimation.RBCspeciesArray[species].CurrentYear
+            if (sp < bm->RBCestimation.Lastsp){
+                fprintf(fid, " ");
+            } else {
+                fprintf(fid, "\n");
+            }
+        }
+    }
+    fprintf(fid, "# First RBC year\n");
+    for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
+        if (FunctGroupArray[sp].isAssessed == TRUE) {
+            fprintf(fid, "%d ", bm->RBCestimation.RBCspeciesArray[sp].mgt_rbcYear);
+            if (sp < bm->RBCestimation.Lastsp){
+                fprintf(fid, " ");
+            } else {
+                fprintf(fid, "\n");
+            }
+        }
+    }
+    fprintf(fid, "# Assessment\n");
+    for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
+        if (FunctGroupArray[sp].isAssessed == TRUE) {
+            fprintf(fid, "%d", (int)(FunctGroupArray[sp].speciesParams[tier_id]));
+            if (sp < bm->RBCestimation.Lastsp){
+                fprintf(fid, " ");
+            } else {
+                fprintf(fid, "\n");
+            }
+        }
+    }
+    fprintf(fid, "# Which fleet related to which metier\n");
+    for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
+        if (FunctGroupArray[sp].isAssessed == TRUE) {
+            for (m = 0; m < bm->RBCestimation.Nmetiers; m++) {
+                fprintf(fid, "%d", bm->RBCestimation.speciesMetierToRPFleet[sp][m]);
+                if ((sp == bm->RBCestimation.Lastsp) && (m == (bm->RBCestimation.Nmetiers - 1))) {
+                    fprintf(fid, "\n");
+                } else {
+                    fprintf(fid, " ");
+                }
+            }
+        }
+    }
+    fprintf(fid, "# Which metiers related to which fleets\n");
+    for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
+        if (FunctGroupArray[sp].isAssessed == TRUE) {
+            for (m = 0; m < bm->RBCestimation.Nmetiers; m++) {
+                fprintf(fid, "%d", bm->RBCestimation.speciesRPFleetToMetier[m][sp]);
+                if ((sp == bm->RBCestimation.Lastsp) && (m == (bm->RBCestimation.Nmetiers - 1))) {
+                    fprintf(fid, "\n");
+                } else {
+                    fprintf(fid, " ");
+                }
+            }
+        }
+    }
+    fprintf(fid, "# Catches by fleet\n");
+    for (yr = year-15; yr < year; yr++) {
+        fprintf(fid, "%d ", yr);
+        for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
+            Nregions = (int)(bm->RBCestimation.RBCspeciesParam[sp][NumRegions_id]);
+            if (FunctGroupArray[sp].isAssessed == TRUE) {
+                for (m = 0; m < bm->RBCestimation.Nmetiers; m++) {
+                    for (nreg = 0; nreg < Nregions ; nreg++){
+                        nf = bm->RBCestimation.speciesMetierToThisFleet[sp][m];
+                        fprintf(fid, "%e", bm->RBCestimation.RBCspeciesArray[sp].CatchData[nf][nreg][yr]);
+                        if ((sp == bm->RBCestimation.Lastsp) && (m == (bm->RBCestimation.Nmetiers - 1))) {
+                            fprintf(fid, "\n");
+                        } else {
+                            fprintf(fid, " ");
+                        }
+                    }
+                }
+            }
+        }
+     }
+
+    return;
+}
+
+/*
+ * Reads in the file MULTRBC.RBC output by PGMSY.R
+ *
+ * THis assumes the ID of the species is noted and then each line of the projection putput is stored (read in)m as
+ *
+ * Year RBC allocations per metiers (sum to RBC)
+ *
+ */
+
+void Read_PGMSY_output(MSEBoxModel *bm, int year, FILE *llogfp) {
+    double TheRBC, AveRBC, StateRBC, StateCatchOrig;
+    char const *outname = "MULTRBC.RBC";
+    FILE *fp;
+    char buffer[STRLEN];
+    int ThisSpID,spID, i, j, m, nf, sp;
+    int nrow = bm->assessnyr;
+    char seps[] = " ,\t";
+    int size = bm->RBCestimation.Nmetiers + 2;
+    double *values = (double *) malloc((size_t)size * sizeof(double));
+    char *line_buf = NULL;
+    //char dirname[STRLEN];
+    //char *varStr;
+    //double val, lastval = 0.0;
+    //char *valueCopy = (char *)malloc(sizeof(char) *STRLEN);
+    //int line_count = 0;
+    size_t line_buf_size = 0;
+    size_t line_size;
+
+    //valueCopy  = strcpy(valueCopy, valueStr);
+
+
+    if(verbose) {
+        printf(" Read_PGMSY_output: reading results back in\n");
+    }
+    
+    if ((fp = fopen(outname, "rt")) == NULL) {
+        quit("Cannot open PGMSY output file %s\n", outname);
+    }
+    
+    // Get the first line of the file
+    line_size = getline(&line_buf, &line_buf_size, fp);
+    if(line_size != 4) {
+        quit("Error in %s - expected header row not present\n", outname);
+    }
+    
+    // Loop through the file
+    
+    for (int sp = 0; sp < bm->RBCestimation.MULTISPestNspecies; sp++) {
+
+        // Read in species of interest
+        line_size = getline(&line_buf, &line_buf_size, fp);
+        if(line_size == 1) {
+            ThisSpID = atoi(line_buf);
+            spID = bm->RBCestimation.MULTISPestIDs[ThisSpID];
+        }
+        
+        // Read in data lines
+        // TODO: Will need to fix this
+        i = 0;
+        while (fgets(buffer, sizeof buffer, fp) && (i < nrow)) {
+            const char* tok;
+            j = 0;
+
+            // Assign values
+            for (tok = strtok(buffer, seps); tok && *tok; j++, tok = strtok(NULL, "\n")) {
+                values[j] = atof(tok);
+                //fprintf(bm->logFile, "%f\t", values[j]);
+            }
+            //fprintf(bm->logFile,"\n");
+
+            // Apply values to correct arrays - assuming the following format for values
+            // TheYear TheRBC  and all the rest are the catch per metier
+            
+            // Assign projection RBC
+            bm->RBCestimation.RBCspeciesArray[sp].RBC_by_year[year][i] = values[1];  // Nead all years (i) as used in calculating Average RBC below
+            if (year == values[0]) {
+                // Store current RBC
+                bm->RBCestimation.RBCspeciesParam[spID][RBCest_id] = values[1];
+            }
+            // Assign metier catches
+            for (m = 0; m < bm->RBCestimation.Nmetiers; m++) {
+                nf = bm->RBCestimation.speciesRPFleetToMetier[m][spID];
+                bm->RBCestimation.Catch_by_Metier[spID][year][i][nf] = values[2+m];
+            }
+            
+            i++;
+        }
+    }
+
+    // Read in Depletion - #TODO
+    
+    /* Handled the RBC */
+    for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
+        if (FunctGroupArray[sp].isAssessed == TRUE) {
+
+            // Calculate the average RBC
+            AveRBC = 0;
+            for (int yr = bm->RBCestimation.RBCspeciesArray[sp].mgt_rbcYear; yr < bm->RBCestimation.RBCspeciesArray[sp].mgt_rbcYear + bm->RBCestimation.MULTISPestRBCaverage - 1; yr++) {
+                AveRBC += bm->RBCestimation.RBCspeciesArray[sp].RBC_by_year[year][yr];
+            }
+            AveRBC /= ((float)(bm->RBCestimation.MULTISPestRBCaverage));
+
+            // Replace the RBCs
+            for (int yr = bm->RBCestimation.RBCspeciesArray[sp].mgt_rbcYear; yr < bm->RBCestimation.RBCspeciesArray[sp].mgt_rbcYear + bm->RBCestimation.MULTISPestRBCaverage - 1; yr++) {
+                // Rescale to account for state catches (what is left is a Commonwealth RBC)
+                StateRBC = 0;
+                StateCatchOrig = 0;
+                for (m = 0; m < bm->RBCestimation.Nmetiers; m++) {
+                    if (!bm->RBCestimation.RBCspeciesArray[sp].MetierUsed[m]) {
+                        nf = bm->RBCestimation.speciesRPFleetToMetier[m][sp];
+                        if (nf > 0) {
+                            StateCatchOrig += bm->RBCestimation.Catch_by_Metier[sp][year][yr][nf];
+                            bm->RBCestimation.Catch_by_Metier[sp][year][yr][nf] = bm->RBCestimation.RBCspeciesArray[sp].StatusQuoCatch[nf];
+                            StateRBC += bm->RBCestimation.Catch_by_Metier[sp][year][yr][nf];
+                        }
+                    }
+                    TheRBC = bm->RBCestimation.RBCspeciesArray[sp].RBC_by_year[year][yr];
+                    bm->RBCestimation.RBCspeciesArray[sp].RBC_post_PGMSY_by_year[year][yr] = TheRBC;  // TODO: Check if need to be store fresh each year or ok to overwrite?
+                }
+
+                // renormalize Targetcatch so that it sums to the average RBC
+                for (m = 0; m < bm->RBCestimation.Nmetiers; m++) {
+                    if (bm->RBCestimation.RBCspeciesArray[sp].MetierUsed[m] > 0) {
+                        bm->RBCestimation.RBCspeciesArray[sp].TargetCatch[m][yr] = bm->RBCestimation.RBCspeciesArray[sp].TargetCatch[m][yr] * (AveRBC - StateRBC) / (TheRBC - StateCatchOrig);    // #TODO: WHAT IS TargetCatch
+                    }
+                }
+                bm->RBCestimation.RBCspeciesArray[sp].RBC_by_year[year][yr] = AveRBC;
+                
+                /*
+                for (m = 0; m < bm->RBCestimation.Nmetiers; m++) {
+                    fprintf(bm->logFile, "Time: %e year: %d yr: %d %s m: %d TargetCatch: %e\n", bm->dayt, year, yr, FunctGroupArray[sp].groupCode, m, bm->RBCestimation.RBCspeciesArray[sp].TargetCatch[m][yr]);
+                 }
+                 */
+            }
+            for (int yr = bm->RBCestimation.RBCspeciesArray[sp].mgt_rbcYear; yr < bm->RBCestimation.RBCspeciesParam[sp][MaxYr_id]+3; yr++) {
+                fprintf(bm->logFile, "Time: %e Final RBC (PGMSY) for %s yr %d RBC_by_year: %e\n", bm->dayt, FunctGroupArray[sp].groupCode, yr, bm->RBCestimation.RBCspeciesArray[sp].RBC_by_year[year][yr]);
+                
+            }
+        }
+    }
+    
+    free1d(values);
+    fclose(fp);
+
+    return;
+}
+
+
+
+void Do_PGMSY_R(MSEBoxModel *bm, int year, FILE *llogfp) {
+    //int sp = 0;
+    //int fleet = 0;
+    //int yr = 0;
+    //int usef = 0;
+    //char str[1000];
+    //double Checkcatch;
+    //double AveRBC;
+    char dirname[STRLEN];
+    int ret = 0;
+
+    /* Create directory */
+    sprintf(dirname, "MultispeciesAssessment_sim_%d_year_%d", bm->RBCestimation.sim, year);
+    ret = mkdir(dirname, S_IRWXU);
+    
+    if (ret == -1) {
+        switch (errno) {
+            case EACCES :
+                quit("Do_PGMSY_R: the parent directory does not allow write\n");
+                break;
+            case EEXIST:
+                quit("Do_PGMSY_R: pathname %s already exists\n", dirname);
+                break;
+            case ENAMETOOLONG:
+                quit("Do_PGMSY_R: pathname %s is too long\n ", dirname);
+                break;
+            default:
+                quit("Do_PGMSY_R: mkdir failed for %s\n", dirname);
+                break;
+        }
+    }
+    
+    /* Change directory into the new directory */
+    //pass your path in the function
+    ret = chdir(dirname);
+    /*if the change of directory was successful it will print successful otherwise it will print not successful*/
+    if (ret < 0)
+        quit("Do_PGMSY_R: chdir change of directory to %s not successful\n", dirname);
+    else
+        printf("Do_PGMSY_R: chdir change of directory to %s successful", dirname);
+    
+    /* multiSpeciesAssess_R.bat */
+    if(!bm->metierFile) {
+        bm->metierFile = initMetierFile(bm);
+    }
+    writeMetierFile(bm, year, bm->metierFile);
+    Util_Close_Output_File(bm->metierFile);
+
+    /* Commands to run PGMSY */
+    printf("Running PGMSY.R\n");
+    system("./multiSpeciesAssess_R.bat");
+
+    /* Read output back into RBCestimation */
+    Read_PGMSY_output(bm, year, llogfp);
+    
+    /*** Clean up ***/
+    /* Change directory back up to output directory */
+    ret = chdir(bm->destFolder);
+    /*if the change of directory was successful it will print successful otherwise it will print not successful*/
+    if (ret < 0)
+        quit("Do_PGMSY_R: chdir change of directory to %s not successful\n", bm->destFolder);
+    else
+        printf("Do_PGMSY_R: chdir change of directory to %s successful", bm->destFolder);
+
+    
+    printf("PGMSY.R finished\n");
+
+    
+}
+
+
+/*********************************************************************************************************************************
+Dynamic Tuer 4 routines
+ ********************************************************************************************************************************/
+
+//******************************************************************************
+//
+// Name:  DynamicTier4Assessment - moved to atRlink as uses R
+// Description:
+//
+//
+// called by : DoAssessment()
+// created  : Oct 2019 Rich Little
+// updated  : Dec 2020 Maciej Golebiewski
+// converted to Atlantis: Jan 2022
+//
+//******************************************************************************
+
+void DynamicTier4Assessment(MSEBoxModel *bm, int species, int year, FILE *llogfp) {
+    char dirname[STRLEN];
+    int ret = 0;
+
+    /* Create directory */
+    sprintf(dirname, "DynTier4_sim_%d_year_%d", bm->RBCestimation.sim, year);
+    ret = mkdir(dirname, S_IRWXU);
+
+    /* Change directory into the new directory */
+    //pass your path in the function
+    ret = chdir(dirname);
+    /*if the change of directory was successful it will print successful otherwise it will print not successful*/
+    if (ret < 0)
+        quit("runDynamicTier4Assessment: chdir change of directory to %s not successful\n", dirname);
+    else
+        printf("runDynamicTier4Assessment: chdir change of directory to %s successful", dirname);
+    
+    /* Create and run bat files */
+    if(!bm->Dyn4File) {
+        bm->Dyn4File = initDynTier4File(bm);
+    }
+    if(!bm->Dyn4CTLFile) {
+        bm->Dyn4CTLFile = initDynTier4CTLFile(bm);
+    }
+    writeDynTier4inputfile(bm, species, year, bm->Dyn4File, bm->Dyn4CTLFile);
+    Util_Close_Output_File(bm->Dyn4File);
+    Util_Close_Output_File(bm->Dyn4CTLFile);
+    
+    /* Commands to run the assessment */
+    printf("Running runDynTier4.R\n");
+    system("./dynTier4_R.bat");
+
+    setRBC(bm, species, year, llogfp);
+
+    return;
+
+}
+
+FILE * initDynTier4File(MSEBoxModel *bm) {
+    FILE *fp;
+    char *fname = "dynTier4.dat";
+
+    /* Create file */
+    if ((fp = Util_fopen(bm, fname, "w")) == NULL)
+        quit("initDynTier4File: Can't open %s\n", fname);
+
+    /* File content - nothing yet as added in another routine */
+    
+
+    /* Return file pointer */
+    return (fp);
+}
+
+FILE * initDynTier4CTLFile(MSEBoxModel *bm) {
+    FILE *fp;
+    char *fname = "dynTier4.ctl";
+
+    /* Create file */
+    if ((fp = Util_fopen(bm, fname, "w")) == NULL)
+        quit("initDynTier4CTLFile: Can't open %s\n", fname);
+
+    /* File content - nothing yet as added in another routine */
+    
+
+    /* Return file pointer */
+    return (fp);
+}
+
+//******************************************************************************
+//
+// Name:  writeDynTier4inputfile
+// Description:
+//
+//
+// called by : DynamicTier4Assessment
+// calls :
+// created  : Oct 2019 Rich Little
+// converted to Atlantis: Jan 2022
+//
+//******************************************************************************
+void writeDynTier4inputfile(MSEBoxModel *bm, int sp, int year, FILE *datfid, FILE *ctlfid) {
+    int t = 0, iy, nf;
+    int Nregions = (int)(bm->RBCestimation.RBCspeciesParam[sp][NumRegions_id]);
+    int sumregion = Nregions;  // sum over regions
+    int Nfleets = (int)(bm->RBCestimation.RBCspeciesParam[sp][NumFisheries_id]);
+
+    if (bm->RBCestimation.RBCspeciesArray[sp].CPUEfleet == 0){
+        printf(" -------- Error --------\n");
+        quit(" -------- Tier4 Fleet equals 0 --------\n");
+    }
+    
+    // First write the content of the CTL file
+    fprintf(ctlfid, "# MSYL\n");
+    fprintf(ctlfid, "%e\n", bm->RBCestimation.RBCspeciesArray[sp].mgt_tier4_MSYL);
+    fprintf(ctlfid, "# EstR\n");
+    fprintf(ctlfid, "%e\n", bm->RBCestimation.RBCspeciesArray[sp].mgt_tier4_estR);
+    fprintf(ctlfid, "# EstZ\n");
+    fprintf(ctlfid, "%e\n", bm->RBCestimation.RBCspeciesArray[sp].mgt_tier4_estZ);
+    fprintf(ctlfid, "# BMSY Year range\n");
+    fprintf(ctlfid, "%e %e\n", bm->RBCestimation.RBCspeciesArray[sp].mgt_tier4_MSYRY1, bm->RBCestimation.RBCspeciesArray[sp].mgt_tier4_MSYRY2);
+    fprintf(ctlfid, "# Target depletion\n");
+    fprintf(ctlfid, "%e\n", bm->RBCestimation.RBCspeciesArray[sp].mgt_tier4_BtargtTier4);
+    fprintf(ctlfid, "# MSY Year range\n");
+    fprintf(ctlfid, "%e %e\n", bm->RBCestimation.RBCspeciesArray[sp].mgt_tier4_MSYPriorY1, bm->RBCestimation.RBCspeciesArray[sp].mgt_tier4_MSYPriorY2);
+    fprintf(ctlfid, "# CV(MSYL)\n");
+    fprintf(ctlfid, "%e\n", bm->RBCestimation.RBCspeciesArray[sp].mgt_tier4_CVMSYL);
+    fprintf(ctlfid, "# R(prior)\n");
+    fprintf(ctlfid, "%e %e\n", bm->RBCestimation.RBCspeciesArray[sp].mgt_tier4_PriorMeanR,bm->RBCestimation.RBCspeciesArray[sp].mgt_tier4_PriorSDr);
+    
+    // Now the dat file
+    fprintf(datfid, "# assessment using Tier 4 of %s\n", FunctGroupArray[sp].name);
+    fprintf(datfid, "# Rlibrary path\n");
+    fprintf(datfid, "%s\n", bm->RBCestimation.Rlibpath);
+    fprintf(datfid, "# Number of fleets\n");
+    fprintf(datfid, "%d\n", Nfleets);
+    fprintf(datfid, "# Range of years\n");
+    fprintf(datfid, "%d %d\n", bm->RBCestimation.HistYrMin, year);
+
+    fprintf(datfid,  "# Year, Catch and CPUE\n");
+    for (iy = bm->RBCestimation.RBCspeciesParam[sp][HistYrMin_id]; iy < year; iy++) {
+        fprintf(datfid,  "%d ", iy);
+    
+        if (bm->RBCestimation.RBCspeciesArray[sp].mgt_Retro_catch && (bm->RBCestimation.RBCspeciesArray[sp].PropClosed > 0) && (t <= bm->RBCestimation.HistYrMax)) {
+            // Allocate historic catches to open area by proportion open
+            for (nf = 0; nf < Nfleets; nf++) {
+                fprintf(datfid,"%e ", ((1.0 - bm->RBCestimation.RBCspeciesArray[sp].PropClosed) * bm->RBCestimation.RBCspeciesArray[sp].CatchData[nf][sumregion][iy]));
+            }
+        } else {
+            for (nf = 0; nf < Nfleets; nf++) {
+                fprintf(datfid,"%e ", bm->RBCestimation.RBCspeciesArray[sp].CatchData[nf][sumregion][iy]);
+            }
+        }
+        
+        for (nf = 0; nf < Nfleets; nf++) {
+             fprintf(datfid,"%e ", bm->RBCestimation.RBCspeciesArray[sp].CatchData[nf][sumregion][iy]);
+        }
+        fprintf(datfid, "\n");
+    }
+            
+    return;
+}
+
+//******************************************************************************
+//
+// Name:  setRBC
+// Description:
+//
+//
+// called by : DynamicTier4Assessment()
+// calls :
+// created  : Oct 2019 Rich Little
+// converted to Atlantis: Jan 2022
+//
+//******************************************************************************
+void setRBC(MSEBoxModel *bm, int species, int year, FILE *llogfp) {
+    char const *outname = "dynTier4.rep";
+    //char str[1000];
+    char *str = NULL;
+    int yy;
+    double d0;
+    int count = 0;
+    //char *line_buf = NULL;
+    //int line_count = 0;
+    size_t line_buf_size = 1000;
+    ssize_t line_size;
+    FILE *fp;
+    char *ret;
+
+    printf("setting dynTier4 RBC for species %s\n", FunctGroupArray[species].name);
+
+    // Check that this file has been created - otherwise ss3 has failed
+    if ((fp = fopen(outname, "rt")) == NULL) {
+        quit("runDynTier4.R failed to generate %s output file\n", outname);
+    }
+
+    count = 0;
+    line_size = getline(&str, &line_buf_size, fp);
+    
+    while (strncmp(str,"\"Maximum gradient component:",28) !=0 && count < 1000) {
+        count++;
+        //printf("%d %s\n", count, str);
+        line_size = getline(&str, &line_buf_size, fp);
+    }
+    if (count >= 1000) {
+        quit("setRBC: Can't find Maximum gradient component in %s output file\n", outname);
+    } else {
+        printf("str **** %s \n", str);
+        ret = strrchr(str, '\"'); // get everything after last  ' " '
+        //printf("ret **** %s \n", ret);
+        //printf("ret %s \n", (ret+2));
+        bm->RBCestimation.RBCspeciesArray[species].MaxConvergCrit = atof((ret+2)); // +2 to skip the ' " ' and the space.
+        //printf("Max Converge %f %f\n", bm->RBCestimation.RBCspeciesArray[species].MaxConvergCrit, atof((ret+2)));
+    }
+
+    // Only continue if all is when
+    if (bm->RBCestimation.RBCspeciesArray[species].MaxConvergCrit > 100.1) {  // RateMSE code found had to use 0.1 not 0.01
+        fprintf(llogfp, "Tier 4 assessment failed due to %s MaxConvergCrit: %e\n", FunctGroupArray[species].groupCode, bm->RBCestimation.RBCspeciesArray[species].MaxConvergCrit);
+        bm->RBCestimation.RBCspeciesParam[species][AssessFail_id] = TRUE;
+        for (yy = bm->RBCestimation.RBCspeciesArray[species].mgt_rbcYear; yy < bm->RBCestimation.RBCspeciesParam[species][MaxYr_id]+2; yy++) {
+            bm->RBCestimation.RBCspeciesArray[species].RBC_by_year[year][yy] = 0.0;              // temporary value, will be reset in DoAssessment
+        }
+        bm->RBCestimation.RBCspeciesParam[species][EstB0_id] = 999.9;
+        bm->RBCestimation.RBCspeciesParam[species][EstBinit_id] = 999.9;
+        bm->RBCestimation.RBCspeciesParam[species][EstBcurr_id] = 999.9;
+    } else {
+        //MSY
+        
+        fseek(fp, 0, SEEK_SET); // Move the file pointer to the start.
+        count = 0;
+        line_size = getline(&str, &line_buf_size, fp);
+        while (strncmp(str,"\"MSY",4) !=0 && count < 1000) {
+            count++;
+            //printf("%d %s\n", count, str);
+            line_size = getline(&str, &line_buf_size, fp);
+        }
+        if (count >= 1000) {
+            quit("setRBC: Can't find MSY in %s output file\n", outname);
+        } else {
+            printf("str **** %s \n", str);
+            ret = strrchr(str, '\"'); // get everything after last  ' " '
+            bm->RBCestimation.RBCspeciesArray[species].MSY = atof((ret+2)); // +2 to skip the ' " ' and the space.
+            //printf("MSY %f %f\n", bm->RBCestimation.RBCspeciesArray[species].MSY, atof((ret+2)));
+        }
+
+        // k
+        fseek(fp, 0, SEEK_SET); // Move the file pointer to the start.
+        count = 0;
+        line_size = getline(&str, &line_buf_size, fp);
+        while (strncmp(str,"\"k",2) !=0 && count < 1000) {
+            count++;
+            line_size = getline(&str, &line_buf_size, fp);
+        }
+        if (count >= 1000) {
+            quit("setRBC: Can't find k in %s output file\n", outname);
+        } else {
+            printf("str **** %s \n", str);
+            ret = strrchr(str, '\"'); // get everything after last  ' " '
+            bm->RBCestimation.RBCspeciesParam[species][EstB0_id] = atof((ret+2)); // +2 to skip the ' " ' and the space.
+            //printf("B0 %f %f\n",bm->RBCestimation.RBCspeciesParam[species][EstB0_id], atof((ret+2)));
+        }
+
+        // Binit
+        fseek(fp, 0, SEEK_SET); // Move the file pointer to the start.
+        count = 0;
+        line_size = getline(&str, &line_buf_size, fp);
+        while (strncmp(str,"\"Binit",6) !=0 && count < 1000) {
+            count++;
+            line_size = getline(&str, &line_buf_size, fp);
+        }
+        if (count >= 1000) {
+            quit("setRBC: Can't find Binit in %s output file\n", outname);
+        } else {
+            printf("str **** %s \n", str);
+            ret = strrchr(str, '\"'); // get everything after last  ' " '
+            bm->RBCestimation.RBCspeciesParam[species][EstBinit_id] = atof((ret+2)); // +2 to skip the ' " ' and the space.
+            //printf("Binit %f %f\n", bm->RBCestimation.RBCspeciesParam[species][EstBinit_id], atof((ret+2)));
+        }
+
+        // Bcurr
+        fseek(fp, 0, SEEK_SET); // Move the file pointer to the start.
+        count = 0;
+        line_size = getline(&str, &line_buf_size, fp);
+        while (strncmp(str,"\"Bcurr",6) !=0 && count < 1000) {
+            count++;
+            line_size = getline(&str, &line_buf_size, fp);
+        }
+        if (count >= 1000) {
+            quit("setRBC: Can't find Bcurr in %s output file\n", outname);
+        } else {
+            printf("str **** %s \n", str);
+            ret = strrchr(str, '\"'); // get everything after last  ' " '
+            bm->RBCestimation.RBCspeciesParam[species][EstBcurr_id] = atof((ret+2)); // +2 to skip the ' " ' and the space.
+            //printf("Bcurr %f %f\n", bm->RBCestimation.RBCspeciesArray[species].EstBcurr, atof((ret+2)));
+        }
+
+        // RBC
+        fseek(fp, 0, SEEK_SET); // Move the file pointer to the start.
+        count = 0;
+        line_size = getline(&str, &line_buf_size, fp);
+        while (strncmp(str,"\"RBC",4) !=0 && count < 1000) {
+            count++;
+            line_size = getline(&str, &line_buf_size, fp);
+        }
+        if (count >= 1000) {
+            quit("setRBC: Can't find RBC in %s output file\n", outname);
+        } else {
+            printf("str **** %s \n", str);
+            ret = strrchr(str, '\"'); // get everything after last  ' " '
+            printf("%s\n", str);
+            for (yy = bm->RBCestimation.RBCspeciesArray[species].mgt_rbcYear; yy < bm->RBCestimation.RBCspeciesParam[species][MaxYr_id]+2; yy++) {
+                
+                //parfile >> d0;
+                // #TODO: Read in d0 once
+                // Do I need to use something like what is in PGMSY read
+                //for (tok = strtok(line, seps); tok && *tok; j++, tok = strtok(NULL, "\n")) {
+                //    values[j] = atof(tok);
+                    //fprintf(bm->logFile, "%f\t", values[j]);
+                //}
+                d0 = 0;  // #TODO REPLACE THIS
+                bm->RBCestimation.RBCspeciesArray[species].RBC_by_year[year][yy] = d0;
+            }
+        }
+    }
+    fclose(fp);
+    
+    if ((bm->RBCestimation.RBCspeciesArray[species].RBC_by_year[year][bm->RBCestimation.RBCspeciesArray[species].mgt_rbcYear] < 0.0) || (bm->RBCestimation.RBCspeciesArray[species].RBC_by_year[year][bm->RBCestimation.RBCspeciesArray[species].mgt_rbcYear] > 999999.9)) {
+        fprintf(llogfp, "Time %e %s SS assessment failed due to mgt_rbcYear: %d RBC = %e\n", bm->dayt, FunctGroupArray[species].groupCode, bm->RBCestimation.RBCspeciesArray[species].mgt_rbcYear, bm->RBCestimation.RBCspeciesArray[species].RBC_by_year[year][bm->RBCestimation.RBCspeciesArray[species].mgt_rbcYear]);
+
+        bm->RBCestimation.RBCspeciesParam[species][AssessFail_id] = TRUE;
+        for (yy = bm->RBCestimation.RBCspeciesArray[species].mgt_rbcYear; yy < bm->RBCestimation.RBCspeciesParam[species][MaxYr_id]+2; yy++) {
+            bm->RBCestimation.RBCspeciesArray[species].RBC_by_year[year][yy] = 0.0;               // temporary value, will be reset in DoAssessment
+        }
+        bm->RBCestimation.RBCspeciesParam[species][EstB0_id] = 999.9;
+        bm->RBCestimation.RBCspeciesParam[species][EstBinit_id] = 999.9;
+        bm->RBCestimation.RBCspeciesParam[species][EstBcurr_id] = 999.9;
+    }
+
+    if (bm->RBCestimation.RBCspeciesParam[species][AssessFail_id] == TRUE) {
+        bm->RBCestimation.RBCspeciesArray[species].NassessFail++;
+    } else {
+        bm->RBCestimation.RBCspeciesArray[species].NassessFail = 0;
+    }
+
+    bm->RBCestimation.RBCspeciesParam[species][EstDepletion_id] = bm->RBCestimation.RBCspeciesParam[species][EstBcurr_id] / bm->RBCestimation.RBCspeciesParam[species][EstB0_id];
+
+    fprintf(llogfp, "Time %e %s dataYear: %d EstDepletion: %e mgt_rbcYear: %d RBC_by_year: %e\n", bm->dayt, FunctGroupArray[species].groupCode, bm->RBCestimation.RBCspeciesArray[species].mgt_dataYear, bm->RBCestimation.RBCspeciesParam[species][EstDepletion_id], bm->RBCestimation.RBCspeciesArray[species].mgt_rbcYear, bm->RBCestimation.RBCspeciesArray[species].RBC_by_year[year][bm->RBCestimation.RBCspeciesArray[species].mgt_rbcYear]);
+    
+    return;
+
+}

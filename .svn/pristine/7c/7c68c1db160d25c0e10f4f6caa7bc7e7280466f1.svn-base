@@ -1,0 +1,498 @@
+/*
+ * atExternalScalar.c
+ *
+ *
+ * This file contains code related to reading in data from a netcdf file to scale linear mortality, growth and recruitment (or number spawned).
+ * This work was commissioned by Cam Ainsworth for the GOM model.
+ *
+ *
+ *  Created on: 25/09/2013
+ *      Author: bec
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <math.h>
+#include <sjwlib.h>
+#include <netcdf.h>
+#include <atlantisboxmodel.h>
+#include <atUtilLib.h>
+
+void Open_Scalar_Prop(MSEBoxModel *bm, EcologyScalarData *propInput);
+void Close_Scalar_Prop(MSEBoxModel *bm, EcologyScalarData *propInput);
+void Get_Scalar_Property(MSEBoxModel *bm, EcologyScalarData *propInput);
+void Match_Scalar_To_Groups(MSEBoxModel *bm, EcologyScalarData *propInput);
+
+/* Maximum amount of memory to allocate for exchange values */
+#define MAXBUFMEM (8L*1024L*1024L)
+
+/**
+ *	Read in information about the forcing tracer files.
+ *
+ *	Will read in data from the forcing netcdf file.
+ *
+ */
+void Init_External_Scalars(MSEBoxModel *bm) {
+
+	FILE *fp;
+
+	/* Open the file containing the list of hydro input files */
+	if ((fp = Open_Input_File(bm->inputFolder,bm->forceIfname, "r")) == NULL)
+		quit("init_externalScalars: Can't open %s%s\n", bm->inputFolder, bm->forceIfname);
+
+	/* Read the list of files */
+	set_keyprm_errfn(warn);
+	readkeyprm_i(fp, "use_external_scaling", &bm->use_external_scaling);
+
+	set_keyprm_errfn(quit);
+
+	if (bm->use_external_scaling) {
+		bm->externalBiologyInput = (EcologyScalarData *) malloc(sizeof(EcologyScalarData));
+		bm->externalBiologyInput->fid = -1;
+
+		/* Read the list of files */
+		readkeyprm_s(fp, "externalBiologyForcingFile", bm->externalBiologyInput->fname);
+		readkeyprm_i(fp, "externalBiologyForcingFile_rewind", &bm->externalBiologyInput->rewind);
+		readkeyprm_i(fp, "scale_all_mortality", &bm->scale_all_mortality);
+		readkeyprm_i(fp, "mortality_addition", &bm->mortality_addition);
+
+
+		/* Allocate memory for the species lookup data */
+		bm->externalBiologyInput->Species_Cohort_Lookup = Util_Alloc_Init_3D_Int(NUM_BIOLOGY_SCALAR, bm->K_num_max_cohort, bm->K_num_tot_sp, -1);
+
+		/* Open the scalar input file and read all the attribute data */
+		Open_Scalar_Prop(bm, bm->externalBiologyInput);
+
+		/* Match the variables in the netcdf to the groups and the scalar types  - will populate the Species_Cohort_Lookup array */
+		Match_Scalar_To_Groups(bm, bm->externalBiologyInput);
+
+		/* Read in the first chunk of netcdf data */
+		Get_Scalar_Property(bm, bm->externalBiologyInput);
+	}else{
+		bm->scale_all_mortality = FALSE;
+	}
+
+	fclose(fp);
+}
+
+/*
+ * Routine to open a scalar input file and check that it has appropriate structure.
+ */
+void Open_Scalar_Prop(MSEBoxModel *bm, EcologyScalarData *propInput) {
+	int ndims = 0;
+	int nvars = 0;
+	int natts = 0;
+	int recdim = 0;
+	int len = 0;
+	long n = 0;
+	nc_type daty;
+	char hdu[BMSLEN];
+	char bmu[BMSLEN];
+	long bytes = 0;
+	double value;
+	int variableIndex, i;
+	char varName[BMSLEN];
+
+	long start[1];
+	long count[1];
+
+	/* Set netCDF library error handling */
+	ncopts = NC_VERBOSE;
+
+	/* Open the file */
+	if ((propInput->fid = Util_ncopen(bm->inputFolder, propInput->fname, NC_NOWRITE)) < 0)
+		quit("open_scalarprop: Can't open scalar input data file %s\n", propInput->fname);
+
+
+	/* Inquire about this file and get the dimensions*/
+	ncopts = NC_VERBOSE; // | NC_FATAL;
+	ncinquire(propInput->fid, &ndims, &nvars, &natts, &recdim);
+	if (ndims < 3)
+		quit("open_scalarprop: not enough dimensions in %s\n", propInput->fname);
+	if (nvars < 2)
+		quit("open_scalarprop: not enough variables in %s\n", propInput->fname);
+
+	/* Check dimensions are as expected */
+	if ((propInput->t_did = ncdimid(propInput->fid, "t")) == -1)
+		quit("open_scalarprop: no t dimension in %s\n", propInput->fname);
+	if (propInput->t_did != recdim)
+		quit("open_scalarprop: t dimension not unlimited in %s\n", propInput->fname);
+	if ((propInput->b_did = ncdimid(propInput->fid, "b")) == -1)
+		quit("open_scalarprop: no b dimension in %s\n", propInput->fname);
+	if ((propInput->z_did = ncdimid(propInput->fid, "z")) == -1)
+		quit("open_scalarprop: no z dimension in %s\n", propInput->fname);
+
+	/* Get dimension sizes and check against geometry */
+	ncdiminq(propInput->fid, propInput->b_did, NULL, &n);
+	if (n != bm->nbox)
+		quit("open_scalarprop: Number of boxes (%ld) in %s doesn't match geometry (%d)\n", n, propInput->fname, bm->nbox);
+
+	ncdiminq(propInput->fid, propInput->z_did, NULL, &n);
+	if (n != bm->wcnz + bm->sednz)
+		quit("open_scalarprop: Number of layers (%ld) in %s doesn't match geometry (%d)\n", n, propInput->fname, (bm->wcnz + bm->sednz));
+
+	/* Check that time units and steps match this model */
+	propInput->t_vid = ncvarid(propInput->fid, "t");
+	if (propInput->t_vid < 0)
+		quit("open_scalarprop: no t variable in %s\n", propInput->fname);
+
+	memset(propInput->t_units, 0, BMSLEN);
+	ncattget(propInput->fid, propInput->t_vid, "units", propInput->t_units);
+	sscanf(propInput->t_units, "%s", hdu);
+	sscanf(bm->t_units, "%s", bmu);
+	if (strcmp(hdu, bmu) != 0)
+		quit("open_scalarprop: Time units (%s) don't match model time units (%s)\n", hdu, bmu);
+
+	/* Not sure this data is required - we never use it */
+	ncattinq(propInput->fid, propInput->t_vid, "dt", &daty, &len);
+	if (nctypelen(daty) != sizeof(double))
+		quit("open_scalarprop: dt attribute wrong type\n");
+
+	ncattget(propInput->fid, propInput->t_vid, "dt", &value);
+	propInput->dt = (double) value;
+	if (propInput->dt <= 0.0)
+		quit("open_scalarprop: %s dt must have positive value\n", propInput->variableName);
+
+	/* Get other variable ids  - need to allow the user to specify as many tracers as they want in a single file.*/
+
+	/* Loop through the variables in this file */
+	propInput->nvariables = nvars - 1; /* ignore the time variable */
+
+	/* Allocate memory for all the variables */
+	propInput->prop_vid = i_alloc1d(propInput->nvariables);
+	propInput->variableName = c_alloc2d(BMSLEN, propInput->nvariables);
+
+	variableIndex = 0;
+	for (i = 0; i < propInput->nvariables + 1; i++) {
+
+		nc_inq_varname(propInput->fid, i, varName);
+
+		if (strcmp(varName, "t") == 0)
+			continue;
+
+		/* Else we have a valid tracer name */
+		propInput->prop_vid[variableIndex] = i;
+		strcpy(propInput->variableName[variableIndex], varName);
+
+		variableIndex++;
+	}
+
+	/* Calculate a reasonable number of time steps
+	 * to store in buffers in memory
+	 */
+
+	bytes = sizeof(double) * propInput->nvariables * bm->nbox * bm->wcnz;
+
+	/* Find out how many time steps are in the file */
+	ncdiminq(propInput->fid, propInput->t_did, NULL, &propInput->nstep);
+
+	propInput->nbuf = min(MAXBUFMEM/bytes, propInput->nstep);
+	if (propInput->nbuf < 1)
+		propInput->nbuf = 1;
+
+	/* allocate memory for the time data and read it all in */
+	propInput->timeDataBuffer = (double *) alloc1d(propInput->nbuf);
+
+	start[0] = 0;
+	count[0] = propInput->nbuf;
+
+	ncvarget(propInput->fid, propInput->t_vid, start, count, propInput->timeDataBuffer);
+	bm->externalBiologyInput->currentTimeIndex = 0;
+
+	/* Allocate memory for data buffers */
+	propInput->valuebuf = (double ****) alloc4d(propInput->nvariables, bm->wcnz, bm->nbox, propInput->nbuf);
+	propInput->dataBuffer = (double ***) alloc3d(propInput->nvariables, bm->wcnz, bm->nbox);
+
+	/* Signify that buffers are empty */
+	propInput->bufstart = -1;
+	propInput->bufend = -1;
+	propInput->nextrec = 0;
+	propInput->rewindCount = 0;
+
+	/* Reset netCDF error handling */
+	ncopts = NC_VERBOSE | NC_FATAL;
+}
+/**
+ * Get the group code and cohort from the given string.
+ * Structure will be similar to:
+ * 	LPPmort_ff or GAG1mort_ff
+ *
+ */
+void Get_Group_Cohort_Value(MSEBoxModel *bm, char *str, int *group, int *cohort) {
+	int length = strlen(str);
+	int i, index = -1;
+	char *cohortString;
+
+	/* Get the cohort value */
+	*cohort = 0;
+
+	for (i = length - 1; i >= 0; i--) {
+		if (isdigit(str[i])) {
+			index = i;
+		}
+	}
+
+	if (index != -1) {
+		cohortString = str + index;
+		*cohort = atoi(cohortString) - 1;
+		str[index] = '\0';
+	}
+	
+	*group = Util_Get_FG_Index(bm, str);
+}
+
+/**
+ *  Match the variable names in the input file to the groups and scalar types.
+ *
+ *
+ */
+void Match_Scalar_To_Groups(MSEBoxModel *bm, EcologyScalarData *propInput) {
+	int variableIndex;
+	char str[BMSLEN];
+	char *strPtr;
+	int group, cohort;
+
+	for (variableIndex = 0; variableIndex < propInput->nvariables; variableIndex++) {
+
+		if (strcmp(propInput->variableName[variableIndex], "t") == 0)
+			continue;
+
+		strcpy(str, propInput->variableName[variableIndex]);
+
+		if (strstr(str, "mort_ff") != NULL) {
+
+			/* Strip off the mort_ff bit */
+			strPtr = strstr(str, "mort_ff");
+			*strPtr = '\0';
+
+			/* See if the last value is a number */
+			Get_Group_Cohort_Value(bm, str, &group, &cohort);
+
+			if(group == -1 || cohort == -1){
+				quit("Match_Scalar_To_Groups: Variable (%s) in file is unrecognised \n", propInput->variableName[variableIndex]);
+			}
+
+			propInput->Species_Cohort_Lookup[group][cohort][MORT_INDEX_ID] = variableIndex;
+		}
+		if (strstr(str, "growth_ff") != NULL) {
+			/* Strip off the mort_ff bit */
+			strPtr = strstr(str, "growth_ff");
+			*strPtr = '\0';
+
+			/* See if the last value is a number */
+			Get_Group_Cohort_Value(bm, str, &group, &cohort);
+			if(group == -1 || cohort == -1){
+				quit("Match_Scalar_To_Groups: Variable (%s) in file is unrecognised \n", propInput->variableName[variableIndex]);
+			}
+
+			propInput->Species_Cohort_Lookup[group][cohort][GROWTH_INDEX_ID] = variableIndex;
+		}
+
+		if (strstr(str, "rec_ff") != NULL) {
+			/* Strip off the mort_ff bit */
+			strPtr = strstr(str, "rec_ff");
+			*strPtr = '\0';
+
+			/* See if the last value is a number */
+			Get_Group_Cohort_Value(bm, str, &group, &cohort);
+			if(group == -1 || cohort == -1){
+				quit("Match_Scalar_To_Groups: Variable (%s) in file is unrecognised \n", propInput->variableName[variableIndex]);
+			}
+			propInput->Species_Cohort_Lookup[group][0][RECRUITMENT_INDEX_ID] = variableIndex;
+		}
+	}
+}
+/**
+ *  Routine to close an already open hydrodynamic input file
+ */
+void Close_Scalar_Prop(MSEBoxModel *bm, EcologyScalarData *propInput) {
+
+	/* Close salinity file */
+	if (propInput->fid >= 0)
+		ncclose(propInput->fid);
+	propInput->fid = -1;
+}
+
+ /**
+  * Free up the data allocated.
+  *
+  */
+void Free_Scalar_Prop(MSEBoxModel *bm, EcologyScalarData *propInput) {
+
+	Close_Scalar_Prop(bm, propInput);
+
+	/* Free buffers */
+	if (propInput->valuebuf != NULL)
+		free4d((double ****) propInput->valuebuf);
+	if (propInput->timeDataBuffer != NULL)
+		free1d(propInput->timeDataBuffer);
+	if (propInput->dataBuffer != NULL)
+		free3d(propInput->dataBuffer);
+	if (propInput->Species_Cohort_Lookup != NULL)
+		i_free3d(propInput->Species_Cohort_Lookup);
+
+
+	if(propInput->prop_vid != NULL)
+		free(propInput->prop_vid);
+
+	if(propInput->variableName != NULL)
+		c_free2d(propInput->variableName);
+
+	propInput->valuebuf = NULL;
+	propInput->timeDataBuffer = NULL;
+	propInput->dataBuffer = NULL;
+	propInput->Species_Cohort_Lookup = 0;
+
+	free(bm->externalBiologyInput);
+}
+
+/* Routine to get the property data for this time step.
+ * This may involve reading the netCDF input file if the
+ * data is not already in the memory buffers
+ */
+void Get_Scalar_Property(MSEBoxModel *bm, EcologyScalarData *propInput) {
+
+	long tstepnum = propInput->nextrec;
+	int i, j, k, valueIndex;
+	double *value;
+	double ***array;
+	long start[3];
+	long count[3];
+	long numTimeValues =  min(propInput->nbuf, propInput->nstep-tstepnum);	/* min of total values, and values we have yet to load */
+
+	propInput->current_nbuf = numTimeValues;
+	ncopts = NC_VERBOSE | NC_FATAL;
+
+	array = alloc3dInput(bm->wcnz, bm->nbox, numTimeValues);
+	value = alloc1dInput(numTimeValues);
+
+	/* Is the requested data already in the memory buffers? */
+	if (tstepnum < propInput->bufstart || tstepnum > propInput->bufend) {
+
+		/* Data must be read from file, so we might as well
+		 * read propInput->nstep records, starting at the requested
+		 * record number (ensuring, of course, that we don't try
+		 * to read past the last record in the file).
+		 */
+
+		start[0] = max(tstepnum - 1, 0);
+		start[1] = 0;
+		start[2] = 0;
+		count[0] = numTimeValues;
+		count[1] = bm->nbox;
+		count[2] = bm->wcnz;
+
+		ncvarget(propInput->fid, propInput->t_vid, start, count, value);
+
+		for (i = 0; i < numTimeValues; i++){
+			propInput->timeDataBuffer[i] = (double) value[i];
+		}
+
+		for (valueIndex = 0; valueIndex < propInput->nvariables; valueIndex++) {
+			ncvarget(propInput->fid, propInput->prop_vid[valueIndex], start, count, array[0][0]);
+			for (i = 0; i < count[0]; i++) {
+				for (j = 0; j < count[1]; j++) {
+					for (k = 0; k < count[2]; k++) {
+						propInput->valuebuf[i][j][k][valueIndex] = (double) array[i][j][k];
+					}
+				}
+			}
+		}
+		propInput->bufstart = tstepnum;
+		propInput->bufend = tstepnum + count[0] - 1;
+		/* Increment next record number */
+		propInput->nextrec += count[0];
+	}
+
+	free3dInput(array);
+	free1dInput(value);
+}
+
+/**
+ *
+ * Calculate the scalar values for the current timestep.
+ *
+ *
+ */
+void Calc_Scalar_Values(MSEBoxModel *bm, EcologyScalarData *propInput) {
+
+	int index, b, k, valueIndex;
+	int prevIndex = FALSE;
+
+	if (verbose)
+		fprintf(stderr, "Entering calcScalarValues\n");
+
+	/* Are we at the end of our data? */
+	if(bm->t > propInput->timeDataBuffer[propInput->current_nbuf - 1]){
+		/* Do we have more data to load? */
+		if( propInput->bufend < (propInput->nstep - 1)){
+			Get_Scalar_Property(bm, propInput);
+		}else{
+			/* Are we rewinding? */
+			if(propInput->rewind == TRUE){
+				/* Reset back to the start */
+				propInput->bufstart = -1;
+				propInput->bufend = -1;
+				propInput->nextrec = 0;
+
+				Get_Scalar_Property(bm, propInput);
+				propInput->rewindCount++;
+
+				for(index = 0; index< propInput->current_nbuf; index++){
+					propInput->timeDataBuffer[index] = propInput->timeDataBuffer[index] + propInput->nstep * propInput->rewindCount * propInput->dt;
+				}
+			}
+		}
+	}
+
+	/* Work out what timestep we should be using. If there isn't a match then interpolate between two time steps */
+	if (bm->t <= propInput->timeDataBuffer[0]) {
+		bm->externalBiologyInput->currentTimeIndex = 0;
+	} else if (bm->t >= propInput->timeDataBuffer[propInput->current_nbuf - 1]) {
+		bm->externalBiologyInput->currentTimeIndex = propInput->current_nbuf - 1;
+	} else {
+		/* Else assume that the time is after the current time */
+		for (index = bm->externalBiologyInput->currentTimeIndex; index < propInput->current_nbuf; index++) {
+			if (bm->t == propInput->timeDataBuffer[index]) {
+				bm->externalBiologyInput->currentTimeIndex = index;
+				break;
+			}
+			if (bm->t <= propInput->timeDataBuffer[index]) {
+				bm->externalBiologyInput->currentTimeIndex = index;
+				prevIndex = TRUE;
+				break;
+			}
+		}
+	}
+
+	/* Loop over each box to calculate the data values. */
+	for (valueIndex = 0; valueIndex < propInput->nvariables; valueIndex++) {
+		for (b = 0; b < bm->nbox; b++) {
+			Box *bp = &bm->boxes[b];
+			/* Loop through water column */
+			for (k = 0; k < bp->nz; k++) {
+				if (prevIndex == TRUE) {
+					bm->externalBiologyInput->dataBuffer[b][k][valueIndex]
+							= (bm->externalBiologyInput->valuebuf[bm->externalBiologyInput->currentTimeIndex][b][k][valueIndex]
+									+ bm->externalBiologyInput->valuebuf[bm->externalBiologyInput->currentTimeIndex - 1][b][k][valueIndex]) / 2.0;
+				} else {
+					bm->externalBiologyInput->dataBuffer[b][k][valueIndex]
+							= bm->externalBiologyInput->valuebuf[bm->externalBiologyInput->currentTimeIndex][b][k][valueIndex];
+				}
+			}
+		}
+	}
+}
+
+/**
+ * Get the scalar value for the given scalarIndex, group and cohort.
+ *
+ * Will just use the pre-calculated values.
+ *
+ */
+double Get_Group_Scalar(MSEBoxModel *bm, EcologyScalarData *propInput, int scalarIndex, int boxIndex, int layerIndex) {
+
+	return bm->externalBiologyInput->dataBuffer[boxIndex][layerIndex][scalarIndex];
+}

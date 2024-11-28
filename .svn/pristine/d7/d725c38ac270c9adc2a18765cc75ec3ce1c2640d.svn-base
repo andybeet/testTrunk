@@ -1,0 +1,62 @@
+<CLAMLink>
+
+	<AttributeGroup AttributeGroupName = "Setup">
+		<Attribute AttributeName = "outputFolderName" AttributeValue = "/home/bec/temp"/>
+		<Attribute AttributeName = "outputFileName" AttributeValue = "/home/bec/temp/data.csv"/>	
+		<Attribute AttributeName = "inputFileName" AttributeValue = "/home/bec/temp/driver.txt"/>	
+		<Attribute AttributeName = "iniFileName" AttributeValue = "C:/ICMS/Builder/Plugins/autoPluginCLAM.ini"/>	
+		<Attribute AttributeName = "startedFileName" AttributeValue = "/home/bec/temp/started.txt"/>	
+		<Attribute AttributeName = "errorFileName" AttributeValue = "/home/bec/temp/error.txt"/>	
+		<Attribute AttributeName = "finishedFileName" AttributeValue = "/home/bec/temp/finished.txt"/>	
+		<Attribute AttributeName = "pathToICMSBuilder" AttributeValue = "c:/ICMS/Builder/ICMSBuilder.exe"/>	
+		<Attribute AttributeName = "ICMSProject" AttributeValue = "c:/ICMS/Builder/Projects/wooloweyah.icm"/>	
+		<Attribute AttributeName = "ICMSDLL" AttributeValue = "autoPluginCLAM.dll"/>	
+	</AttributeGroup>
+     <AttributeGroup AttributeGroupName = "IndicatorList">
+         <AttributeSubGroup AttributeGroupName = "Indicator">
+             <Attribute AttributeName = "TracerName" AttributeValue = "Temp"/>
+             <Attribute AttributeName = "MinValue" AttributeValue = "26"/>
+             <Attribute AttributeName = "MaxValue" AttributeValue = "27"/>
+			 <Attribute AttributeName = "CLAMOutputName" AttributeValue = "Lake Temperature"/>
+			 <Attribute AttributeName = "IndicatorLocation" AttributeValue = "1"/>
+
+			<!-- If there is a problem with this tracer then try these scenarios -->
+			<AttributeSubGroup AttributeGroupName = "ScenarioLinks">
+				<Attribute AttributeName = "CLAMScenario" AttributeValue = "Aquaculture"/>
+			</AttributeSubGroup>
+        </AttributeSubGroup>
+		<AttributeSubGroup AttributeGroupName = "Indicator">
+             <Attribute AttributeName = "TracerName" AttributeValue = "salt"/>
+             <Attribute AttributeName = "MinValue" AttributeValue = "30"/>
+             <Attribute AttributeName = "MaxValue" AttributeValue = "35"/>
+			 <Attribute AttributeName = "CLAMOutputName" AttributeValue = "Lake Salinity"/>
+			 <Attribute AttributeName = "IndicatorLocation" AttributeValue = "1"/>
+
+			<!-- If there is a problem with this tracer then try these scenarios -->
+			<AttributeSubGroup AttributeGroupName = "ScenarioLinks">
+				<Attribute AttributeName = "CLAMScenario" AttributeValue = "Aquaculture"/>
+			</AttributeSubGroup>
+        </AttributeSubGroup>
+     </AttributeGroup>
+	 <AttributeGroup AttributeGroupName = "CLAMOutputs">
+		<AttributeSubGroup AttributeGroupName = "Aq">
+	</AttributeGroup>
+ </CLAMLink>
+
+
+<!--
+outputFolderPath 	/home/bec/temp 
+outputFileName 		/home/bec/temp/data.csv 
+inputFileName 		/home/bec/temp/driver.txt 
+iniFileName 		C:/ICMS/Builder/Plugins/autoPluginCLAM.ini 
+startedFileName 	/home/bec/temp/started.txt 
+errorFileName 		/home/bec/temp/error.txt 
+finishedFileName 	/home/bec/temp/finished.txt 
+
+#commandLinesStr 	c:/ICMS/Builder/ICMSBuilder.exe \"C:/ICMS/Builder/Projects/empty.icm\" autoPluginCLAM.dll  
+#commandLinesStr %s \"%s\" %s",linkData->pathToICMSBuilder,  linkData->ICMSProject, linkData->ICMSDLL); 
+
+pathToICMSBuilder	c:/ICMS/Builder/ICMSBuilder.exe
+ICMSProject		c:/ICMS/Builder/Projects/wooloweyah.icm
+ICMSDLL			autoPluginCLAM.dll  
+-->

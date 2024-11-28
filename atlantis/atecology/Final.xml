@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AtlantisBiology>
+	<AttributeGroup AttributeGroupName="Functional Group Flags"><Attribute AttributeName="FunctionalGroupFlag" AttributeComment="True if the functional group is present in this model run, false otherwise.">
+		<GroupAttribute GroupName="FPL" GroupValue="0"></GroupAttribute></Attribute>
+		<Attribute AttributeName="VertebrateFoodAvailability">
+			<GroupAttribute GroupName="FPL">
+				<AgeClassAttribute AgeClass="" AgeClassValue="0"></AgeClassAttribute></GroupAttribute></Attribute></AttributeGroup>
+	</AtlantisBiology>

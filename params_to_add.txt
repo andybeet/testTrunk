@@ -1,0 +1,15 @@
+RBCArrays
+    int mgt_dataYear;  // Set from dayt in Atlantis
+    int mgt_rbcYear;
+    int mgt_assessYear;
+
+	double* HiLenBin;    // upper lengths of length bins
+	double* LoLenBin;    //  in size
+		
+	double ****MeanLenAgeM;
+    double ****SigmaLenAgeM;
+    double ****MeanWtAgeS;
+    double ****MeanWtAgeM;
+    
+    int *NblockperPatt;  // NblockPattern_id
+    

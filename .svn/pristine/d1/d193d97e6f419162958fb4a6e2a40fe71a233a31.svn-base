@@ -1,0 +1,77 @@
+
+cd atassess
+todos -dv *.*
+cd CVS 
+todos -dv *
+cd ../include 
+todos -dv *.h
+cd CVS 
+todos -dv *
+
+cd ../../../atecology
+todos -dv *.*
+cd CVS 
+todos -dv *
+cd ../include 
+todos -dv *.h
+cd CVS 
+todos -dv *
+
+cd ../../../ateconomic
+todos -dv *.*
+cd CVS 
+todos -dv *
+cd ../include 
+todos -dv *.h
+cd CVS 
+todos -dv *
+
+
+cd ../../../atFileConvert
+todos -dv *.*
+cd CVS 
+todos -dv *
+cd ../include 
+todos -dv *.h
+cd CVS 
+todos -dv *
+
+
+cd ../../../atlantismain
+todos -dv *.*
+cd CVS 
+todos -dv *
+cd ../include 
+todos -dv *.h
+cd CVS 
+todos -dv *
+
+cd ../../../atlantisTestSuite
+todos -dv *.*
+cd CVS 
+todos -dv *
+
+cd ../../atlantisUtil
+todos -dv *.*
+cd CVS 
+todos -dv *
+cd ../include 
+todos -dv *.h
+cd CVS 
+todos -dv *
+
+cd ../../../atmanage
+todos -dv *.*
+cd CVS 
+todos -dv *
+cd ../include 
+todos -dv *.h
+cd CVS 
+todos -dv *
+
+cd ../../../atphysics
+todos -dv *.*
+cd CVS 
+todos -dv *
+
+

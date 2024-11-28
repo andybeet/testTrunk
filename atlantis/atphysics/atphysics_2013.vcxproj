@@ -1,0 +1,127 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>atphysics</ProjectName>
+    <ProjectGuid>{7CFE48A2-09C4-401E-81AE-0E5F67B5D804}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Debug\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Release\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(SolutionDir)\atCLAMLink\include;$(SolutionDir)\ConvertAtlantis\include;$(SolutionDir)\externalLibs\;$(SolutionDir)\externalLibs\libiconv\include;$(SolutionDir)\externalLibs\include;$(SolutionDir)\externalLibs\tre\include;$(SolutionDir)\atlantismain\include;$(SolutionDir)\atlantisUtil\include;$(SolutionDir)\ateconomic\include;$(SolutionDir)\atecology\include;$(SolutionDir)\netcdf\include;$(SolutionDir)\atlink\include;$(SolutionDir)\atimplementation\include;$(SolutionDir)\atharvest\include;$(SolutionDir)\atmanage\include;$(SolutionDir)\atassess\include;$(SolutionDir)\sjwlib\include;$(SolutionDir)\atphysics\include;$(SolutionDir)\atSS3Link\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;DLL_NETCDF;%(PreprocessorDefinitions); _CRT_SECURE_NO_DEPRECATE</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <AdditionalOptions>/wd4100  /wd4244 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(OutDir)atphysics.lib</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(OutDir)atphysics.lib</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="atagetracerIO.c" />
+    <ClCompile Include="atbioirrig.c" />
+    <ClCompile Include="atbioturb.c" />
+    <ClCompile Include="atboundary.c" />
+    <ClCompile Include="atdecay.c" />
+    <ClCompile Include="atdeposition.c" />
+    <ClCompile Include="atdiagIO.c" />
+    <ClCompile Include="atdietIO.c" />
+    <ClCompile Include="atepiIO.c" />
+    <ClCompile Include="atfishstatIO.c" />
+    <ClCompile Include="atgas.c" />
+    <ClCompile Include="atgeomIO.c" />
+    <ClCompile Include="athdiff.c" />
+    <ClCompile Include="athydromod.c" />
+    <ClCompile Include="aticeIO.c" />
+    <ClCompile Include="atindex.c" />
+    <ClCompile Include="atLandIO.c" />
+    <ClCompile Include="atparamIO.c" />
+    <ClCompile Include="atphysics.c" />
+    <ClCompile Include="atPhysicsModule.c" />
+    <ClCompile Include="atphysIO.c" />
+    <ClCompile Include="atprofile.c" />
+    <ClCompile Include="atreadbm.c" />
+    <ClCompile Include="atsaturation.c" />
+    <ClCompile Include="atsedprops.c" />
+    <ClCompile Include="atsettle.c" />
+    <ClCompile Include="atsourcesink.c" />
+    <ClCompile Include="atsummaryIO.c" />
+    <ClCompile Include="atsuspension.c" />
+    <ClCompile Include="atswr.c" />
+    <ClCompile Include="attempsalt.c" />
+    <ClCompile Include="attracerIO.c" />
+    <ClCompile Include="attransport.c" />
+    <ClCompile Include="atvdiff.c" />
+    <ClCompile Include="atvertgeom.c" />
+    <ClCompile Include="atvmix.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\atPhysics.h" />
+    <ClInclude Include="include\atPhysicsModule.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ReadMe.txt" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

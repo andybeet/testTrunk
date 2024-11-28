@@ -1,0 +1,400 @@
+/*********************************************************************
+
+ File:           atepiIO.c
+
+ Created:        Thu Nov 17 15:41:37 EST 1994
+
+ Author:         Stephen Walker
+ CSIRO Division of Oceanography
+
+ Purpose:        Routines which deal with epibenthos data files. These
+ files are in netCDF format and should be read, written
+ and created using the routines below.
+
+ Arguments:      See each routine below
+
+ Returns:        See each routine below
+
+ Revisions:      8/8/2004 EA Fulton
+ Ported across the code from the southeast (sephys) model
+
+ 17/11/2004 EA Fulton
+ Converted original routine definitions from
+ void
+ routine_name(blah,blahblah)
+ int blah;
+ double blahblah;
+
+ to
+
+ void routine_name(int blah, double blahblah)
+
+ 8/3/2005 EA Fulton
+ Added flagid check added so only output active groups
+ *********************************************************************/
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <math.h>
+#include <sjwlib.h>
+#include <netcdf.h>
+#include <atlantisboxmodel.h>
+#include <atUtilLib.h>
+
+/*******************************************************************//**
+ Routine to read the model epis from a netCDF file.
+ This routine assumes that the file has the following
+ format (roughly written in CDL).
+
+ dimensions:
+
+ t = unlimited;    // Time dimension
+ b = N;            // Number of boxes
+ z = N;	    // Number of layers (water column + sediment)
+
+ // z values correspont to vertical positions as follows:
+ // z = 0             Bottom water layer
+ // z = wcnz-1        Surface water column layer
+ // z = wcnz          Uppermost sediment layer
+ // z = wcnz+sednz-1  Deepest sediment layer
+
+ variables:
+
+ // A typical tracer entry
+ double salt(t,b,z);            // Salinity values
+ salt:bmtype = "tracer";      // This is a tracer variable
+ salt:units = "PSU";          // Units for salt
+ salt:long_name = "Salinity"; // Long name of salt
+ salt:dtype = 0;              // Flag => general data type (1 if fisheries data)
+ salt:inwc = 1;               // Flag => exists in water column
+ salt:insed = 1;              // Flag => exists in sediment
+ salt:dissol = 1;             // Flag => dissolved
+ salt:partic = 0;             // Flag => particulate
+ salt:decay = 0.0;            // Decay constant
+ salt:svel = 0.0;             // Settling velocity
+
+ // A typical epibenthos entry
+ double weed(t,b);                // Weed values
+ weed:bmtype = "epibenthos";    // This is an epibenthos variable
+ weed:units = "Percent";        // Units for weed
+ weed:long_name = "Weed Cover"; // Long name of weed
+ weed:dtype = 0;                // Flag => general data type (1 if fisheries data)
+
+ // The netCDF file has global attributes as follows
+ :title = "Description of this data set";
+ :geometry = "Name of geometry file";
+ :parameters = "Name of parameter file";
+ :wcnz = N;     // Number of water column layers
+ :sednz = N;    // Number of sediment layers
+
+ The routine finds out how many epi variables there
+ are, allocates memory and reads the information and
+ values for each epi.
+
+ *********************************************************************/
+void readBMEpiInfo(int fid, MSEBoxModel *bm) {
+	int ndims = 0; /* Number of dimensions */
+	int nvars = 0; /* Number of variables */
+	int ngatts = 0; /* Number of global attributes */
+	int recdim = 0; /* ID of unlimited dimension */
+	int t_id = 0; /* Dimension ids */
+	int b_id = 0;
+	int dims[MAX_NC_DIMS];
+	int *idlist;
+	long n = 0;
+	int i = 0;
+
+	/* Set netCDF library error handling */
+	ncopts = NC_VERBOSE | NC_FATAL;
+
+	if (verbose > 1)
+		fprintf(stderr, "Entering readBMEpiInfo\n");
+
+	/* Inquire about this file */
+	ncinquire(fid, &ndims, &nvars, &ngatts, &recdim);
+	if (ndims < 2)
+		quit("readBMEpiInfo: not enough dimensions\n");
+	if (nvars < 2)
+		quit("readBMEpiInfo: not enough variables\n");
+
+	/* Check dimensions are as expected */
+	if ((t_id = ncdimid(fid, "t")) == -1)
+		quit("readBMEpiInfo: no t dimension\n");
+	if (t_id != recdim)
+		quit("readBMEpiInfo: t dimension not unlimited\n");
+	if ((b_id = ncdimid(fid, "b")) == -1)
+		quit("readBMEpiInfo: no b dimension\n");
+
+	/* Get dimension sizes and check against geometry */
+	ncdiminq(fid, b_id, NULL, &n);
+	if (n != bm->nbox)
+		quit("readBMEpiInfo: Number of boxes (b) doesn't match geometry\n");
+
+	/* Find and count epi variables */
+	dims[0] = t_id;
+	dims[1] = b_id;
+	idlist = i_alloc1d(nvars);
+
+	n = ncvarfind(fid, 2, dims, "bmtype", "epibenthos", idlist);
+	if (n < 1)
+		warn("readBMEpiInfo: No epibenthos variables\n");
+	if (verbose > 1)
+		fprintf(stderr, "readBMEpiInfo: %ld epibenthos variables\n", n);
+
+	/* Allocate space for epi info */
+	if ((bm->einfo = (EpiInfo *) malloc((size_t)n * sizeof(EpiInfo))) == NULL)
+		quit("readBMEpiInfo: Can't allocate memory for info\n");
+
+	/* Clear tracer info */
+	memset(bm->einfo, 0, (size_t)n * sizeof(EpiInfo));
+
+	/* Loop over the epi variables to read info */
+	for (i = 0; i < n; i++) {
+		nc_type dt;
+		int nd;
+		int d[3];
+		int na;
+		int len;
+
+		/* Epi number (must be equal to i) */
+		bm->einfo[i].n = i;
+		/* Epi name */
+		ncvarinq(fid, idlist[i], bm->einfo[i].name, &dt, &nd, d, &na);
+		/* Epi attributes */
+
+		/* Units */
+		ncattget(fid, idlist[i], "units", bm->einfo[i].units);
+
+		/* Long name */
+		ncattget(fid, idlist[i], "long_name", bm->einfo[i].long_name);
+
+		/* Data type */
+		ncattinq(fid, ncvarid(fid, bm->einfo[i].name), "dtype", &dt, &len);
+		if (nctypelen(dt) != sizeof(bm->einfo[i].dtype))
+			quit("readBMEpiInfo: dtype attribute wrong type (%s)\n", bm->einfo[i].name);
+		ncattget(fid, idlist[i], "dtype", &bm->einfo[i].dtype);
+
+		/* Sum type */
+		ncattinq(fid, ncvarid(fid, bm->einfo[i].name), "sumtype", &dt, &len);
+		if (nctypelen(dt) != sizeof(bm->einfo[i].sumtype))
+			quit("readBMEpiInfo: sumtype attribute wrong type (%s)\n", bm->einfo[i].name);
+		ncattget(fid, idlist[i], "sumtype", &bm->einfo[i].sumtype);
+
+		bm->einfo[i].flagid = 1;
+
+		if (verbose > 1)
+			fprintf(stderr, "readBMEpiInfo: %s info read\n", bm->einfo[i].name);
+		/*	fprintf(stderr,"with units: %s\n",bm->einfo[i].units);
+		 fprintf(stderr,"and long name: %s\n",bm->einfo[i].long_name);
+		 */
+	}
+
+	/* Store number of epis */
+	bm->nepi = (int)n;
+
+	fprintf(stderr, "Read in %d epibenthic variables\n", bm->nepi);
+
+	/* Free epi variable id array */
+	i_free1d(idlist);
+}
+
+/**** Free any memory allocated during a readBMEpiInfo call.
+ ****/
+void freeBMEpiInfo(MSEBoxModel *bm) {
+	free(bm->einfo);
+}
+
+/*********//**
+ Routine to write epibenthic info to general data file
+ ***********/
+void writeBMEpiInfo(int fid, MSEBoxModel *bm, int dtype) {
+	int i = 0;
+	nc_type dt;
+	int dim[2];
+
+	/* set netCDF data type */
+	dt = NC_DOUBLE;
+
+	/* Get dimension ids */
+	dim[0] = ncdimid(fid, "t");
+	dim[1] = ncdimid(fid, "b");
+    
+    /* Note that nominal_dz is not time dependent */
+    i = ncvardef(fid, "is_boundary", NC_INT, 2, dim);
+    ncattput(fid, i, "bmtype", NC_CHAR, (int) strlen("epibenthos") + 1, "epibenthos");
+    ncattput(fid, i, "units", NC_CHAR, (int) strlen("") + 1, "");
+    ncattput(fid, i, "long_name", NC_CHAR, (int) strlen("Whether box is a boundary box") + 1, "Whether box is a boundary box");
+
+	/* Loop over the epi variables */
+	for (i = 0; i < bm->nepi; i++) {
+		int vid;
+
+		if (dtype == bm->einfo[i].dtype && bm->einfo[i].flagid) {
+
+			/* Define the variable */
+			vid = ncvardef(fid, bm->einfo[i].name, dt, 2, dim);
+
+			/* Set the attributes */
+			ncattput(fid, vid, "bmtype", NC_CHAR, (int) strlen("epibenthos") + 1, "epibenthos");
+			ncattput(fid, vid, "units", NC_CHAR, (int) strlen(bm->einfo[i].units) + 1, bm->einfo[i].units);
+			ncattput(fid, vid, "long_name", NC_CHAR, (int) strlen(bm->einfo[i].long_name) + 1, bm->einfo[i].long_name);
+			ncattput(fid, vid, "dtype", NC_LONG, 1, &bm->einfo[i].dtype);
+			ncattput(fid, vid, "sumtype", NC_LONG, 1, &bm->einfo[i].sumtype);
+
+			if (verbose > 1)
+				fprintf(stderr, "writeBMEpiInfo: %s info written\n", bm->einfo[i].name);
+            
+			/*		fprintf(stderr,"with units: %s\n",bm->einfo[i].units);
+			 fprintf(stderr,"and long name: %s\n",bm->einfo[i].long_name);
+			 */
+
+		}
+	}
+
+}
+
+/*******************************************************************//**
+ Routine to read the epi data from a netCDF file. This routine
+ assumes that the epi information in the MSEBoxModel is valid and
+ corresponds with the netCDF file. Minimal checking for consistency
+ is done here.
+ *********************************************************************/
+void readBMEpiData(int fid, int dump, MSEBoxModel *bm) {
+	int i = 0, sp, found_partial_match = 0, this_sp;
+	doubleINPUT *val;
+	long start[2];
+	long count[2];
+	long n = 0;
+    char *pdest;
+    char *pdestsp;
+    char bstr[] = "_N";
+
+	/* Set netCDF library error handling */
+	ncopts = NC_VERBOSE | NC_FATAL;
+
+	/* Check that requested dump exists in file */
+	ncdiminq(fid, ncdimid(fid, "t"), NULL, &n);
+	if (dump >= n)
+		quit("readBMEpiData: dump %d not in file (%ld records)\n", dump, n);
+
+	/* Allocate temporary storage for one epi variable */
+	val = (doubleINPUT *) alloc1dInput(bm->nbox);
+
+	/* Set indices for reading variables */
+	start[0] = dump;
+	start[1] = 0;
+	count[0] = 1;
+	count[1] = bm->nbox;
+    
+	/* Loop over each variable */
+	for (i = 0; i < bm->nepi; i++) {
+		int b;
+
+		/* Read data */
+		ncvarread(fid, bm->einfo[i].name, sizeof(doubleINPUT), start, count, (void *) val);
+		checkNetCDFData1D("readBMEpiData", bm->einfo[i].name, val,  bm->nbox);
+
+        /* Check if need to scale initial vertebrate numbers */
+        if (bm->flagscaleinit) {
+            found_partial_match = 0;
+            this_sp = bm->K_num_tot_sp;
+            /* Identify scalar to use */
+            pdest = strstr(bm->einfo[i].name, bstr);
+            fprintf(bm->logFile, "looking for %s\n", pdest);
+            if (pdest != NULL) {
+                found_partial_match = 1;
+                /* Had a match now figure out what species it was */
+                for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
+                    if (FunctGroupArray[sp].isEpiFauna == TRUE) {
+                        pdestsp = strstr(bm->einfo[i].name, FunctGroupArray[sp].name);
+                        if (pdestsp != NULL) {
+                            this_sp = sp;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            /* If a species was found scale */
+            if (this_sp < bm->K_num_tot_sp) {
+                if(bm->init_scalar[this_sp] != 1.0){
+                    warn("%s scaled by %e\n", bm->einfo[i].name, bm->init_scalar[this_sp]);
+                }
+                for (b = 0; b < bm->nbox; b++) {
+                    val[b] *= bm->init_scalar[this_sp];
+                    fprintf(bm->logFile, "box: %d sp: %d init_scalar: %e\n", b, sp, bm->init_scalar[this_sp]);
+                }
+            } else if (found_partial_match) {
+                warn("run.prm file says scale initial epibenthic biomasses, but no string matches found, no scaling performed for %s\n", bm->einfo[i].name);
+            }
+        }
+
+		/* Move data to model storage */
+		for (b = 0; b < bm->nbox; b++) {
+			bm->epi[b][i] = (doubleINPUT) val[b];
+			//printf("box: %d id: %d (%s) epi: %e\n", b, i, bm->einfo[i].name, bm->epi[b][i]);
+		}
+	}
+	/* Free temporary storage */
+	free1dInput((doubleINPUT *) val);
+
+}
+
+/*******************************************************************//**
+ Routine to write the epi data to a netCDF file. This routine
+ assumes that the epi information in the MSEBoxModel is valid and
+ corresponds with the netCDF file. Minimal checking for consistency
+ is done here.
+ *********************************************************************/
+void writeBMEpiData(int fid, int dump, MSEBoxModel *bm, int dtype) {
+	int i = 0;
+	doubleINPUT *val;
+	long start[2];
+	long count[2];
+
+	if (verbose > 0)
+		fprintf(stderr, "Entering writeBMEpiData\n");
+
+	/* Set netCDF library error handling */
+	ncopts = NC_VERBOSE | NC_FATAL;
+
+	/* Allocate temporary storage for one epi variable */
+	val = (doubleINPUT *) alloc1dInput(bm->nbox);
+
+	/* Set indices for writing epis */
+	start[0] = dump;
+	start[1] = 0;
+	count[0] = 1;
+	count[1] = bm->nbox;
+    
+    /* Write physical variables */
+    ncvarput(fid, ncvarid(fid, "is_boundary"), start, count, bm->is_boundary);
+
+	/* Loop over each epi */
+	for (i = 0; i < bm->nepi; i++) {
+		int vid;
+		int b;
+		int n;
+
+		if (dtype == bm->einfo[i].dtype && bm->einfo[i].flagid) {
+			/* Get netCDF variable id */
+			vid = ncvarid(fid, bm->einfo[i].name);
+
+			/* Check double compatibility */
+			if ((n = ncvarsize(fid, vid)) != sizeof(doubleINPUT))
+				quit("writeBMEpiData: %s has %d bytes per value in file, code compiled with %d\n", bm->einfo[i].name, n, sizeof(doubleINPUT));
+
+			/* Get epi data from model storage */
+			for (b = 0; b < bm->nbox; b++)
+				val[b] = (doubleINPUT) bm->epi[b][i];
+
+			/* Write data */
+			ncvarput(fid, vid, start, count, val);
+		}
+	}
+
+	/* Free temporary storage */
+	free1dInput((doubleINPUT *) val);
+
+}

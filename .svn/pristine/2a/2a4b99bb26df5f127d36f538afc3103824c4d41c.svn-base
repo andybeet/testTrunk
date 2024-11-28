@@ -1,0 +1,197 @@
+/**
+ *  Revisions:
+ *
+ *  07-07-2009 Bec Gorton
+ *  Added the fishery node types to the AtlantisXMLObjectType enum definition.
+ *
+ *
+ *  09-07-2009 Bec Gorton
+ *  Added the ATL_XML_ATTRIBUTE_TYPES enum to define the possible attribute types.
+ *
+ *  29-01-2010 Bec Gorton
+ *  Moved the SpeciesParamStruct into this header file.
+ *
+ *  02-08-2012 Bec Gorton
+ *  Added the Util_XML_Read_Array_String function so we can read in the list of additional tracers.
+ *
+ *  23-04-2013 Bec Gorton
+ *	Added the SP_OVERWINTER value.
+ *
+ *  25-04-2013 Beth Fulton
+ * Added the SP_PREDATOR_OR_BACT value.
+ *
+ */
+
+#ifndef ATXMLUTIL_H_
+#define ATXMLUTIL_H_
+
+#include <libxml/xpathInternals.h>
+#include <libxml/xmlmemory.h>
+#include <libxml/parser.h>
+#include <libxml/xpath.h>
+
+typedef enum {
+	ATLANTIS_ATTRIBUTE_GROUP,			/* The parent node in each document */
+	ATLANTIS_ATTRIBUTE_SUB_GROUP,		/* Attribute grouping node */
+	ATLANTIS_ATTRIBUTE,					/* Attribute value nodes that aren't specifically related to a group */
+	ATLANTIS_GROUP_ATTRIBUTE,			/* Attribute nodes that are linked to a group */
+	ATLANTIS_AGE_CLASS_ATTRIBUTE,		/* Attribute associated with an age class */
+	ATLANTIS_TEMPORAL_ATTRIBUTE,		/* Attribute that is related to time, eg season or month */
+	ATLANTIS_COHORT_ATTRIBUTE,			/* Attribute where there is a value per cohort */
+	ATLANTIS_SEX_ATTRIBUTE,			    /* Attribute where there is a value per sex */
+	ATLANTIS_FISHERY_ATTRIBUTE,			/* Attribute associated with a fishery */
+	ATLANTIS_FISHERY_GROUP_ATTRIBUTE	/* Attribute where there is a value per fishery and per group */
+} AtlantisXMLObjectType;
+
+typedef enum {
+	ATTRIBUTE_TYPE = 0, ATTRIBUTE_NAME = 1, ATTRIBUTE_VALUE = 2
+} AtlantisXMLATTRIBUTES;
+
+typedef enum {
+	XML_TYPE_FLOAT = 0,
+	XML_TYPE_INTEGER = 1,
+	XML_TYPE_BOOLEAN = 2,
+	XML_TYPE_FLOATARRAY = 3,
+	XML_TYPE_INTEGERARRAY = 4,
+	XML_TYPE_LOOKUP = 5,
+	XML_TYPE_BOOLEANARRAY = 6,
+	XML_TYPE_LOOKUPARRAY = 7,
+	XML_TYPE_STRING = 8,
+	XML_TYPE_STRINGARRAY = 9
+} ATL_XML_ATTRIBUTE_TYPES;
+
+
+/**
+ * The different type of species parameters we have defined. These values indicate which species the values are read in for.
+ *
+ * If you need to add another value in this list make sure you define which groups are applicable in both
+ *
+ * Util_XML_Read_Species_Param() and Check_Species_Param().
+ *
+ * The first function is used to actually read in the values from the XML file and the first is used to print out
+ * error messages to the user in the conversion from prm to XML. Its better to have the check at the first stage rather than
+ * just when we parse the XML file as you get XML looking errors that will confuse people editing prm files.
+ *
+ *
+ */
+typedef enum {
+	NOT_USED = -1,
+	SP_TURNED_ON = 0,
+	SP_ALL = 1,
+	SP_VERTS = 2,
+	SP_REMIN_CONTRIB = 3,
+	SP_NOT_DET = 4,
+	SP_SED_BACT = 5,
+	SP_AGE_STRUCTURED = 6,
+	SP_PREDATOR = 7,
+	SP_INVERT_PREDATORS = 8,
+	SP_Q10 = 9,
+	SP_BIOTURB = 10,
+	SP_INF = 11,
+	SP_KN = 12,
+	SP_PP = 13,
+	SP_MICROALGAE = 14,
+	SP_MACROPHYTE = 15,
+	SP_OXYGEN = 16,
+	SP_SED_EP_FF = 17,
+	SP_BASAL = 18,
+	SP_HORIZONATAL_MOVE = 19,
+	SP_MOVEMENT = 20,
+	SP_FISHED = 21,
+	SP_IMPACTED = 22,
+	SP_MORT = 23,
+	SP_TIME = 24,
+	SP_TIME_AGE = 25,
+	SP_MORT_NOT_PP = 26,
+	SP_NOT_PP = 27,/* All groups except primary producers and detritus */
+	SP_POP_LIM = 28,	/* infauna and filter feeders */
+	SP_AGE_DIET = 29,
+	SP_VERTS_HOME_RANGE = 30,
+	SP_AGE_STRUCTURED_BIOMASS = 31,
+	SP_OVERWINTER = 32,
+	SP_PREDATOR_OR_BACT = 33,  /* All consumer groups plus bacteria */
+	SP_SG = 34,
+	SP_CORAL = 35,
+	//SP_TIER_ASSESSMENT = 36,
+	SP_CULTURED = 37,
+	SP_RUGOSITY = 38,
+	SP_COVER_SED_EP_FF = 39,
+    SP_FED = 40
+} ATL_SPECIES_PARAM_TYPES;
+
+
+/**
+ * The structure setting up the species parameters.
+ *
+ */
+typedef struct {
+	char tag[100]; 						/* The tag to use for this parameter. */
+	int paramID;						/* The ID of this value in the SPECIES_PARAMS enum in atlantisboxmodel.h */
+	char regEx[500];					/* The regular expression to use for this parameter. This helps us match the line in the input file to the parameter */
+	ATLANTIS_CHECK_TYPES checkType;		/* The type of check to use for this parameter */
+	double divider;						/* A dividier if required else just use 1.0 */
+	ATL_SPECIES_PARAM_TYPES paramType;	/* The ATL_SPECIES_PARAM_TYPES for this parameter. This is used to define which groups a value should be read in for */
+} SpeciesParamStruct;
+
+#define NUM_ATLANTIS_NODE_TYPES 10
+extern char AtlantisXMLObjectNAMES[NUM_ATLANTIS_NODE_TYPES][3][100];
+extern char AtlantisXMLAttributeTypeStrings[9][100];
+
+/**
+ * XML util functions
+ */
+double Util_XML_Read_Value(char *fileName, int type, int localecotest, int isRequired, xmlNodePtr doc, int entry_type, char *valueName);
+int Util_XML_Get_Value_Time(char *fileName, int type, int localecotest, int isRequired, xmlNodePtr parent, int entry_type, char *valueName, double *val);
+
+/* General purpose functions */
+xmlNodePtr Util_XML_Parse_Create_Node(FILE *infile, char *fileName, xmlNodePtr cur, char *valueName, char *comment, char *units, int type,
+		char *recommendedValue);
+xmlNodePtr Util_XML_Create_Node_Next_Line(FILE *infile, char *fileName, xmlNodePtr cur, char *valueName, char *comment, char *units, int type);
+
+int Util_XML_Read_Array_Integer(int type, char *fileName, xmlNodePtr parent, int entry_type, char *key, int **p, int size);
+int Util_XML_Read_Array_Double(int type, char *fileName, char *errorPath, xmlNodePtr parent, int entry_type, char *key, double **p, int size);
+int Util_XML_Read_Array_String(int type, char *fileName, char *errorPath, xmlNodePtr parent, char *key, char ***p, int size);
+
+void Util_XML_Set_Node_Property(xmlNodePtr attributeNode, char *attributeName, char *attributeValue);
+void Util_XML_Add_Node_Property(xmlNodePtr attributeNode, char *attributeName, char *attributeValue);
+
+xmlNodePtr Util_XML_Create_Lookup_Node(xmlNodePtr parent);
+xmlNodePtr Util_XML_Create_Lookup_Value_Node(xmlNodePtr parent, char *value, char *description);
+
+xmlNodePtr Util_XML_Create_Node(int type, xmlNodePtr parent, char *attributeName, char *commentString, char *units, char *value);
+xmlNodePtr Util_XML_Get_Node(int type, xmlNodePtr parent, char *attributeName);
+xmlXPathObjectPtr Util_XML_Get_Node_List(int type, xmlNodePtr parent, char *attributeName);
+xmlNodePtr Util_XML_Get_Or_Create_Node(int type, xmlNodePtr parent, char *attributeName);
+void Util_XML_Set_Node_Value(int type, xmlNodePtr parent, char *attributeName, char *value);
+void Util_XML_Replace_Node_Value(int type, xmlNodePtr parent, char *attributeName, char *value, int size, int replaceIndex);
+
+int Util_XML_Get_Node_Value_Double(int type, xmlNodePtr node, double *returnValue);
+int Util_XML_Get_Node_Value_Int(char *fileName, int type, xmlNodePtr node);
+char *Util_XML_Get_Node_Value_String(int type, xmlNodePtr node);
+
+int Util_XML_Get_Value_String(char *fileName, int type, int isRequired, xmlNodePtr parent, char *valueName, char *returnValue);
+int Util_XML_Get_Value_Double(char *fileName, int type, int localecotest, int isRequired, xmlNodePtr parent, int entry_type, char *valueName,
+		double *returnValue);
+int
+		Util_XML_Get_Value_Integer(char *fileName, int type, int localecotest, int isRequired, xmlNodePtr parent, int entry_type, char *valueName,
+				int *returnValue);
+
+char *Util_Get_Node_Name(xmlNodePtr node);
+
+double *Parse_Into_Array(char *fileName, char *paramName, char *valueStr, int size, int entry_type) ;
+int skipToKeyEndNoRewind(FILE *fp, char *key);
+xmlDocPtr xmlReadFileDestFolder(char *destFolder, char *fileName,  const char *encoding, int options);
+
+
+//void Util_XML_Read_Species_Param(MSEBoxModel *bm, char *fileName, xmlNodePtr parent, int paramID);
+//int Util_XML_Get_Param_Index(SpeciesParamStruct array[], int size, int paramID);
+//
+//double Util_XML_Get_Species_Node_Value(xmlNodePtr parent, int paramID, int guild, SpeciesParamStruct *paramStruct);
+
+//extern SpeciesParamStruct speciesParamStructArray[tot_prms];
+//extern SpeciesParamStruct cohortSpeciesParamStructArray[cohortDepParams];
+
+
+/* Functions that are used to load information about fisheries */
+
+#endif /*ATXMLUTIL_H_*/

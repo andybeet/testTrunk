@@ -1,0 +1,13 @@
+./configure \
+CC='gcc-mp-4.6' \
+CFLAGS='-I/usr/local/x64/include -I/usr/local/include/libxml2' \
+CXXFLAGS='-I/usr/local/x64/include -I/usr/local/include/libxml2' \
+CPPFLAGS='-I/usr/local/x64/include -I/usr/local/include/libxml2' \
+LDFLAGS='-L/usr/local/x64/lib -lcurl'
+
+
+#./configure --enable-ss3link \
+#CFLAGS='-I/usr/local/x64/include -I/usr/local/include/libxml2 -I/usr/local/include/libcsoap-1.1 -I/usr/local/include/nanohttp-1.1' \
+#CXXFLAGS='-I/usr/local/x64/include -I/usr/local/include/libxml2 -I/usr/local/include/libcsoap-1.1 -I/usr/local/include/nanohttp-1.1' \
+#CPPFLAGS='-I/usr/local/x64/include -I/usr/local/include/libxml2 -I/usr/local/include/libcsoap-1.1 -I/usr/local/include/nanohttp-1.1' \
+#LDFLAGS='-L/usr/local/x64/lib -lcurl'

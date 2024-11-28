@@ -1,0 +1,32 @@
+README
+
+This README describes how to run the example Atlantis model. It should work with the latest version of the trunk version of Atlantis (the one you checked out from the svn repository).
+
+Please follow the instructions on the Atlantis wiki regarding how to compile and run Atlantis. 
+
+These examples files are provided to allow you to make sure you have successfully compiled Atlantis and it will run on your system. 
+
+This is a very simple model example with 11 boxes and 31 ecological groups.
+
+if you have any issues installing the model or getting the simple example run to work please look on the wiki or in the manual guidance. You can also find help in the Atlantis Google group.
+
+Please note you should not attempt to develop an Atlantis model in isolation. 
+Considerable discussion and advice from Beth Fulton and the wider Atlantis community is required to successfully develop an Atlantis model. 
+
+Also the model is supported by a small number of developers and so things can slip through the cracks (like forgetting to update the example files for new parameters added to allow for new functionality). We try to keep this to a minimum, but mistakes are made and if you find any mistakes, broken links or files please let us know and we will prioritise fixing that.
+
+Base test files:
+
+atlantis -i INIT_VMPA_Jan2015.nc 0 -o outputSETAS.nc -r VMPA_setas_run_fishing_F_Trunk.prm -f VMPA_setas_force_fish_Trunk.prm -p VMPA_setas_physics.prm -b VMPA_setas_biol_fishing_Trunk.prm -h VMPA_setas_harvest_F_Trunk.prm  -s SETasGroupsDem.csv -q SETasFisheries.csv -d OutputFolderTest
+
+On Windows you should be able to use the runsetasNew.bat to run the model after you have sucessfully compiled the executable. The command line should look like
+atlantismain -i INIT_VMPA_Jan2015.nc 0 -o outputSETAS.nc -r VMPA_setas_run_fishing_F_Trunk.prm -f VMPA_setas_force_fish_Trunk.prm -p VMPA_setas_physics.prm -b VMPA_setas_biol_fishing_Trunk.prm -h VMPA_setas_harvest_F_Trunk.prm  -s SETasGroupsDem.csv -q SETasFisheries.csv -d outputFolderPristine
+
+On Linux the runTrunk is a good place to start but will require some editing before it will run but the command line should look like. 
+atlantisMerged -i INIT_VMPA_Jan2015.nc 0 -o outputSETAS.nc -r VMPA_setas_run_fishing_F_Trunk.prm -f VMPA_setas_force_fish_Trunk.prm -p VMPA_setas_physics.prm -b VMPA_setas_biol_fishing_Trunk.prm -h VMPA_setas_harvest_F_Trunk.prm  -s SETasGroupsDem.csv -q SETasFisheries.csv -d outputFolderPristine
+
+On Mac the 
+atlantisMerged -i INIT_VMPA_Jan2015.nc 0 -o outputSETAS.nc -r VMPA_setas_run_fishing_F_Trunk.prm -f VMPA_setas_force_fish_Trunk.prm -p VMPA_setas_physics.prm -b VMPA_setas_biol_fishing_Trunk.prm -h VMPA_setas_harvest_F_Trunk.prm  -s SETasGroupsDem.csv -q SETasFisheries.csv -d outputFolderPristine
+
+
+

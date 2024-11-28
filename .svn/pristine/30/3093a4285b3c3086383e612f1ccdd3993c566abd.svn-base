@@ -1,0 +1,36 @@
+/**
+ * \ingroup atHarvestLib
+ * \file atHarvestPrivate.h
+ *
+ *  Created on: 01/02/2010
+ *      Author: bec
+ */
+
+#ifndef ATHARVESTPRIVATE_H_
+#define ATHARVESTPRIVATE_H_
+
+
+/*
+ * Variables that are public to the atHarvest library.
+ **/
+
+//double **k_cover;
+double k_pattern;
+double k_patches;
+double k_mismatch;
+
+double ***FFCDR;
+double ***SELchange;
+double ***Pchange;
+double ****Qchange;
+double ***SWEPTchange;
+double ****mFCchange;
+
+double ****DISCRDchange;
+double **OldCatchSum;
+int *checkedBox;
+double ***TotCumCatch;
+
+int Q_max_num_changes, mFC_max_num_changes;
+
+#endif /* ATHARVESTPRIVATE_H_ */

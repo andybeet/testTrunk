@@ -1,0 +1,880 @@
+/**
+
+ \file
+ \brief This file contains functions to convert the harvest prm file to the harvest.XML file. Only the harvest paremeters will be pulled
+ into the new XML file.
+
+
+
+ There are a number of different types of input data:
+
+ 1. Flags for each fishery - these are stored in bm->FISHERYprms
+ 2. Flags for species - these are stored in the FunctGroupArray speciesParams arrays.
+ 3. Flags for species in each fishery - these are stored in bm->SP_FISHERYprms.
+
+ Changes:
+
+
+
+
+ */
+/*  Open library routines */
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <math.h>
+#include <ctype.h>
+#include <assert.h>
+#include <netcdf.h>
+#include <sjwlib.h>
+#include <atlantisboxmodel.h>
+#include <atUtilLib.h>
+#include <atHarvestLib.h>
+#include "convertXML.h"
+
+
+/**
+ * \brief Grab the fishery name off the end of the given string and the set the node under the given parent
+ * for that fishery with the given value string.
+ *
+ */
+void Fishery_Last_XMLFunction(MSEBoxModel *bm, char *fileName, xmlNodePtr parent, char *str, char *valueStr) {
+
+	char *fisheryStr;
+	int fisheryIndex;
+
+	fisheryStr = strchr(str, '_');
+	fisheryStr++;
+	while (strchr(fisheryStr, '_') != NULL) {
+		fisheryStr = strchr(fisheryStr, '_');
+		fisheryStr++;
+	}
+	fisheryIndex = Util_Get_Fishery_Index(bm, fisheryStr);
+	Util_XML_Set_Node_Value(ATLANTIS_FISHERY_ATTRIBUTE, parent, FisheryArray[fisheryIndex].fisheryCode, valueStr);
+}
+
+/**
+ * \brief Create a node for each fishery.
+ */
+void Create_Fishery_XMLNodes(MSEBoxModel *bm,  xmlNodePtr parent) {
+	int index;
+
+	/* Create a node for each functional group*/
+	for (index = 0; index < bm->K_num_fisheries; index++)
+		Util_XML_Create_Node(ATLANTIS_FISHERY_ATTRIBUTE, parent, FisheryArray[index].fisheryCode, "", "", "");
+}
+
+/**
+ *	\brief Create an XML node for each fished species.
+ */
+void Create_Fished_Species_XMLNodes(MSEBoxModel *bm, xmlNodePtr parent) {
+
+	int guild;
+
+	/* Create a node for each functional group that is fished. */
+	for (guild = 0; guild < bm->K_num_tot_sp; guild++) {
+		if (FunctGroupArray[guild].isFished == TRUE) {
+			Util_XML_Create_Node(ATLANTIS_GROUP_ATTRIBUTE, parent, FunctGroupArray[guild].groupCode, "", "", "");
+		}
+	}
+}
+
+/**
+ *	\brief Create an XML node for each impacted species.
+ */
+void Create_Impacted_Species_XMLNodes(MSEBoxModel *bm, xmlNodePtr parent) {
+
+	int guild;
+
+	/* Create a node for each functional group*/
+	for (guild = 0; guild < bm->K_num_tot_sp; guild++) {
+		if (FunctGroupArray[guild].isImpacted == TRUE) {
+			Util_XML_Create_Node(ATLANTIS_GROUP_ATTRIBUTE, parent, FunctGroupArray[guild].groupCode, "", "", "");
+		}
+	}
+}
+
+
+/**
+ * \brief Strip the word target from the start of the given str and use that to get the fishery index, the set the fishery node
+ * with the given value.
+ *
+ *
+ *
+ */
+static void Target_SpeciesXML(MSEBoxModel *bm, char *fileName, xmlNodePtr parent, char *str, char *valueStr) {
+
+	int fisheryIndex;
+	char *fisheryStr;
+
+	/* Get the fishery index based on the str value */
+	fisheryStr = str + strlen("target_");
+	fisheryIndex = Util_Get_Fishery_Index(bm, fisheryStr);
+
+	Util_XML_Set_Node_Value(ATLANTIS_FISHERY_ATTRIBUTE, parent, FisheryArray[fisheryIndex].fisheryCode, valueStr);
+
+}
+
+/**
+ *	\brief Create the XML structure to hold the vertebrate qstock data.
+ */
+void InitAJVertSpeciesXML(MSEBoxModel *bm, xmlNodePtr parent) {
+    
+	xmlNodePtr groupNode;
+	int guild;
+    
+	/* Create a node for each functional group*/
+	for (guild = 0; guild < bm->K_num_tot_sp; guild++) {
+		if (FunctGroupArray[guild].isVertebrate == TRUE) {
+			groupNode = Util_XML_Create_Node(ATLANTIS_GROUP_ATTRIBUTE, parent, FunctGroupArray[guild].groupCode, "", "", "");
+			Util_XML_Create_Node(ATLANTIS_AGE_CLASS_ATTRIBUTE, groupNode, "adult", "", "", "");
+			Util_XML_Create_Node(ATLANTIS_AGE_CLASS_ATTRIBUTE, groupNode, "juv", "", "", "");
+		}
+	}
+}
+
+
+static void Proportional_Biomass_DiscardingXML(MSEBoxModel *bm, char *fileName, xmlNodePtr parent, char *str, char *valueStr) {
+
+	int speciesIndex;
+	char *speciesStr;
+
+	/* Get the fishery index based on the str value */
+	speciesStr = str + strlen("FCcocatch");
+	speciesIndex = Util_Get_FG_Index_From_Token(bm, speciesStr, fileName, str, TRUE);
+
+	Util_XML_Set_Node_Value(ATLANTIS_GROUP_ATTRIBUTE, parent, FunctGroupArray[speciesIndex].groupCode, valueStr);
+
+}
+
+static void Age_Catch_DistributionXML(MSEBoxModel *bm, char *fileName, xmlNodePtr parent, char *str, char *valueStr) {
+
+	Species_NodeXML(bm, fileName, parent, str, valueStr, "CatchTS_agedistrib");
+}
+
+static void Age_Discard_DistributionXML(MSEBoxModel *bm,  char *fileName, xmlNodePtr parent, char *str, char *valueStr) {
+
+	Species_NodeXML(bm, fileName, parent, str, valueStr, "DiscardTS_agedistrib");
+}
+
+static void Age_Group_Constant_DiscardsXML(MSEBoxModel *bm, char *fileName, xmlNodePtr parent, char *str, char *valueStr) {
+
+	*(strstr(str, "chrt")) = '\0';
+	Species_NodeXML(bm, fileName, parent, str, valueStr, "FFCDR_");
+}
+
+static void Incidental_MortalityXML(MSEBoxModel *bm, char *fileName, xmlNodePtr parent, char *str, char *valueStr) {
+	int guild;
+	char newValueStr[5000];
+	int fisheryIndex;
+
+	strcpy(newValueStr, "");
+
+	for (fisheryIndex = 0; fisheryIndex < bm->K_num_fisheries; fisheryIndex++) {
+		strcat(newValueStr, " ");
+		strcat(newValueStr, valueStr);
+	}
+
+	for (guild = 0; guild < bm->K_num_tot_sp; guild++) {
+		if (FunctGroupArray[guild].isImpacted == TRUE) {
+			//Util_XML_Set_Node_Value(ATLANTIS_GROUP_ATTRIBUTE, parent, FunctGroupArray[guild].groupCode, newValueStr);
+			Util_XML_Set_Node_Value(ATLANTIS_GROUP_ATTRIBUTE, parent, FunctGroupArray[guild].groupCode, "0.0");
+		}
+	}
+}
+
+
+
+//void FisheriesHabitatXML(MSEBoxModel *bm, char *fileName, xmlNodePtr parent, char *str, char *valueStr) {
+//
+//	Fisheries_NodeXML(bm, fileName, parent, str, valueStr, "habitat_");
+//}
+
+static void Fisheries_KCoverXML(MSEBoxModel *bm, char *fileName, xmlNodePtr parent, char *str, char *valueStr) {
+
+	Fisheries_NodeXML(bm, fileName, parent, str, valueStr, "k_cover");
+}
+
+/**
+ */
+void Group_Catch_Selectivity_XMLFunction(MSEBoxModel *bm, char *fileName, xmlNodePtr parent, char *str, char *valueStr) {
+
+	char tempStr[50];
+	char *strPtr;
+	int speciesIndex, cohort = juv_id;
+	xmlNodePtr speciesNode;
+
+	//	fprintf(bm->logFile, "str = %s\n", str);
+	strcpy(tempStr, str);
+
+	// Get the speciesIndex
+	strPtr = tempStr + strlen("sel_");
+
+	if (strstr(strPtr, "juv") != NULL) {
+		*(strstr(strPtr, "juv")) = '\0';
+	} else {
+		*(strstr(strPtr, "ad")) = '\0';
+		cohort = adult_id;
+	}
+
+	speciesIndex = Util_Get_FG_Index_From_Token(bm, strPtr, fileName, str, TRUE);
+
+	/* Get the species node and set the cohort value */
+	speciesNode = Util_XML_Get_Or_Create_Node(ATLANTIS_GROUP_ATTRIBUTE, parent, FunctGroupArray[speciesIndex].groupCode);
+
+	Util_XML_Set_Node_Value(ATLANTIS_AGE_CLASS_ATTRIBUTE, speciesNode, cohortStrings[cohort], valueStr);
+}
+
+void qStockXMLFunction(MSEBoxModel *bm, char *fileName, xmlNodePtr parent, char *str, char *valueStr) {
+        
+        char *speciesStr;
+        int juvIndex = adult_id;
+        xmlNodePtr speciesNode;
+        int speciesIndex;
+        
+        speciesStr = strchr(str, '_');
+        speciesStr++;
+        
+        // Check to see if this is a juv value.
+        if (*speciesStr == 'j') {
+            juvIndex = juv_id;
+            speciesStr++;
+        }
+        speciesIndex = Util_Get_FG_Index_From_Token(bm, speciesStr, fileName, str, TRUE);
+        speciesNode = Util_XML_Get_Or_Create_Node(ATLANTIS_GROUP_ATTRIBUTE, parent, FunctGroupArray[speciesIndex].groupCode);
+        Util_XML_Set_Node_Value(ATLANTIS_AGE_CLASS_ATTRIBUTE, speciesNode, cohortStrings[juvIndex], valueStr);
+}
+
+
+void FisheryFlagXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr doc, xmlNodePtr rootnode) {
+
+	xmlNodePtr groupingNode, node, lookupNode;
+	groupingNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, rootnode, "Fishing_Flags", "Fishing Flags", "", "");
+
+	node = Create_Fishery_ParamXML(bm, fp, fileName, groupingNode, fisheriesflagactive_id,
+			"Period of activity for fisheries.  Active: 2 = no preference, 1 = day, 0 = night", "", XML_TYPE_LOOKUP, "2");
+	lookupNode = Util_XML_Create_Lookup_Node(node);
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "0", "Night");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "1", "Day");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "2", "No preference");
+
+	Create_Fishery_ParamXML(bm, fp, fileName, groupingNode, tStart_id, "This sets the start date of a fishery in days after the start of the run", "d", XML_TYPE_INTEGER,
+			"0");
+	Create_Fishery_ParamXML(bm, fp, fileName, groupingNode, tEnd_id, "This sets the end date of a fishery in days after the start of the run", "d", XML_TYPE_INTEGER,
+			"1000000000");
+	Create_Fishery_ParamXML(bm, fp, fileName, groupingNode, start_manage_id, "This sets the start date for fishery managment in days after the start of the run",
+			"d", XML_TYPE_INTEGER, "0");
+	Create_Fishery_ParamXML(bm, fp, fileName, groupingNode, end_manage_id, "This sets the end date for fishery management in days after the start of the run",
+			"d", XML_TYPE_INTEGER, "1000000000");
+
+	Create_Species_ParamXML(bm, fileName, fp,  groupingNode, flagfish_id,
+			"Fisheries targeting options - If true then the group is fished.", "", XML_TYPE_BOOLEAN,"");
+
+	node = Create_Harvest_Fishery_Group_ParamXML( bm, fp, fileName, groupingNode, flaghabitat_id,
+					"Fisheries habitat related - the vectors indicate which habitat patchiness equation to use when applying fishing mortality related mortality. 0=standard % overlap, 1=Ellis and Pantus based subgrid scale model",
+					"", XML_TYPE_LOOKUP);
+	lookupNode = Util_XML_Create_Lookup_Node(node);
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "0", "standard % overlap");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "1", "Ellis and Pantus based subgrid scale model");
+
+	Create_Fishery_ParamXML(bm, fp, fileName, groupingNode, flagdempelfishery_id,
+			"This sets the flag for each group and fishery to show whether it is benthic or pelagic. 0 = pelagic, 1 = demersal", "", XML_TYPE_BOOLEAN,"");
+	node = Create_Fishery_ParamXML(bm, fp, fileName, groupingNode, flageffortmodel_id,
+					"Flag indicating effort dynamics model to use. \n0=Constant fishing pressure per quarter per cell (evenly distributed across cells), \n1=Constant fishing pressure per quarter per cell (adjusted by relative area of the cell), \n2=Constant effort with spatial distribution based on location of previous day's cpue, \n3=Prescribed spatial effort matrices, \n4=Effort based on cpue of previous day, \n5=full fleet dynamics model using ports, \n6=human population-based recreational fishing,\n 7=alternative full fleet dynamics model using ports, \n8=alternative fleet model but weighted by prescribed effort matrices, \n9=ideal distribution of effort (perfect knowledge of biomass distribution), \n10=dynamic cpue based effort distribution, \n11=read effort timeseries, \n12=recreational economic model, \n13=dynamic economic commercial fleet model",
+					"", XML_TYPE_LOOKUP, "0");
+
+	lookupNode = Util_XML_Create_Lookup_Node(node);
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "0", "Constant fishing pressure per quarter per cell (evenly distributed across cells)");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "1", "Constant fishing pressure per quarter per cell (adjusted by relative area of the cell)");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "2", "Constant effort with spatial distribution based on location of previous day's cpue.");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "3", "Prescribed spatial effort matrices, ");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "4", "Effort based on cpue of previous day,");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "5", "Full fleet dynamics model using ports");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "6", "human population-based recreational fishing");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "7", "alternative full fleet dynamics model using ports");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "8", "alternative fleet model but weighted by prescribed effort matrices");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "9", "ideal distribution of effort (perfect knowledge of biomass distribution)");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "10", "dynamic cpue based effort distribution");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "11", "read effort timeseries");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "12", "recreational economic model");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "13", "dynamic economic commercial fleet model");
+
+	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "dynanyway",
+			"Flag to indicate whether want dynamic (=1) or pseudo (=0) movement if using pseudo assemssments and effortmodel = 8", "", XML_TYPE_BOOLEAN,"0");
+
+	Create_Fishery_ParamXML(bm, fp, fileName, groupingNode, flagexplore_id,
+			"Flag indicating whether fisheries will do exploratory fishing to expand their grounds (0=no, 1=yes)", "", XML_TYPE_BOOLEAN,"0");
+	Create_Fishery_ParamXML(bm, fp, fileName, groupingNode, flagdropEFF_id,
+			"Flag indicating whether total effort can drop dynamically (without management) as stocks are depleted.(0=no, 1=yes)", "", XML_TYPE_BOOLEAN,"0");
+	node = Create_Fishery_ParamXML( bm, fp, fileName, groupingNode, selcurve_id,
+					"Flag indicating what form of selectivity a fishery starts with (this can change through time if the appropriate changeSEL is set to 1 below). \n0=groups specific constant, \n1=cohort specific constant for each group, \n2=size based logistic curve, \n3=size based normal curve, \n4=size based lognormal curve, \n5=size based gamma curve, \n6=knife edged",
+					"", XML_TYPE_BOOLEAN,"0");
+	lookupNode = Util_XML_Create_Lookup_Node(node);
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "0", "Groups specific constant");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "1", "Cohort specific constant for each group");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "2", "Size based logistic curve");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "3", "Size based normal curve");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "4", "Size based lognormal curve");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "5", "Size based gamma curve");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "6", "Knife edged");
+
+	node = Create_Harvest_Fishery_Group_ParamXML( bm, fp, fileName, groupingNode, flagdiscard_id,
+					"Flag indicating which discarding formulation is used. \n0=constant %, \n1=constant % per cohort, \n2=size based, \n3=loaded from timeseries file, \n4 = conditional on catch of other species.",
+					"", XML_TYPE_LOOKUPARRAY);
+	lookupNode = Util_XML_Create_Lookup_Node(node);
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "0", "Constant %");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "1", "Constant % per cohort");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "2", "Size based");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "3", "Loaded from timeseries file");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "2", "Conditional on catch of other species");
+
+	node = Create_Harvest_Fishery_Group_ParamXML(bm, fp, fileName, groupingNode, flagescapement_id,
+			"Flag indicating which escapement formulation is used. 0=no escapement, 1=fixed proportion escape, 2=size based", "", XML_TYPE_LOOKUPARRAY);
+	lookupNode = Util_XML_Create_Lookup_Node(node);
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "0", "No escapement");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "1", "Fixed proportion escape");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "2", "size based");
+
+	Create_Species_ParamXML(bm, fileName, fp, groupingNode, access_thru_wc_id,
+			"Access identifier - whether a species can be accessed throughout the water column regardless of respective vertical distributions of fishery and group (1=yes, 0=no) ",
+			"", XML_TYPE_BOOLEAN,"0");
+
+//	createHarvestGroupParamXML(
+//				bm,
+//				fp,
+//				groupingNode,
+//				access_thru_wc_id,
+//				"GroupWCAccess",
+//				"^flag_access_thru_wc_",
+//				"Access identifier - whether a species can be accessed throughout the water column regardless of respective vertical distributions of fishery and group (1=yes, 0=no) ",
+//				"", XML_TYPE_BOOLEAN,"0");
+
+}
+
+void AquacultFlagXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr doc, xmlNodePtr rootnode) {
+
+	xmlNodePtr groupingNode;
+	groupingNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, rootnode, "Aquaculture_Values", "Aquaculture Parameter Values", "", "");
+
+	Create_Species_ParamXML(bm, fileName, fp, groupingNode, aquacult_age_harvest_id, "Age of first harvest for aquaculture group", "", XML_TYPE_INTEGER,"0");
+}
+
+
+//Create_Harvest_Fishery_Group_ParamXML(bm, fp, fileName, groupingNode, flagimposecatch_id, "GroupImposeCatch", "^flagimposecatch_", "", "");
+
+void FisheryCatchTimeXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr doc, xmlNodePtr rootnode) {
+
+	xmlNodePtr groupingNode, node, lookupNode;
+	groupingNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, rootnode, "Catch_Time", "Catch Time", "", "");
+
+	node = Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flagimposeglobal",
+					"Fisheries catch time series used. This flag indicates whether generally there is:\n 0 = no imposed catch,\n 1 = imposed catch matches global biomass distribution,\n 2 = imposed catch is spatially explicit,\n 3 = imposed catch is spatially explicit but will 'steal' from the stock if can't fill local catch,\n 4 = imposed catch is spatially explicit but will from adjacent cells only if cant'y fill local catch time series",
+					"", XML_TYPE_LOOKUP, "0");
+	lookupNode = Util_XML_Create_Lookup_Node(node);
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "0", "No imposed catch");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "1", "Imposed catch matches global biomass distribution");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "2", "Imposed catch is spatially explicit");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "3", "Imposed catch is spatially explicit but will 'steal' from the stock if can't fill local catch");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "4",
+			"Imposed catch is spatially explicit but will from adjacent cells only if cant'y fill local catch time series");
+
+	node = Create_Harvest_Fishery_Group_ParamXML( bm, fp, fileName, groupingNode, flagimposecatch_id,
+					"Fisheries catch time series used - the vectors indicate which of the 5 options listed above \n(no imposed catch, global, spatially explicit, stock associated or adjacent cells) is \nused for each fishery for each group",
+					"", XML_TYPE_LOOKUPARRAY);
+	lookupNode = Util_XML_Create_Lookup_Node(node);
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "0", "No imposed catch");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "1", "Imposed catch matches global biomass distribution");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "2", "Imposed catch is spatially explicit");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "3", "Imposed catch is spatially explicit but will 'steal' from the stock if can't fill local catch");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "4",
+			"Imposed catch is spatially explicit but will from adjacent cells only if cant'y fill local catch time series");
+
+	Create_Harvest_Fishery_Group_ParamXML(bm, fp, fileName, groupingNode, flagF_id,
+			"The vectors indicate whether a catch time series is used for catch rather than fleet dynamics model (0=no, 1=yes)", "", XML_TYPE_BOOLEANARRAY);
+}
+
+/**
+ * bm->FISHERYtarget = Util_Alloc_Init_2D_Int(bm->K_num_fished_sp, bm->K_num_fisheries, 0);
+ */
+void createFisheryXML(MSEBoxModel *bm, char *fileName, xmlNodePtr parent) {
+
+	int index;
+
+	/* Create a node for each functional group*/
+	for (index = 0; index < bm->K_num_fisheries; index++)
+		Util_XML_Create_Node(ATLANTIS_FISHERY_ATTRIBUTE, parent, FisheryArray[index].fisheryCode, "", "", "");
+}
+/**
+ * \brief Creates the fishing scenario xml.
+ *
+ *
+ */
+void FisheryScenarioFlags(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr doc, xmlNodePtr rootnode) {
+	xmlNodePtr groupingNode;
+	groupingNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, rootnode, "Fishing_Scenario_Flags", "Scenario specification flags", "", "");
+
+    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flagchangediscrd", "1=discarding practices change with time, 0=remain constant", "", XML_TYPE_BOOLEAN,"0");
+    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flagchangesel", "1=selectivity changes with time, 0=remains constant", "", XML_TYPE_BOOLEAN,"0");
+    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flagchangeF", "1=F mortality rate forcing changes, 0=F not used or remains constant", "", XML_TYPE_BOOLEAN,"0");
+    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flagchangeq", "1=catchability changes with time, 0=remains constant", "", XML_TYPE_BOOLEAN,"0");
+    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flagchangep", "1=fisheries spatial coverage changes with time, 0=remains constant", "", XML_TYPE_BOOLEAN,"0");
+    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flagchangeswept", "1=fisheries gear swept area changes with time, 0=remains constant", "", XML_TYPE_BOOLEAN,"0");
+    
+	Create_Fishery_ParamXML(
+			bm,
+			fp,
+			fileName,
+			groupingNode,
+			flagchangeSEL_id,
+			"Flag indicating whether the selectivity for the specific fishery changes through time. 0=no, 1=yes. If any of these are set flagchangesel to 1 then set to 1 too",
+			"", XML_TYPE_BOOLEAN,"0");
+	Create_Fishery_ParamXML(
+			bm,
+			fp,
+			fileName,
+			groupingNode,
+			flagchangeP_id,
+			" Flag indicating whether the coverage of a specific fishery changes through time. 0=no, 1=yes If any of these are set flagchangep to 1 then set to 1 too",
+			"", XML_TYPE_BOOLEAN,"0");
+	Create_Fishery_ParamXML(
+			bm,
+			fp,
+			fileName,
+			groupingNode,
+			flagchangeSWEPT_id,
+			"Flag indicating whether the swept area of the gear used by a specific fishery changes through time. 0=no, 1=yes. If any of these are set to 1 then set flagchangeswept to 1 too",
+			"", XML_TYPE_BOOLEAN,"0");
+
+	Create_Harvest_Fishery_Group_ParamXML(bm, fp, fileName, groupingNode, flagQchange_id,
+			"Flag indicating whether catchabiity of a group to a fishery changes through time. 0=no, 1=yes,", "", XML_TYPE_BOOLEAN);
+	Create_Harvest_Fishery_Group_ParamXML(
+			bm,
+			fp,
+			fileName,
+			groupingNode,
+			flagFchange_id,
+			"Flag indicating whether fishing mortality value of a group (if being used to force the model) changes for a fishery changes through time. 0=no, 1=yes",
+			"", XML_TYPE_BOOLEAN);
+	Create_Harvest_Fishery_Group_ParamXML(bm, fp, fileName, groupingNode, flagchangeDISCRD_id,
+			"Flag indicating whether discarding of a group by a fishery changes through time. 0=no, 1=yes", "", XML_TYPE_BOOLEAN);
+
+	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "k_mismatch", "Reduction in effectiveness of gear due to mismatch in watercolumn of gear and vertebrates", "",
+			XML_TYPE_BOOLEAN, "0.25");
+
+	/* Might need a new sub-group here */
+
+	Parse_File(
+			bm,
+			fp,fileName,
+			groupingNode,
+			"FisheryTargetSpecies",
+			"^target_",
+			" Identify chief target species for each fishery - when determining effort allocation, the expected CPUE of these species is used to select (or weight) potential fishing sites",
+			"", XML_TYPE_BOOLEANARRAY, bm->K_num_tot_sp, TRUE, Create_Fishery_XMLNodes, Target_SpeciesXML);
+
+	Parse_File(bm, fp, fileName, groupingNode, "CatchAgeDistributions", "^CatchTS_agedistrib",
+			"Catch by age distribution for conditioning time series of catch (if used)", "", XML_TYPE_FLOATARRAY, bm->K_num_max_cohort * bm->K_num_max_genetypes, TRUE,
+			Init_Age_Structured_SpeciesXML, Age_Catch_DistributionXML);
+
+	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "highgrade_thresh",
+			"Proportion of catch which defines perferred target size (so if CatchTS value > highgrade_thresh this is preferred cohort)", "", XML_TYPE_FLOAT, "0.1");
+
+	Create_Harvest_Fishery_Group_ParamXML(bm, fp, fileName, groupingNode, q_id, "Catchability per fished group per fishery", "", XML_TYPE_FLOATARRAY);
+    
+    if(bm->K_num_stocks_per_sp > 1)
+        Parse_File(bm, fp, fileName, groupingNode, "qStock", "^qSTOCK_", "Variable catchability per stock. Array length of each group is the number of stocks.", "", XML_TYPE_FLOATARRAY, -1, TRUE, InitAJVertSpeciesXML, qStockXMLFunction);
+
+    
+    
+}
+
+/**
+ * General Vessel Characteristics
+ *
+ */
+void GeneralVesselCharateristics(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr doc, xmlNodePtr rootnode) {
+	xmlNodePtr groupingNode;
+	groupingNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, rootnode, "General_Vessel_Characteristics",
+			"General vessel characteristics (specific characteristics are in the economics parameter file )", "", "");
+
+	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "Speed_boat", "Speed of average fishing vessel", "m.hr-1 ", XML_TYPE_FLOAT, "9260");
+	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "Speed_recboat", "Speed of average recreational fishing vessel ", "m.hr-1 ", XML_TYPE_FLOAT, "9260");
+	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "KDEP_fishery", "Sediment penetration depth of fishing gear", "m", XML_TYPE_FLOAT, "0.1");
+}
+
+/*
+ * Fisheries habitat association.
+ */
+void FisheryHabitat(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr doc, xmlNodePtr rootnode) {
+	xmlNodePtr groupingNode, childGroupingNode;
+	groupingNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, rootnode, "Fishery_Habitat", "Fisheries habitat association", "", "");
+
+	Parse_File(
+			bm,
+			fp,fileName,
+			groupingNode,
+			"FisheryHabitats",
+			"^habitat_",
+			"Vectors indicating which habitats each fishery can operate in. \n1 = in the habitat, 0 = excluded from the habitat. \nThe list of habitats are the habitat groups in order of definition then reef, flat, soft, canyon",
+			"", XML_TYPE_BOOLEANARRAY,bm->K_num_cover_types, TRUE, Create_Fishery_XMLNodes, Fishery_Last_XMLFunction);
+
+	//TODO possibly should be in management */
+	Create_Fishery_ParamXML(bm, fp, fileName, groupingNode, maxFCdepth_id,
+			"Maximum seafloor depths fishery will act over (so if won't fish deeper than 1500m put 1500 here)", "m", XML_TYPE_FLOAT, "1 - 1805");
+
+	Create_Fishery_ParamXML(bm, fp, fileName, groupingNode, minFCdepth_id, "Min seafloor depths fishery will act over", "m", XML_TYPE_FLOAT, "1 - 1805");
+
+	childGroupingNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, groupingNode, "Habitat_Patchiness", "Habitat patchiness parameters for fishing",
+			"", "");
+	Util_XML_Parse_Create_Node(fp, fileName, childGroupingNode, "k_pattern", "", "", XML_TYPE_FLOAT, "0.0");
+	Util_XML_Parse_Create_Node(fp, fileName, childGroupingNode, "k_patches", "", "", XML_TYPE_FLOAT, "2.0");
+
+	Parse_File(bm, fp, fileName, childGroupingNode, "BoxHabitatProportion", "^k_cover", "", "", XML_TYPE_FLOATARRAY, bm->nbox, TRUE, Create_Fishery_XMLNodes, Fisheries_KCoverXML);
+}
+
+/*
+ * Fisheries time values.
+ */
+void FisheryTimeValues(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr doc, xmlNodePtr rootnode) {
+	xmlNodePtr groupingNode;
+	groupingNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, rootnode, "Fishery_Times", "Fisheries time values", "", "");
+
+	Create_Harvest_Fishery_Group_ParamXML(bm, fp, fileName, groupingNode, imposecatchstart_id, "Catch time series start dates (day from run start)", "", XML_TYPE_INTEGER);
+	Create_Harvest_Fishery_Group_ParamXML(bm, fp, fileName, groupingNode, imposecatchend_id, "Catch time series end dates (day from run start)", "", XML_TYPE_INTEGER);
+}
+
+/*
+ * Fisheries reporting
+ */
+void CatchReportingValues(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr doc, xmlNodePtr rootnode) {
+	xmlNodePtr groupingNode;
+	groupingNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, rootnode, "Catch_Reporting", "Catch reporting", "", "");
+
+	Create_Harvest_Fishery_Group_ParamXML(
+			bm,
+			fp,
+			fileName,
+			groupingNode,
+			FC_reportscale_id,
+			" Scalar for imposed catches to scale from reported catches to total catches (including misreporting) \nFor example if there was an additional 25% of the catch that was not reported, so that total catch was equal to 125% of official reported catch then the scalar should be set to 1.25 here.",
+			"", XML_TYPE_FLOATARRAY);
+}
+
+/*
+ * Fishing mortality
+ */
+void FishingMortalityXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr doc, xmlNodePtr rootnode) {
+	xmlNodePtr groupingNode;
+	groupingNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, rootnode, "Fishing_Mortality", "Fishing mortality values.", "", "");
+
+	Create_Harvest_Fishery_Group_ParamXML(bm, fp, fileName, groupingNode, mFC_id, "Forced fishing mortality rates - one entry per fishery", "", XML_TYPE_FLOATARRAY);
+	Create_Harvest_Fishery_Group_ParamXML(bm, fp, fileName, groupingNode, mFC_start_age_id,
+			"Age class forced fishing mortality rates begin being imposed - one entry per fishery", "", XML_TYPE_INTEGERARRAY);
+        
+}
+
+/*
+ * Fishing selectivity
+ */
+void FishingSelectivityXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr doc, xmlNodePtr rootnode) {
+	xmlNodePtr groupingNode, selGroupNode;
+	groupingNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, rootnode, "Fishing_Selectivity", "Fishing selectivity values.", "", "");
+
+	Create_Harvest_Fishery_Group_ParamXML(
+			bm,
+			fp,
+			fileName,
+			groupingNode,
+			sel_id,
+			"Selectivity parameters per fishery per group. \nFor the invertebrate functional groups take into account the range of possible sizes of those animals and adjust the selectivity accordingly (e.g. BFS represents many of shallow filter feeders not just scallops so the selectivity is set below what it would be for scallops alone)",
+			"", XML_TYPE_FLOATARRAY);
+	Parse_File(
+			bm,
+			fp,fileName,
+			groupingNode,
+			"ConstantAgeGroupSelectivity",
+			"^sel_.*[dv]$",
+			"Constant selectivity per cohort or stage for each group (for the invertebrates it is identical to the entries above for constant selectivity regardless of size. \nThe following vectors are the selectivities per maturity level for each species for each fishery it is captured in.",
+			"", XML_TYPE_FLOATARRAY, bm->K_num_fisheries, TRUE, Init_Age_Structured_SpeciesXML, Group_Catch_Selectivity_XMLFunction);
+
+	selGroupNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, groupingNode, "Selectivity_Curve", "Selectivity curve parameters", "", "");
+	Create_Fishery_ParamXML(bm, fp, fileName, selGroupNode, sel_b_id, "Logistic selectivity curve parameters - the b parameter", "", XML_TYPE_FLOAT, "0.0 - 0.2");
+	Create_Fishery_ParamXML(bm, fp, fileName, selGroupNode, sel_lsm_id, "Inflexion point of the logistic selectivity curve", "", XML_TYPE_FLOAT, "0.0 - 40.0");
+	Create_Fishery_ParamXML(bm, fp, fileName, selGroupNode, sel_normsigma_id, "Measure of spread of normal selectivity curve", "", XML_TYPE_FLOAT, "0.0 - 70.0");
+
+	Create_Fishery_ParamXML(bm, fp, fileName, selGroupNode, sel_normlsm_id, "Modal length of the normal selectivity curve", "", XML_TYPE_FLOAT, "0.0 - 100.0");
+	Create_Fishery_ParamXML(bm, fp, fileName, selGroupNode, sel_lognormsigma_id, "Measure of spread of lognormal selectivity curve", "", XML_TYPE_FLOAT, "0.0");
+	Create_Fishery_ParamXML(bm, fp, fileName, selGroupNode, sel_lognormlsm_id, "Modal length of the lognormal selectivity curve", "", XML_TYPE_FLOAT, "0.0");
+
+	Create_Fishery_ParamXML(bm, fp, fileName, selGroupNode, sel_gammasigma_id, "Measure of spread of gamma selectivity curve", "", XML_TYPE_FLOAT, "0.0 - 400.0");
+	Create_Fishery_ParamXML(bm, fp, fileName, selGroupNode, sel_gammalsm_id, "Modal length of the gamma selectivity curvee", "", XML_TYPE_FLOAT, "0.0 - 120.0");
+	Create_Fishery_ParamXML(bm, fp, fileName, selGroupNode, sel_bisigma_id, "Measure of spread of bi-modal 'normal' selectivity curve", "", XML_TYPE_FLOAT, "0.0");
+	Create_Fishery_ParamXML(bm, fp, fileName, selGroupNode, sel_bisigma2_id, "Measure of spread of second peak in assymetric bi-modal 'normal' selectivity curve", "", XML_TYPE_FLOAT, "0.0");
+	Create_Fishery_ParamXML(bm, fp, fileName, selGroupNode, sel_ampli_id, "Amplitude of second peak in assymetric bi-modal 'normal' selectivity curve", "", XML_TYPE_FLOAT, "0.0");
+	Create_Fishery_ParamXML(bm, fp, fileName, selGroupNode, sel_bilsm1_id, "Leftside modal length of the bimodal 'normal' selectivity curve", "", XML_TYPE_FLOAT, "0.0");
+	Create_Fishery_ParamXML(bm, fp, fileName, selGroupNode, sel_bilsm2_id, "Rightside modal length of the bimodal 'normal' selectivity curve", "", XML_TYPE_FLOAT, "0.0");
+
+}
+/*
+ * Fishing Escapement
+ */
+void FishingEscapmentXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr doc, xmlNodePtr rootnode) {
+	xmlNodePtr groupingNode;
+	groupingNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, rootnode, "Fishing_Escapment", "Fishing escapement values.", "", "");
+
+	Create_Harvest_Fishery_Group_ParamXML(bm, fp, fileName, groupingNode, p_escape_id, "Proportion that escape per fishery per group", "", XML_TYPE_FLOATARRAY);
+	Create_Harvest_Fishery_Group_ParamXML(bm, fp, fileName, groupingNode, Ka_escape_id, "Coefficient of escape for size based escapement", "", XML_TYPE_FLOATARRAY);
+	Create_Harvest_Fishery_Group_ParamXML(bm, fp, fileName, groupingNode, Kb_escape_id, "Exponent of escape for size based escapement", "", XML_TYPE_FLOATARRAY);
+}
+
+/*
+ * Fishing Discarding
+ */
+void FishingDiscardingXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr doc, xmlNodePtr rootnode) {
+	xmlNodePtr groupingNode, node, selGroupNode, lookupNode;
+	groupingNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, rootnode, "Fishing_Discarding", "Fishing Discarding Parameters.", "", "");
+
+	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "prop_within", "Proportion of quota which when exceeded will see fisheries begin high grading", "", XML_TYPE_FLOAT, "0.9");
+	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "salethresh", "Proportion of maximum market value below which fishery will begin market-based discarding", "",
+			XML_TYPE_FLOAT, "0.1");
+
+	Create_Fishery_ParamXML(bm, fp, fileName, groupingNode, maxsaleprice_id, "Maximum Sale Price", "Monetary unit ($) per kilo", XML_TYPE_FLOAT, "1.0 - 100.0");
+
+	Parse_File(bm,fp,fileName,groupingNode,"DiscardAgeDistributions","^DiscardTS_agedistrib",
+			"Discard by age distribution for conditioning time series of discard (if used). \nNote that for CEP and PWN only the first 2 entries are effective.",
+			"", XML_TYPE_FLOATARRAY, bm->K_num_max_cohort, TRUE, Init_Age_Structured_SpeciesXML, Age_Discard_DistributionXML);
+
+	Parse_File(bm, fp, fileName, groupingNode, "ProportionDiscarding", "^FCcocatch",
+			"Proportional discarding of biomass of a species based on catch of another species (e.g. ratio of kg of FPS discarded for each kg of PWN landed",
+			"", XML_TYPE_FLOATARRAY, bm->K_num_tot_sp, TRUE, Create_Impacted_Species_XMLNodes, Proportional_Biomass_DiscardingXML);
+
+	Create_Harvest_Fishery_Group_ParamXML(bm, fp, fileName, groupingNode, FFCDR_id, "Fixed proportion of the catch discarded for each group.", "", XML_TYPE_FLOATARRAY);
+	node = Create_Harvest_Fishery_Group_ParamXML(bm, fp, fileName, groupingNode, FC_case_id,
+			"Which version of the age-dependent discarding distribution to use for which fishery (currently only two options A=0 and B=1)", "", XML_TYPE_LOOKUPARRAY);
+
+	lookupNode = Util_XML_Create_Lookup_Node(node);
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "0", "Use the values in AgeGroupConstantDiscardingA");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "1", "Use the values in AgeGroupConstantDiscardingB");
+
+	Parse_File(bm, fp, fileName, groupingNode, "AgeGroupConstantDiscardingA", "^FFCDR_.*chrt$",
+			"Constant discards per cohort per group. Note that for CEP only the first 2 entries are effective.", "", XML_TYPE_FLOATARRAY, bm->K_num_max_cohort, TRUE,
+			Init_Age_Structured_SpeciesXML, Age_Group_Constant_DiscardsXML);
+
+	Parse_File(bm, fp, fileName, groupingNode, "AgeGroupConstantDiscardingB", "^FFCDR_.*chrtB$",
+			"Constant discards per cohort per group. Note that this is entry 1 for the purposes of FC_case above (for the vertebrates only)", "", XML_TYPE_FLOATARRAY,
+			bm->K_num_max_cohort, TRUE, Init_Vert_Species_Zero_ValuesXML, Age_Group_Constant_DiscardsXML);
+
+	selGroupNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, groupingNode, "Size_Based_Discarding", "Size based discarding parameters.", "", "");
+
+	Create_Harvest_Fishery_Group_ParamXML(bm, fp, fileName, selGroupNode, FCthreshli_id,
+			"Size based discarding. Threshold length below which the group is disarded for each fishery.", "cm", XML_TYPE_FLOATARRAY);
+
+	Parse_File_Single_Line(bm, fp, fileName, selGroupNode, "IncidentalMortality", "invert_incidmort",
+			"Proportion of the discarded undersize animals that survive discarding", "", XML_TYPE_FLOAT, "", TRUE, Create_Impacted_Species_XMLNodes, Incidental_MortalityXML);
+
+	Create_Harvest_Fishery_Group_ParamXML(bm, fp, fileName, selGroupNode, incidmort_id, "Proportion of the discarded undersize animals that survive discarding",
+			"", XML_TYPE_FLOATARRAY);
+	Create_Harvest_Fishery_Group_ParamXML(bm, fp, fileName, selGroupNode, k_retain_id, "Proportion of the undersize that are retained (illegally)", "", XML_TYPE_FLOATARRAY);
+	Create_Harvest_Fishery_Group_ParamXML(bm, fp, fileName, selGroupNode, k_waste_id, "Proportion of catch of that is discarded as waste (guts, skin etc).", "",
+			XML_TYPE_FLOATARRAY);
+}
+
+/*
+ * Fishing gear
+ */
+void FishingGearXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr doc, xmlNodePtr rootnode) {
+	xmlNodePtr groupingNode;
+	groupingNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, rootnode, "Fishing_Gear", "Fishing gear parameters..", "", "");
+
+	Create_Fishery_ParamXML(bm, fp, fileName, groupingNode, swept_area_id, "Swept area of each piece of fishing gear or shot (in m3) in an average day", "m^3",
+			XML_TYPE_FLOAT, "0 - 1080000000000");
+}
+
+/*
+ * Changes in fisheries over time.
+ */
+void FisheryChangeXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr doc, xmlNodePtr rootnode) {
+
+	xmlNodePtr groupingNode, selGroupNode, node, lookupNode;
+	groupingNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, rootnode, "Fishery_Change",
+			"Scenario specification - changing fisheries conditions over time", "", "");
+
+	/* not sure about the grouping of these nodes */
+	selGroupNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, groupingNode, "Selectivity_Change", "Selectivity curve change parameters", "", "");
+	Create_Fishery_ParamXML(bm, fp, fileName, selGroupNode, SEL_num_changes_id, "Changes in selectivity through time", "", XML_TYPE_INTEGER, "1");
+
+	Parse_File(
+			bm,
+			fp,fileName,
+			selGroupNode,
+			"Start",
+			"^SELchange_start_",
+			"Arrays to indicate when each change in selectivity begins (days from run start). \nThere must be as many entries in this array as there are number of changes in selectivity for that fishery",
+			"", XML_TYPE_INTEGERARRAY, -1, TRUE, Create_Fishery_XMLNodes, Fishery_Last_XMLFunction);
+
+	node
+			= Parse_File(
+					bm,
+					fp,
+					fileName,
+					selGroupNode,
+					"NewCurve",
+					"^SELchange_curve_",
+					"Arrays to indicate new form of the selectivity for that group. select curve: \n0=const, \n1=logistic, \n2=norm, \n3=lognorm, \n4=gamma. \nThere must be as many entries in this array as there are number of changes in selectivity for that group.",
+					"", XML_TYPE_LOOKUPARRAY, -1, TRUE, Create_Fishery_XMLNodes, Fishery_Last_XMLFunction);
+
+	lookupNode = Util_XML_Create_Lookup_Node(node);
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "0", "Constant");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "1", "Logistic");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "2", "Norm");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "3", "lognorm");
+	Util_XML_Create_Lookup_Value_Node(lookupNode, "4", "gamma");
+
+	Parse_File(
+			bm,
+			fp,fileName,
+			selGroupNode,
+			"ConstantValueAddition",
+			"^SELchange_addlsm_",
+			"Arrays to indicate change in lsm of selectivity curve for each change in selectivity for the fishery. If a constant selectivity is being used than this parameter indicates the change in this constant value. There must be as many entries in this array as there are number of changes in selectivity for that group.",
+			"", XML_TYPE_FLOATARRAY, -1, TRUE, Create_Fishery_XMLNodes, Fishery_Last_XMLFunction);
+
+	Parse_File(
+			bm,
+			fp,fileName,
+			selGroupNode,
+			"SigmaValueAddition",
+			"^SELchange_addsigma_",
+			"Arrays to indicate change in sigma of selectivity curve for each change in selectivity for the fishery. There must be as many entries in this array as there are number of changes in selectivity for that group.",
+			"", XML_TYPE_FLOATARRAY, -1, TRUE, Create_Fishery_XMLNodes, Fishery_Last_XMLFunction);
+
+	/* */
+	selGroupNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, groupingNode, "Coverage_Change", "Changes in fishery coverage.", "", "");
+	Create_Fishery_ParamXML(bm, fp, fileName, selGroupNode, P_num_changes_id, "Change in fisheries coverage through time", "", XML_TYPE_INTEGER, "1");
+	Create_Fishery_ChangeXML(bm, fp, fileName, doc, selGroupNode, "Pchange", "fishing coverage", "K_cover");
+
+	selGroupNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, groupingNode, "Swept_change", "Changes in fishing gear swept area.", "", "");
+	Create_Fishery_ParamXML(bm, fp, fileName, selGroupNode, SWEPT_num_changes_id, "number of changes in fishing gear swept area", "", XML_TYPE_INTEGER, "1");
+	Create_Fishery_ChangeXML(bm, fp,fileName, doc, selGroupNode, "SWEPTchange", "swept area", "swept_area");
+
+	selGroupNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, groupingNode, "Discard_Changes", "Changes in discarding through time.", "", "");
+
+	Create_Harvest_Fishery_Group_ParamXML(bm, fp, fileName, selGroupNode, DISCRD_num_changes_id, "Number of changes in discarding", "", XML_TYPE_INTEGER);
+
+	Parse_File(
+			bm,
+			fp,fileName,
+			selGroupNode,
+			"Start",
+			"^DISCRDchange_start_",
+			"Arrays to indicate when each change in discarding begins (days from run start). \nThere must be as many entries in this array as the MAXIMUM number of changes in discarding across all groups (e.g. if the highest number of changes in a single fishery by a single group is 6 then there must be 6 entries etc).",
+			"d", XML_TYPE_INTEGERARRAY, -1, TRUE, Create_Fished_Species_XMLNodes, Species_Last_XMLFunction);
+
+	Parse_File(
+			bm,
+			fp,fileName,
+			selGroupNode,
+			"ChangeThreshMult",
+			"^DISCRDchange_threshmult_",
+			"Arrays to indicate new minimum legal size limit for fishery. \nIts a multiplication factor relative to the original minimum size. There must be as many entries in this array as the MAXIMUM number of changes in discarding for any group.",
+			"d", XML_TYPE_FLOATARRAY, -1, TRUE, Create_Fished_Species_XMLNodes, Species_Last_XMLFunction);
+
+	Parse_File(
+			bm,
+			fp,fileName,
+			selGroupNode,
+			"RetainMult",
+			"^DISCRDchange_retainmult_",
+			"Arrays to indicate new proportion of undersize fish retained. \nIts a multiplication factor relative to the original proportion retained. There must be as many entries in this array as the MAXIMUM number of changes in discarding for any group.",
+			"", XML_TYPE_FLOATARRAY, -1, TRUE, Create_Fished_Species_XMLNodes, Species_Last_XMLFunction);
+
+	Parse_File(
+			bm,
+			fp,fileName,
+			selGroupNode,
+			"DiscardMult",
+			"^DISCRDchange_discardmult_",
+			"Arrays to indicate new level of discarding for that group. \nThere must be as many entries in this array as the MAXIMUM number of changes in discarding for any group. It a a multiplcation factor relative to the original level of discarding (if using constant rates) or wastes (guts/skin) disposed of (if using size based discarding).",
+			"", XML_TYPE_FLOATARRAY, -1, TRUE, Create_Fished_Species_XMLNodes, Species_Last_XMLFunction);
+
+    Parse_File(
+               bm,
+               fp,fileName,
+               selGroupNode,
+               "WasteMult",
+               "^DISCRDchange_wastemult_",
+               "Arrays to indicate new level of waste discarding for that group. \nThere must be as many entries in this array as the MAXIMUM number of changes in discarding for any group. It a a multiplcation factor relative to the original level of discarding of waste (guts/skin).",
+               "", XML_TYPE_FLOATARRAY, -1, TRUE, Create_Fished_Species_XMLNodes, Species_Last_XMLFunction);
+    
+    /* not sure about the grouping of these nodes */
+	selGroupNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, groupingNode, "Catchability_Change", "Changes in catchability through time", "", "");
+
+	Create_Harvest_Fishery_Group_ParamXML(bm, fp, fileName, selGroupNode, Q_num_changes_id, "Number of changes of catchability", "", XML_TYPE_INTEGER);
+
+	Create_Fished_Groups_ChangeXML(bm, fp, fileName, doc, selGroupNode, "Qchange", "catchability");
+
+    /* not sure about the grouping of these nodes */
+	selGroupNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, groupingNode, "Fishing_Mortality_Change", "Changes in fishing mortality through time",
+			"", "");
+
+	Create_Harvest_Fishery_Group_ParamXML(bm, fp, fileName, selGroupNode, mFC_num_changes_id, "Number of changes of fishing mortality", "", XML_TYPE_INTEGER);
+
+	Create_Fished_Groups_ChangeXML(bm, fp, fileName, doc, selGroupNode, "mFCchange", "fishing mortality");
+
+
+}
+
+void Convert_Harvest_To_XML(MSEBoxModel *bm, char *fileName, char *outputFileName) {
+	xmlDocPtr doc;
+	xmlNodePtr rootnode;
+	FILE *fp;
+
+	/* Init libxml */
+	xmlInitParser();
+	LIBXML_TEST_VERSION
+
+	if ((fp = Open_Input_File(bm->inputFolder,fileName, "rt")) == NULL) {
+		quit("Cannot open harvest input file %s%s\n", bm->inputFolder, fileName);
+	}
+
+	doc = xmlNewDoc((unsigned char *) "1.0");
+
+	if (doc == NULL) {
+		fprintf(stderr, "Document not created successfully. \n");
+		return;
+	}
+
+	rootnode = xmlNewDocNode(doc, NULL, (const xmlChar*) AtlantisXMLObjectNAMES[ATLANTIS_ATTRIBUTE_GROUP], NULL);
+	Util_XML_Add_Node_Property(rootnode, AtlantisXMLObjectNAMES[ATLANTIS_ATTRIBUTE_GROUP][ATTRIBUTE_NAME], "AtlantisHarvest");
+
+	xmlDocSetRootElement(doc, rootnode);
+
+	FisheryFlagXML(bm, fp, fileName, doc, rootnode);
+	FisheryCatchTimeXML(bm, fp, fileName, doc, rootnode);
+	FisheryScenarioFlags(bm, fp, fileName, doc, rootnode);
+	GeneralVesselCharateristics(bm, fp, fileName, doc, rootnode);
+	FisheryHabitat(bm, fp, fileName, doc, rootnode);
+	FisheryTimeValues(bm, fp, fileName, doc, rootnode);
+	CatchReportingValues(bm, fp, fileName, doc, rootnode);
+	FishingMortalityXML(bm, fp, fileName, doc, rootnode);
+	FishingSelectivityXML(bm, fp, fileName, doc, rootnode);
+	FishingEscapmentXML(bm, fp, fileName, doc, rootnode);
+	FishingDiscardingXML(bm, fp, fileName, doc, rootnode);
+	FishingGearXML(bm, fp, fileName, doc, rootnode);
+	//SpatialManagementXML(bm, fp, fileName, doc, rootnode);
+	FisheryChangeXML(bm, fp, fileName, doc, rootnode);
+
+	if(bm->flag_aquacult_on)
+		AquacultFlagXML(bm, fp, fileName, doc, rootnode);
+
+	/* Save to the output file */
+	xmlSaveFormatFileDestFolder(bm->destFolder, outputFileName, doc, 1);
+	xmlFreeDoc(doc);
+	fclose(fp);
+
+	/* Shutdown libxml */
+	xmlCleanupParser();
+
+	return;
+}

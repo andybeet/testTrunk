@@ -1,0 +1,17 @@
+module load proj
+module load netcdf
+
+aclocal
+autoheader
+autoconf
+automake -a
+
+
+./configure \
+CC='gcc' \
+CFLAGS='-I$NETCDF_ROOT/include ' \
+CXXFLAGS='-I$NETCDF_ROOT/include ' \
+CPPFLAGS='-I$NETCDF_ROOT/include ' \
+LDFLAGS='-L$NETCDF_ROOTlib -lcurl'
+
+make

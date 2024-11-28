@@ -1,0 +1,9 @@
+FROM debian:jessie
+RUN apt-get update && apt-get install -yq build-essential autoconf libnetcdf-dev libxml2-dev libproj-dev subversion valgrind
+
+
+COPY atlantis /app/src
+RUN cd /app/src && aclocal && autoheader && autoconf && automake -a && ./configure && make && make install
+
+WORKDIR /app/model
+CMD ./RunAtlantis.sh

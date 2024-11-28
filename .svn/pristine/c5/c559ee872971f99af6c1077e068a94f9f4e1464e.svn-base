@@ -1,0 +1,10 @@
+IMAGE=atlantis_docker
+
+run: build
+	 docker run -v /home/bec/temp/atlantis/trunk/example:/app/model --user $(id -u):$(id -g) atlantis_docker
+
+build:
+	docker build --build-arg REGISTRY=docker-registry.it.csiro.au -t $(IMAGE) .
+
+clean:
+	docker system prune -f

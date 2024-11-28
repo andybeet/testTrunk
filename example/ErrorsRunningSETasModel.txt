@@ -1,0 +1,50 @@
+## errors I ran into trying to run the sample project for the first time
+
+error didn't find flagpassivetracer in run.prm file
+
+-> fix: add flag with value 0 (off)
+
+error failed to find species param _min_spawn_temp in file biol.prm
+
+-> fix: add these lines to biol.prm
+	CEP_min_spawn_temp 4   
+	CEP_max_spawn_temp 25
+	
+error failed to find fishery paramter _flag_framebased in file harvest.prm for fishery midwcCEP
+
+-> fix: add following lines to harvest.prm
+
+# Flag indicating whether there is frame-based management. 0=no, 1=yes 
+midwcCEP_flag_framebased  0                                                                            0
+jigCEP_flag_framebased    0                                                                            0
+midwcFP_flag_framebased   0                                                                            0
+dredgeBFS_flag_framebased 0                                                                            0
+netFD_flag_framebased     0                                                                            0
+netSH_flag_framebased     0                                                                            0
+plineFVO_flag_framebased  0                                                                            0
+pseineFVO_flag_framebased 0                                                                            0
+pseineFP_flag_framebased  0                                                                            0
+trapBMS_flag_framebased   0                                                                            0
+trapFD_flag_framebased    0                                                                            0
+dtrawlBMS_flag_framebased 0                                                                            0
+dtrawlCEP_flag_framebased 0                                                                            0
+dtrawlFD_flag_framebased  0                                                                            0
+dtrawlFDB_flag_framebased 0                                                                            0
+dtrawlFDO_flag_framebased 0                                                                            0
+midwcFD_flag_framebased   0                                                                            0
+dseineFDB_flag_framebased 0                                                                            0
+dlineFD_flag_framebased   0                                                                            0
+dlineFVS_flag_framebased  0                                                                            0
+dlineSH_flag_framebased   0                                                                            0
+diveBG_flag_framebased    0                                                                            0
+pseineFVS_flag_framebased 0                                                                            0
+cullPIN_flag_framebased   0                                                                            0
+recfish_flag_framebased   0                                                                            0
+ptrawlPWN_flag_framebased 0                                                                            0
+dtrawlFBP_flag_framebased 0                                                                            0
+midwcZL_flag_framebased   0                                                                            0
+trapFDE_flag_framebased   0                                                                            0
+dlineFDE_flag_framebased  0                                                                            0
+netFDE_flag_framebased    0                                                                            0
+midwcPWN_flag_framebased  0                                                                            0
+mowMA_flag_framebased     0                                                                            0

@@ -1,0 +1,1306 @@
+/**
+ * \file atannualbiology.c
+ * \brief Biological processes that are done annually
+ * \ingroup atEcology
+ * \author Beth Fulton 	5/10/2005 CSIRO Marine Laboratories,  2005
+ *
+ *
+ * 	Determines timing of annual events that will execute in main biological code
+ *
+ * <b>Revisions:</b>
+ * 5/10/2005 Created from atannualbiology.c
+ *
+ * 12/10/2005 Corrected code to do with first round of wrapping
+ * of reproduction (recruits in the pipeline), particularly
+ * to do with those groups that have linear relationship
+ * between pupping and adult abundance
+ *
+ * 24/2/2006 Rewrote vertebrate date determination in Annual_biology().
+ * Added flagrandom so could switch off random factors. Added
+ * initDATES and consistency checks to make sure don't have
+ * artificial recruitment failure due to Wrap, WrapOld value mismatch.
+ *
+ * 3/4/2006 Moved handling of first year carry over recruits from
+ * initBiology() to AnnualBiology()
+ *
+ * 26-05-2008 Bec Gorton
+ * Changed all references from bm->VERTind to the tracer arrays associated with
+ * each functional group.
+ *
+ * 02-10-2008 Bec Gorton
+ * Removed references to jCEP and jPWN.
+ *
+ * 15/01/2009 Bec Gorton
+ * Rewrote all code to loop over all the functional groups.
+ * Created the Init_Vert_Spawning and Calculate_Migration_Dates functions.
+ *
+ * 16-01-2009 Bec Gorton
+ * Added code to check the flagrandom flag in the invertegrate
+ * migration date code. Previously this was not checked and a random
+ * value was always added.
+ *
+ * 03-04-2009 Bec Gorton
+ * Fixed a bug in a fprintf statement in Annual_biology.
+ *
+ * 03-06-2009 Bec Gorton
+ * Added a additional debugging option to the Annual_biology function. When
+ * bm->debug == debug_prey_biology_process is true do_debug will be set to true.
+ *
+ * 16-02-2010 Bec Gorton
+ * Renamed the KMIGa array to KMIG.
+ * 
+ * 08-02-2012 Bec Gorton
+ * Added a check on flagRandom before we add a random value to the invertebrate spawning and
+ * aging dates. This makes testing easier.
+ */
+/*  Open library routines */
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <math.h>
+#include <atecology.h>
+
+/**
+ * prototypes for static functions that are only defined in this file.
+ */
+//static void Init_Mortality_Estimates(MSEBoxModel *bm);
+static void Init_Vert_Spawning(MSEBoxModel *bm, FILE *llogfp, int do_debug, int sp);
+static void Calculate_Migration_Dates(MSEBoxModel *bm, FILE *llogfp, int sp, int cohort, int migrationID, int do_debug);
+static void CheckDates(MSEBoxModel *bm, int sp, int cohort, int ngene, int lid, int qid, int nspawn, int do_debug, int this_day, FILE *llogfp);
+static void Pad_The_Demography_Queues(MSEBoxModel *bm, int sp, int cohort, int nspawn, int qid, int lid, int aid, FILE *llogfp);
+static void Scale_Group_Size(MSEBoxModel *bm, FILE *llogfp);
+
+/**
+ *	\brief This routine resets any annual biological processes (done 1st day of the year)
+ *	It is called by main() in the transport module.
+ *
+ *	For each active vertebrate and immigrating invert:<br>
+ *	<ul>
+ *	<li>Find the spawning date</li>
+ *	<li>Find start and end dates of recruitment and the recruitment period.</li>
+ *	<li>Populate the MigrateAway and MigrateReturn arrays.</li>
+ *	</ul>
+ *	@param t  current time  (seconds)
+ *	@param dt time range
+ *	@param llogfp The model log file
+ *
+ *  Outputs :
+ *  New spawning and migration times
+ */
+void Ecology_Annual(MSEBoxModel *bm, FILE *llogfp) {
+
+	double temp1, temp2, real_mig_length;
+	int i, sp, Time_Spawn_sp, VarTime1, VarTime2, sp_Migrate_Time, sp_Migrate_Return, Time_Age_sp, qid, aid, lid;
+	int cohort, do_debug, migrationID, stage, bcohort, nspawn, sp_numGeneTypes;
+	int sp_migrate, ngene, nstk, prev_spawn, prev_age;
+	int newdim, olddim, nt, Recruit_Period_sp, Recruit_Time_sp;
+	int this_day = (int)(bm->dayt);
+	//int basecohort;
+
+	if (bm->debug && ((bm->debug == debug_migrate) || (bm->debug == debug_spawn) || (bm->debug == debug_age) || (bm->debug == debug_recruit)
+			|| (bm->debug == debug_prey_biology_process))) {
+		do_debug = 1;
+	} else
+		do_debug = 0;
+
+	if (verbose > 0)
+		printf("First day of year so annual events are done first\n");
+
+	/* First day of the year stuff. Note years go from day 0 to day	364 NOT day 1 to day 365! */
+
+	/* Setup new variable spawning and recruitment lengths and update old ones
+	 if recruitment spans 1st day of the yr */
+	if (verbose > 0) {
+		printf("Spawning and migration dates are sorted out for vertebrates\n");
+		//fprintf(llogfp, "Spawning and migration dates are sorted out for vertebrates\n");
+	}
+
+    /** Handle age structured migration and spawning */
+	/* Done like this to get the drandom calls in the same order as the orginal code so that we get consistent results */
+	for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
+		if (sp == bm->which_check)
+			do_debug = 1;
+
+		/* Check that the group is on */
+		if ((int) (FunctGroupArray[sp].speciesParams[flag_id]) == TRUE) {
+            
+            // Initialise diet update check
+            FunctGroupArray[sp].updatedDiet = 0;
+            
+			switch (FunctGroupArray[sp].groupAgeType) {
+			case AGE_STRUCTURED:
+
+				/* Initialise the vertebrate spawning dates */
+				Init_Vert_Spawning(bm, llogfp, do_debug, sp);
+
+				for (cohort = 0; cohort < FunctGroupArray[sp].numStages; cohort++) {
+					/* Loop through each possible migration and calculate the migration dates */
+					//for (migrationID = 0; migrationID < bm->K_num_migout; migrationID++) {
+					for(migrationID = 0; migrationID < FunctGroupArray[sp].speciesParams[num_migrate_id]; migrationID++){
+
+						sp_migrate = FALSE;
+						MIGRATION[sp].Leave_Now[cohort][migrationID] = 366;
+						MIGRATION[sp].Return_Now[cohort][migrationID] = 366;
+
+						/* If the period of this migration is not positive then move on to the next migration */
+						if (MIGRATION[sp].Period[cohort][migrationID] > 0)
+							sp_migrate = TRUE;
+
+						sp_Migrate_Time = (int) (MIGRATION[sp].StartDay[cohort][migrationID]);
+						sp_Migrate_Return = (int) (MIGRATION[sp].EndDay[cohort][migrationID]);
+
+						/* Check for zero length migrations */
+						if (sp_Migrate_Time < sp_Migrate_Return) {
+							real_mig_length = sp_Migrate_Return - sp_Migrate_Time;
+						} else if (sp_Migrate_Time > sp_Migrate_Return) {
+							real_mig_length = sp_Migrate_Return + 364 - sp_Migrate_Time;
+						} else
+							real_mig_length = 0;
+
+						/* If the real_mig_length value is not greater than one move onto the next migration */
+						if (fabs(real_mig_length) <= 1)
+							sp_migrate = FALSE;
+
+						if (do_debug && (sp == bm->which_check)) {
+							fprintf(llogfp, "%s-%d migrate_sp%d: %d, T%d: %d, R%d: %d, mig_length: %e\n", FunctGroupArray[sp].groupCode, cohort, migrationID,
+									sp_migrate, migrationID, sp_Migrate_Time, migrationID, sp_Migrate_Return, real_mig_length);
+						}
+
+						/* If assuming migrants just emerge into the model domain at the correct size */
+						if (sp_migrate == TRUE) {
+
+							/* Now recruit straight to the MIGRATION array in Find_Final_Recruit_Distribtuion()
+							if (!bm->flagavgmig && !cohort) {
+								for (b = 0; b < FunctGroupArray[sp].numCohortsXnumGenes; b++) {
+									basecohort = floor(b / FunctGroupArray[sp].numGeneTypes);
+									MIGRATION[sp].SN[b][migrationID] = MIGRATION[sp].SN[basecohort][migrationID];
+									MIGRATION[sp].RN[b][migrationID] = MIGRATION[sp].RN[basecohort][migrationID];
+
+									//if(do_debug && (sp == bm->which_check)){
+									//	fprintf(llogfp,"Reset %s-%d SN and RN to values in KMIG array (%e and %e)\n",
+									//	FunctGroupArray[sp].groupCode, b, MIGRATION[sp].SN[basecohort][migrationID], MIGRATION[sp].RN[basecohort][migrationID]);
+									// }
+								}
+							}
+							*/
+
+							/* And finally calculate the migration dates */
+							Calculate_Migration_Dates(bm, llogfp, sp, cohort, migrationID, do_debug);
+						}
+					}
+				}
+
+				break;
+			case AGE_STRUCTURED_BIOMASS:
+				nspawn = 0;
+				EMBRYO[sp].next_spawn = MAXINT;
+				EMBRYO[sp].next_age = MAXINT;
+
+				if (first_year) {
+					EMBRYO[sp].latest_in_spawn_queue = -1;
+					EMBRYO[sp].latest_in_aging_queue = -1;
+					EMBRYO[sp].latest_in_larval_queue = -1;
+
+					// Set up RecruitPeriod array
+					for (i=0; i < EMBRYO[sp].num_in_larval_queue; i++){
+						EMBRYO[sp].RecruitPeriod[i] = (int) (FunctGroupArray[sp].speciesParams[Recruit_Period_id]);
+						for(cohort = 0; cohort < FunctGroupArray[sp].numCohortsXnumGenes; cohort++) {
+							EMBRYO[sp].StartDay[cohort][i] = (int) (FunctGroupArray[sp].spawnSpeciesParams[nspawn][Time_Spawn_id] + (int)FunctGroupArray[sp].speciesParams[Recruit_Time_id]);
+							EMBRYO[sp].EndDay[cohort][i] = EMBRYO[sp].StartDay[cohort][i] + (int)EMBRYO[sp].RecruitPeriod[i];
+						}
+					}
+				}
+
+				prev_spawn = -1;
+				prev_age = -1;
+
+				for( nt=0; nt < FunctGroupArray[sp].numSpawns; nt++){
+
+					/* Get base parameter values */
+					Time_Age_sp =(int) FunctGroupArray[sp].spawnSpeciesParams[nt][Time_Age_id];
+					Time_Spawn_sp = (int)FunctGroupArray[sp].spawnSpeciesParams[nt][Time_Spawn_id];
+					Recruit_Period_sp = (int) (FunctGroupArray[sp].speciesParams[Recruit_Period_id]);
+					Recruit_Time_sp = (int) (FunctGroupArray[sp].speciesParams[Recruit_Time_id]);
+
+					if ( FunctGroupArray[sp].numSpawns == 1 )
+						Time_Age_sp = Time_Spawn_sp - 1;
+
+					if(prev_spawn != Time_Spawn_sp) {
+						EMBRYO[sp].latest_in_spawn_queue++;
+						EMBRYO[sp].latest_in_larval_queue++;
+						prev_spawn = Time_Spawn_sp;
+					}
+					if(prev_age != Time_Age_sp){
+						EMBRYO[sp].latest_in_aging_queue++;
+						prev_age = Time_Age_sp;
+					}
+
+					qid = EMBRYO[sp].latest_in_spawn_queue;
+					if( qid >= (EMBRYO[sp].num_in_spawn_queue) ) {
+						newdim = EMBRYO[sp].latest_in_spawn_queue + 1;
+						olddim = EMBRYO[sp].num_in_spawn_queue;
+						cohort = FunctGroupArray[sp].numCohortsXnumGenes;
+						EMBRYO[sp].Spawn_Now = Util_ReAlloc_2D_Int(newdim, olddim, cohort, cohort, EMBRYO[sp].Spawn_Now, 0);
+						EMBRYO[sp].num_in_spawn_queue = newdim;
+					}
+					aid = EMBRYO[sp].latest_in_aging_queue;
+					if( aid >= (EMBRYO[sp].num_in_aging_queue) ) {
+						newdim = EMBRYO[sp].latest_in_aging_queue + 1;
+						olddim = EMBRYO[sp].num_in_aging_queue;
+						cohort = FunctGroupArray[sp].numCohortsXnumGenes;
+						EMBRYO[sp].Age_Now = Util_ReAlloc_2D_Int(newdim, olddim, cohort, cohort, EMBRYO[sp].Age_Now, 0);
+						EMBRYO[sp].num_in_aging_queue = newdim;
+					}
+
+					lid = EMBRYO[sp].latest_in_larval_queue;
+					if( lid >= (EMBRYO[sp].num_in_larval_queue) ){
+						fprintf(llogfp,"Doing realloc for %s in demography code - num_in_queue %d, latest_added %d\n", FunctGroupArray[sp].groupCode, EMBRYO[sp].num_in_larval_queue, EMBRYO[sp].latest_in_larval_queue);
+						newdim = EMBRYO[sp].latest_in_larval_queue + 1;
+						olddim = EMBRYO[sp].num_in_larval_queue;
+						nstk = FunctGroupArray[sp].numStocks;
+						sp_numGeneTypes = FunctGroupArray[sp].numGeneTypes;
+						cohort = FunctGroupArray[sp].numCohorts * sp_numGeneTypes;
+						EMBRYO[sp].Larvae = Util_ReAlloc_3D_Double(newdim, olddim, sp_numGeneTypes, sp_numGeneTypes, nstk, nstk, EMBRYO[sp].Larvae, 0.0);
+						EMBRYO[sp].StartDay = Util_ReAlloc_2D_Int(newdim, olddim, cohort, cohort, EMBRYO[sp].StartDay, 0);
+						EMBRYO[sp].EndDay = Util_ReAlloc_2D_Int(newdim, olddim, cohort, cohort, EMBRYO[sp].EndDay, 0);
+						EMBRYO[sp].RecruitPeriod = Util_ReAlloc_1D_Double(newdim, olddim, EMBRYO[sp].RecruitPeriod, 1.0);
+						EMBRYO[sp].num_in_larval_queue = newdim;
+					}
+
+					for (ngene = 0; ngene < FunctGroupArray[sp].numGeneTypes; ngene++) {
+						if (bm->flagrandom) {
+							temp1 = drandom(-14.0, 14.0);
+							if (temp1 < 0.0)
+								VarTime1 = (int) (ceil(temp1 - 0.5));
+							else
+								VarTime1 = (int) (floor(temp1 + 0.5));
+							temp2 = drandom(-7.0, 7.0);
+							if (temp2 < 0.0)
+								VarTime2 = (int) (ceil(temp2 - 0.5));
+							else
+								VarTime2 = (int) (floor(temp2 + 0.5));
+						} else {
+							VarTime1 = 0;
+							VarTime2 = 0;
+						}
+
+						for(bcohort = 0; bcohort < FunctGroupArray[sp].numCohorts; bcohort++){
+							cohort = (FunctGroupArray[sp].numGeneTypes * bcohort) + ngene;
+							//basecohort = floor(cohort / FunctGroupArray[sp].numGeneTypes);
+							//printf("Currently doing calendar coordination for %s-%d\n", FunctGroupArray[sp].groupCode, cohort);
+
+							EMBRYO[sp].Spawn_Now[cohort][qid] = Time_Spawn_sp + VarTime1;
+							if (EMBRYO[sp].Spawn_Now[cohort][qid] < 2)
+								EMBRYO[sp].Spawn_Now[cohort][qid] = 2;
+							else if (EMBRYO[sp].Spawn_Now[cohort][qid] >= 364)
+								EMBRYO[sp].Spawn_Now[cohort][qid] = 363;
+
+							if (do_debug && (sp == bm->which_check)) {
+								fprintf(llogfp, "%s-%d SpawnNow = %d (%d)", FunctGroupArray[sp].groupCode, cohort, EMBRYO[sp].Spawn_Now[cohort][qid], Time_Spawn_sp);
+							}
+
+							/* Find dates of recruitment (beginning and end) - now compatible with handling of fully age structured groups */
+							EMBRYO[sp].StartDay[cohort][lid] = EMBRYO[sp].Spawn_Now[cohort][qid] + Recruit_Time_sp + VarTime2;
+							if (EMBRYO[sp].StartDay[cohort][lid] < EMBRYO[sp].Spawn_Now[cohort][qid])
+								EMBRYO[sp].StartDay[cohort][lid] = EMBRYO[sp].Spawn_Now[cohort][qid];
+							EMBRYO[sp].RecruitPeriod[lid] = Recruit_Period_sp;
+							EMBRYO[sp].EndDay[cohort][lid] = EMBRYO[sp].StartDay[cohort][lid] + (int)EMBRYO[sp].RecruitPeriod[lid];
+
+							EMBRYO[sp].wraps[cohort] = 0;
+							if (EMBRYO[sp].EndDay[cohort][lid] > 364){
+								EMBRYO[sp].wraps[cohort] = 1;
+							}
+
+							/* Use same random variation so "simultaneous" aging and spawning
+							don't get out of step (which is a problem for biomass pool groups)
+
+							TODO: Maybe one day amalgamate spawn and aging triggers
+							*/
+							if ( FunctGroupArray[sp].numSpawns == 1 ) {
+								EMBRYO[sp].Age_Now[cohort][aid] = EMBRYO[sp].Spawn_Now[cohort][qid] - 1;
+							} else {
+								EMBRYO[sp].Age_Now[cohort][aid] = Time_Age_sp + VarTime1;
+								if (EMBRYO[sp].Age_Now[cohort][aid] < 1)
+									EMBRYO[sp].Age_Now[cohort][aid] = 1;
+								else if (EMBRYO[sp].Age_Now[cohort][aid] >= 364)
+									EMBRYO[sp].Age_Now[cohort][aid] = 363;
+							}
+
+							if (do_debug && (sp == bm->which_check)) {
+								fprintf(llogfp, " AgeNow%d = %d (%d) \n", aid, EMBRYO[sp].Age_Now[cohort][aid], Time_Age_sp);
+							}
+
+							EMBRYO[sp].Spawn_Now[cohort][qid] += this_day;
+							EMBRYO[sp].StartDay[cohort][lid] += this_day;
+							EMBRYO[sp].EndDay[cohort][lid] += this_day;
+							EMBRYO[sp].Age_Now[cohort][aid] += this_day;
+
+							if (do_debug && (sp == bm->which_check)) {
+								fprintf(llogfp, "%s-%d has final qid: %d, aid: %d, lid: %d, SpawnNow: %d, AgeNow: %d, STartDay: %d, EndDay: %d\n", 
+									FunctGroupArray[sp].groupCode, cohort, qid, aid, lid, 
+									EMBRYO[sp].Spawn_Now[cohort][qid], EMBRYO[sp].Age_Now[cohort][aid], 
+									EMBRYO[sp].StartDay[cohort][lid], EMBRYO[sp].EndDay[cohort][lid]);
+							}
+							
+
+							/* Loop through each possible migration and calculate the migration dates */
+							stage = FunctGroupArray[sp].cohort_stage[cohort];
+
+							for (migrationID = 0; migrationID < FunctGroupArray[sp].speciesParams[num_migrate_id]; migrationID++)
+								Calculate_Migration_Dates(bm, llogfp, sp, stage, migrationID, do_debug);
+
+							if(EMBRYO[sp].next_spawn > EMBRYO[sp].Spawn_Now[cohort][expect_id])
+								EMBRYO[sp].next_spawn = EMBRYO[sp].Spawn_Now[cohort][expect_id];
+							if(EMBRYO[sp].next_age > EMBRYO[sp].Age_Now[cohort][expect_id])
+								EMBRYO[sp].next_age = EMBRYO[sp].Age_Now[cohort][expect_id];
+
+							if (do_debug && (sp == bm->which_check)){
+								fprintf(llogfp,"%s annual setting next_spawn to %d, next_age to %d\n", FunctGroupArray[sp].groupCode, EMBRYO[sp].next_spawn, EMBRYO[sp].next_age);
+							}
+						}
+					}
+				}
+				break;
+            case BIOMASS:
+				/* Loop through each possible migration and calcule the migration dates */
+				for (migrationID = 0; migrationID < FunctGroupArray[sp].speciesParams[num_migrate_id]; migrationID++)
+					Calculate_Migration_Dates(bm, llogfp, sp, 0, migrationID, do_debug);
+ 				break;
+			}
+		}
+	}
+
+	/* Its no longer the first year to set the first_year flag to false */
+	first_year = 0;
+
+	/* Write out annual stock size file */
+	Ecology_Calculate_Total_Abundance(bm, bm->dt, -1, llogfp);
+
+	/* Initialse mortality estimate arrays  - now dealt with in Ecology_Update_Invert_Cohorts()*/
+	//Init_Mortality_Estimates(bm);
+
+	/* Scale the groups size (sn and rn values) */
+	Scale_Group_Size(bm, llogfp);
+
+	return;
+}
+
+/**
+ *	\brief This routine resets any mortality arrays so can estimate natural
+ *  mortality for output. (NB: in some cases some of these already reset
+ *  in Assess_Pseudo_Estimate_Prm())
+ *
+ *
+
+static void Init_Mortality_Estimates(MSEBoxModel *bm) {
+	int sp, pred;
+
+	// Re-initialise mortality array for biomass pool invertebrates
+	for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
+		// For biomass pool invertebrates store starting biomass
+		if ((FunctGroupArray[sp].isVertebrate == FALSE) && (FunctGroupArray[sp].groupAgeType == BIOMASS)) {
+			bm->calcMnum[sp][hist_id] = bm->calcMnum[sp][expect_id];
+			bm->calcFnum[sp][hist_id] = bm->calcFnum[sp][expect_id];
+			bm->calcNstart[sp][hist_id] = bm->calcNstart[sp][expect_id];
+			bm->calcNstartPerPred[sp][hist_id] = bm->calcNstartPerPred[sp][expect_id];
+			bm->calcMnum[sp][expect_id] = 0;
+			bm->calcFnum[sp][expect_id] = 0;
+			FunctGroupArray[sp].speciesParams[calcupdate_date_id] = 0.0;
+			bm->calcNstart[sp][expect_id] = bm->totbiom[sp];
+			bm->calcNstartPerPred[sp][expect_id] = bm->totbiom[sp];
+			for (pred = 0; pred < bm->K_num_tot_sp; pred++) {
+				bm->calcMnumPerPred[sp][pred][hist_id] = bm->calcMnumPerPred[sp][pred][expect_id];
+				bm->calcMnumPerPred[sp][pred][expect_id] = 0;
+			}
+		}
+	}
+	return;
+}
+*/
+/**
+ * \brief Initialise the vertebrate spawning dates.
+ *
+ *
+ *
+ *
+ */
+static void Init_Vert_Spawning(MSEBoxModel *bm, FILE *llogfp, int do_debug, int sp) {
+	double temp1, temp2, sumnzj1, sumnzj2, vertdistrib, maxstock, AgeClassSize_sp;
+	double ngenes, thisday;
+	int nboxes = bm->nbox;
+	int nlayers = bm->wcnz;
+	int this_day = (int)(bm->dayt);
+	int qid = 0;
+	int aid = 0;
+	int mid = 0;
+	int lid = 0;
+	int startTofY = 0;
+	int nspawn = 0;
+	int i, j, k, layerk, Time_Spawn_sp, Recruit_Period_sp, Recruit_Time_sp, den, VarTime1,
+		VarTime2, stock_id = 0, diffdeep, cohort, flagdem, recruit_sp, diff,
+		basecohort, stage, wrap_this, stid, countback, stepsize, num_steps,
+		newdim, olddim, temp_val, temp_val_start, temp_val_end, ngene, bcohort,
+        nstk, sp_numGeneTypes, start_i;
+	int any_wrap = 0;
+	int spawn_queue_extension = 0;
+	int aging_queue_extension = 0;
+	int larval_queue_extension = 0;
+    double prod_scalar = 1.0;
+    int spawn_increment = (int)(365 / FunctGroupArray[sp].numSpawns);
+
+
+	double *adults_spawning = (double *) alloc1d(bm->K_num_stocks_per_sp);
+
+
+	if (sp == bm->which_check)
+		do_debug = 1;
+
+    if (first_year) {
+        EMBRYO[sp].latest_in_spawn_queue = -1;
+        EMBRYO[sp].latest_in_aging_queue = -1;
+        EMBRYO[sp].latest_in_larval_queue = -1;
+        
+        // Set up RecruitPeriod array
+        for (i=0; i < EMBRYO[sp].num_in_larval_queue; i++){
+            EMBRYO[sp].RecruitPeriod[i] = (int) (FunctGroupArray[sp].speciesParams[Recruit_Period_id]);
+            for(cohort = 0; cohort < FunctGroupArray[sp].numCohortsXnumGenes; cohort++) {
+                EMBRYO[sp].Spawn_Now[cohort][i] = (int)(FunctGroupArray[sp].spawnSpeciesParams[nspawn][Time_Spawn_id]) + (i * spawn_increment);
+                EMBRYO[sp].StartDay[cohort][i] = EMBRYO[sp].Spawn_Now[cohort][i] + (int)(FunctGroupArray[sp].speciesParams[Recruit_Time_id]);
+                EMBRYO[sp].EndDay[cohort][i] = EMBRYO[sp].StartDay[cohort][i] + (int)EMBRYO[sp].RecruitPeriod[i];
+                EMBRYO[sp].Age_Now[cohort][i] = EMBRYO[sp].StartDay[cohort][i] - 1;
+                
+                
+            }
+        }
+    }
+    
+    
+    for( nspawn = 0; nspawn < FunctGroupArray[sp].numSpawns; nspawn++){
+    
+        EMBRYO[sp].next_spawn = MAXINT;
+        EMBRYO[sp].next_age = MAXINT;
+
+        EMBRYO[sp].latest_in_spawn_queue++;
+        EMBRYO[sp].latest_in_aging_queue++;
+        EMBRYO[sp].latest_in_larval_queue++;
+
+        if(sp == bm->which_check){
+            fprintf(llogfp,"%s starting annual biology calc with latest_in_spawn_queue: %d, latest_in_aging_queue: %d\n",
+                    FunctGroupArray[sp].groupCode, EMBRYO[sp].latest_in_spawn_queue, EMBRYO[sp].latest_in_aging_queue);
+        }
+
+        qid = EMBRYO[sp].latest_in_spawn_queue;
+        if( qid >= (EMBRYO[sp].num_in_spawn_queue ) ) {
+            newdim = EMBRYO[sp].latest_in_spawn_queue + 1;
+            olddim = EMBRYO[sp].num_in_spawn_queue;
+            cohort = FunctGroupArray[sp].numCohortsXnumGenes;
+            EMBRYO[sp].Spawn_Now = Util_ReAlloc_2D_Int(newdim, olddim, cohort, cohort, EMBRYO[sp].Spawn_Now, 0);
+
+            EMBRYO[sp].num_in_larval_queue = newdim;
+        }
+
+        aid = EMBRYO[sp].latest_in_aging_queue;
+        if( aid >= (EMBRYO[sp].num_in_aging_queue) ) {
+            newdim = EMBRYO[sp].latest_in_aging_queue + 1;
+            olddim = EMBRYO[sp].num_in_aging_queue;
+            cohort = FunctGroupArray[sp].numCohortsXnumGenes;
+            EMBRYO[sp].Age_Now = Util_ReAlloc_2D_Int(newdim, olddim, cohort, cohort, EMBRYO[sp].Age_Now, 0);
+
+            EMBRYO[sp].num_in_aging_queue = newdim;
+        }
+
+        lid = EMBRYO[sp].latest_in_larval_queue;
+        if( lid >= (EMBRYO[sp].num_in_larval_queue) ){
+            fprintf(llogfp,"Doing realloc for %s in demography code - num_in_queue %d, latest_added %d\n", FunctGroupArray[sp].groupCode, EMBRYO[sp].num_in_larval_queue, EMBRYO[sp].latest_in_larval_queue);
+            newdim = EMBRYO[sp].latest_in_larval_queue + 1;
+            olddim = EMBRYO[sp].num_in_larval_queue;
+            nstk = FunctGroupArray[sp].numStocks;
+            sp_numGeneTypes = FunctGroupArray[sp].numGeneTypes;
+            cohort = FunctGroupArray[sp].numCohorts * sp_numGeneTypes;
+            EMBRYO[sp].Larvae = Util_ReAlloc_3D_Double(newdim, olddim, sp_numGeneTypes, sp_numGeneTypes, nstk, nstk, EMBRYO[sp].Larvae, 0.0);
+            EMBRYO[sp].StartDay = Util_ReAlloc_2D_Int(newdim, olddim, cohort, cohort, EMBRYO[sp].StartDay, 0);
+            EMBRYO[sp].EndDay = Util_ReAlloc_2D_Int(newdim, olddim, cohort, cohort, EMBRYO[sp].EndDay, 0);
+            EMBRYO[sp].RecruitPeriod = Util_ReAlloc_1D_Double(newdim, olddim, EMBRYO[sp].RecruitPeriod, 1.0);
+            EMBRYO[sp].num_in_larval_queue = newdim;
+        }
+    
+        Time_Spawn_sp = (int) (FunctGroupArray[sp].spawnSpeciesParams[nspawn][Time_Spawn_id]);
+        Recruit_Period_sp = (int) (FunctGroupArray[sp].speciesParams[Recruit_Period_id]);
+        Recruit_Time_sp = (int) (FunctGroupArray[sp].speciesParams[Recruit_Time_id]);
+
+        AgeClassSize_sp = (double)(FunctGroupArray[sp].ageClassSize);
+        flagdem = (int) (FunctGroupArray[sp].speciesParams[flagdem_id]);
+        recruit_sp = (int) (FunctGroupArray[sp].speciesParams[flagrecruit_id]);
+
+        // Assume the genetypes can go at different times but that all cohorts per genetype go at the same time
+        // This is different to the old code where it was the cohort not the genetype that was being set
+        for (ngene = 0; ngene < FunctGroupArray[sp].numGeneTypes; ngene++) {
+            if (bm->flagrandom) {
+                temp1 = drandom(-14.0, 14.0);
+                if (temp1 < 0.0)
+                    VarTime1 = (int) (ceil(temp1 - 0.5));
+                else
+                    VarTime1 = (int) (floor(temp1 + 0.5));
+                temp2 = drandom(-7.0, 7.0);
+                if (temp2 < 0.0)
+                    VarTime2 = (int) (ceil(temp2 - 0.5));
+                else
+                    VarTime2 = (int) (floor(temp2 + 0.5));
+            } else {
+                VarTime1 = 0;
+                VarTime2 = 0;
+            }
+		
+            for(bcohort = 0; bcohort < FunctGroupArray[sp].numCohorts; bcohort++){
+                cohort = (FunctGroupArray[sp].numGeneTypes * bcohort) + ngene;
+                basecohort = (int)floor(cohort / FunctGroupArray[sp].numGeneTypes);
+                /* Start with Migrants */
+                stage = FunctGroupArray[sp].cohort_stage[basecohort];
+                //printf("Currently doing calendar coordination for %s-%d\n", FunctGroupArray[sp].groupCode, cohort);
+
+                /* Find spawning date */
+                EMBRYO[sp].Spawn_Now[cohort][qid] = Time_Spawn_sp + VarTime1;
+                if (EMBRYO[sp].Spawn_Now[cohort][qid] < 2)
+                    EMBRYO[sp].Spawn_Now[cohort][qid] = 2;
+                else if (EMBRYO[sp].Spawn_Now[cohort][qid] >= 364)
+                    EMBRYO[sp].Spawn_Now[cohort][qid] = 363;
+
+                /* Find dates of recruitment (beginning and end) */
+                EMBRYO[sp].StartDay[cohort][lid] = EMBRYO[sp].Spawn_Now[cohort][qid] + Recruit_Time_sp + VarTime2;
+
+                /* Avoid the tick over (aging or startday) being on the first day of the year as can trip stuff
+                 up so in those cases shuffle a few days further into the year
+                 */
+                thisday = (double)(EMBRYO[sp].StartDay[cohort][lid]);
+                if ((thisday / 365.0) < 1.0)
+                    startTofY = (int) (floor(thisday + 0.5));
+                else
+                    startTofY = (int) (floor((thisday / 365.0 - floor(thisday / 365.0)) * 365.0 + 0.5));
+
+                if( startTofY < 2 ){
+                    diff = 2 - startTofY;
+                    EMBRYO[sp].StartDay[cohort][lid] += diff;
+                }
+
+                if (do_debug && (bm->which_check == sp)) {
+                    fprintf(llogfp, "%s qid: %d, lid: %d, StartDay: %d, SpawnNow: %d, RecTime: %d, VarTime: %d\n", FunctGroupArray[sp].groupCode,
+						qid, lid, EMBRYO[sp].StartDay[cohort][lid], EMBRYO[sp].Spawn_Now[cohort][qid], Recruit_Time_sp, VarTime2);
+                }
+
+                if (EMBRYO[sp].StartDay[cohort][lid] < EMBRYO[sp].Spawn_Now[cohort][qid])
+                    EMBRYO[sp].StartDay[cohort][lid] = EMBRYO[sp].Spawn_Now[cohort][qid];
+
+                EMBRYO[sp].RecruitPeriod[lid] = Recruit_Period_sp;
+                EMBRYO[sp].EndDay[cohort][lid] = EMBRYO[sp].StartDay[cohort][lid] + (int)EMBRYO[sp].RecruitPeriod[lid];
+
+                if (do_debug && (bm->which_check == sp)) {
+                    fprintf(llogfp, "%s-%d lid: %d, EndDay: %d, StartDay: %d, RecPeriod: %f\n", FunctGroupArray[sp].groupCode, cohort,
+						lid, EMBRYO[sp].EndDay[cohort][lid], EMBRYO[sp].StartDay[cohort][lid], EMBRYO[sp].RecruitPeriod[lid]);
+
+					fprintf(llogfp, "%s-%d has Spawn_now[%d]: %d, StartDay: %d, EndDay: %d, RecruitPeriod: %e\n",
+						FunctGroupArray[sp].groupCode, cohort, qid, EMBRYO[sp].Spawn_Now[cohort][qid],
+						EMBRYO[sp].StartDay[cohort][lid], EMBRYO[sp].EndDay[cohort][lid], EMBRYO[sp].RecruitPeriod[lid]);
+                }
+
+                // Check if larval period > 364 days (would have wrapped in old code, needed to set up values in first_year)
+                wrap_this = 0;
+                EMBRYO[sp].wraps[cohort] = 0;
+
+                // Things get messy if end day falls write on the calendar rollover so trim as needed
+                if ((EMBRYO[sp].EndDay[cohort][lid] > 363) && (EMBRYO[sp].EndDay[cohort][lid] < 366)){
+                    if(EMBRYO[sp].StartDay[cohort][lid] == 363){
+                        EMBRYO[sp].StartDay[cohort][lid] = 362; // Need to make sure they get one day to arrive in at least
+                    }
+                    EMBRYO[sp].EndDay[cohort][lid] = 363;  // Trim a bit short of the end of the year just to be safe.
+                }
+                // Otherwise can continue as normal by wrapping into the new year
+                if (EMBRYO[sp].EndDay[cohort][lid] > 364){
+                    wrap_this = 1;
+                    EMBRYO[sp].wraps[cohort] = 1;
+                }
+
+                // Now have calendar sorted add it on to current day to give actual day of events
+                EMBRYO[sp].Spawn_Now[cohort][qid] += this_day;
+                EMBRYO[sp].StartDay[cohort][lid] += this_day;
+                EMBRYO[sp].EndDay[cohort][lid] += this_day;
+
+                if (do_debug && (bm->which_check == sp)) {
+                    fprintf(llogfp, "%s-%d qid: %d, updated EndDay: %d (expect EndDay: %d), StartDay: %d (expect StartDay: %d), RecPeriod: %f (expect RecPeriod %f)\n", FunctGroupArray[sp].groupCode, cohort,
+						qid, EMBRYO[sp].EndDay[cohort][lid], EMBRYO[sp].EndDay[cohort][expect_id], EMBRYO[sp].StartDay[cohort][lid], EMBRYO[sp].StartDay[cohort][expect_id], EMBRYO[sp].RecruitPeriod[lid], 
+						EMBRYO[sp].RecruitPeriod[expect_id]);
+
+					fprintf(llogfp, "%s-%d has Spawn_now[%d]: %d, StartDay: %d, EndDay: %d, RecruitPeriod: %e\n",
+						FunctGroupArray[sp].groupCode, cohort, qid, EMBRYO[sp].Spawn_Now[cohort][qid],
+						EMBRYO[sp].StartDay[cohort][lid], EMBRYO[sp].EndDay[cohort][lid], EMBRYO[sp].RecruitPeriod[lid]);
+                }
+
+                /* Get initial first year number of recruits */
+                if (first_year) { // If the first year of the run set to current values
+                    EMBRYO[sp].RecruitPeriod[lid] = Recruit_Period_sp;
+                    if ( EMBRYO[sp].Spawn_Now[cohort][qid] > 364 ) {
+                        countback = 0;
+                        temp_val = EMBRYO[sp].Spawn_Now[cohort][qid];
+                        while ( temp_val > 364 ) {
+                            temp_val -= 364;
+                            countback++;
+                        }
+                        for(i = countback; i > 0; i--){
+                            EMBRYO[sp].Spawn_Now[cohort][qid+countback] = EMBRYO[sp].Spawn_Now[cohort][qid] - 364 * (countback - i);
+                        }
+                        EMBRYO[sp].Spawn_Now[cohort][qid] -= 364 * countback;
+
+                        // Acknowledge the additions in the queue length
+                        if(spawn_queue_extension < countback) {
+                            temp_val = countback - spawn_queue_extension;
+                            EMBRYO[sp].latest_in_spawn_queue += temp_val;
+                            spawn_queue_extension += temp_val;
+                        }
+
+                    }
+                    
+                    // First deal with the case where StartDay (and thus EndDay) are > 364
+                    countback = 0;
+                    if ( wrap_this) {
+                        any_wrap = 1;
+                        temp_val_end = EMBRYO[sp].EndDay[cohort][lid];
+                        while ( temp_val_end > 364 ) {
+                            temp_val_end -= 364;
+                            countback++;
+                        }
+                        temp_val_start = EMBRYO[sp].StartDay[cohort][lid];
+                        temp_val_end = EMBRYO[sp].EndDay[cohort][lid];
+                        
+                        /* Try not increasing the size of the queue - just update the numbers */
+                        start_i = -1;
+                        if (FunctGroupArray[sp].numSpawns > 1) {
+                            // New method = shuffle the spawns forward and insert those that would have occurred last year
+                            // Start by finding the insertion point
+                            for(i = 0; i < EMBRYO[sp].num_in_larval_queue; i++){
+                                if(temp_val_start > EMBRYO[sp].StartDay[cohort][i]) {
+                                    start_i = i;
+                                    break;
+                                }
+                            }
+                            
+                            // Error checking - to make sure don't exceed the queue length
+                            if ((FunctGroupArray[sp].numSpawns + countback) > EMBRYO[sp].num_in_larval_queue)
+                                quit("About to break the larval queue for %s (as numSpawns: %d, countback: %d, num_in_larval_queue: %d) - ask for code that includes realloc of the queue to avoid this problem\n", FunctGroupArray[sp].groupCode, FunctGroupArray[sp].numSpawns, countback, EMBRYO[sp].num_in_larval_queue);
+                            
+                            // Shuffle entries out of the way - including lid as will need that to lead into next year
+                            for(i=EMBRYO[sp].num_in_larval_queue - countback - 1; i >= start_i; i--){
+                                EMBRYO[sp].StartDay[cohort][i + countback] = EMBRYO[sp].StartDay[cohort][i];
+                                EMBRYO[sp].EndDay[cohort][i + countback] = EMBRYO[sp].EndDay[cohort][i];
+                            }
+                            
+                            // Now insert the new valuesafer countback
+                            j = 0;
+                            for(i = countback; i >= 1; i--){
+                                EMBRYO[sp].StartDay[cohort][start_i + j] = temp_val_start - 365 * i;
+                                EMBRYO[sp].EndDay[cohort][start_i + j] = temp_val_end - 365 * i;
+                                
+                                if(EMBRYO[sp].StartDay[cohort][start_i + j] < 2)
+                                    EMBRYO[sp].StartDay[cohort][start_i + j] = 2;
+                                
+                                if(bm->which_check == sp){
+                                    fprintf(llogfp, "%s-%d after update, StartDay: %d (lid_startday: %d), EndDay: %d\n",
+                                        FunctGroupArray[sp].groupCode, cohort, EMBRYO[sp].StartDay[cohort][start_i + j], EMBRYO[sp].StartDay[cohort][lid],EMBRYO[sp].EndDay[cohort][start_i + j]);
+                                }
+                                
+                                j++;
+                            }
+                            
+                            
+                        } else {
+                            // Original code - for when a single spawn per year
+                            EMBRYO[sp].StartDay[cohort][0] = temp_val_start - 365 * countback;
+                            EMBRYO[sp].EndDay[cohort][0] = temp_val_end - 365 * countback;
+                            
+                            if(EMBRYO[sp].StartDay[cohort][0] < 2)
+                                EMBRYO[sp].StartDay[cohort][0] = 2;
+
+                            /* Now adjust the rest of the queue */
+                            for(i = 1; i < EMBRYO[sp].num_in_larval_queue; i++){
+                                EMBRYO[sp].StartDay[cohort][i] = EMBRYO[sp].StartDay[cohort][i - 1] + 365;
+                                EMBRYO[sp].EndDay[cohort][i] = EMBRYO[sp].EndDay[cohort][i - 1] + 365;
+                            }
+                        }
+
+                        if(bm->which_check == sp){
+                            fprintf(llogfp, "%s-%d after countback: %d, lid: %d, StartDay: %d, EndDay: %d\n",
+                                    FunctGroupArray[sp].groupCode, cohort, countback, lid, EMBRYO[sp].StartDay[cohort][lid], EMBRYO[sp].EndDay[cohort][lid]);
+                        }
+
+                        // Acknowledge the additions in the queue length
+                        if(aging_queue_extension < countback) {
+                            temp_val = countback - aging_queue_extension;
+                            EMBRYO[sp].latest_in_aging_queue += temp_val;
+                            aging_queue_extension += temp_val;
+                        }
+
+                        if(larval_queue_extension < countback) {
+                            temp_val = countback - larval_queue_extension;
+                            EMBRYO[sp].latest_in_larval_queue += temp_val;
+                            larval_queue_extension += temp_val;
+                        }
+                        
+                        if(do_debug && (bm->which_check == sp)){
+                            fprintf(llogfp, "%s-%d now has latest in larval_queue: %d, latest_ageing queue: %d, latest_spawning_queue: %d\n",
+                                    FunctGroupArray[sp].groupCode, cohort, EMBRYO[sp].latest_in_larval_queue, EMBRYO[sp].latest_in_aging_queue, EMBRYO[sp].latest_in_spawn_queue);
+
+							fprintf(llogfp, "%s-%d has Spawn_now[%d]: %d, StartDay: %d, EndDay: %d, RecruitPeriod: %e\n",
+								FunctGroupArray[sp].groupCode, cohort, expect_id, EMBRYO[sp].Spawn_Now[cohort][expect_id],
+								EMBRYO[sp].StartDay[cohort][expect_id], EMBRYO[sp].EndDay[cohort][expect_id], EMBRYO[sp].RecruitPeriod[expect_id]);
+                        }
+
+                        /* If a vertebrate using fixed_linear_recruit need to get entire adult
+                         population to see total recruits produced - can't base it on local
+                         population as adults and juveniles spatial disjunct */
+                        if (recruit_sp != fixed_linear_recruit) {
+                            if(!cohort){
+                                for (stock_id = 0; stock_id < bm->K_num_stocks_per_sp; stock_id++) {
+                                    adults_spawning[stock_id] = 1.0;
+                                }
+                            }
+                        } else {
+                            if(!cohort){
+                                for (stock_id = 0; stock_id < bm->K_num_stocks_per_sp; stock_id++) {
+                                    adults_spawning[stock_id] = 0.0;
+                                }
+                            }
+
+                            /* Assume from first migrant group only */
+                            stock_id = (int) (MIGRATION[sp].returnstock[stage][0]) - 1;
+                            if (stock_id < 0) {
+                                /* Homogeneously spread across stocks */
+                                maxstock = FunctGroupArray[sp].numStocks;
+                                for(mid = 0; mid < FunctGroupArray[sp].speciesParams[num_migrate_id]; mid++){
+                                    for (j = 0; j < maxstock; j++){
+                                        adults_spawning[j] += FunctGroupArray[sp].scaled_FSPB[cohort] * (MIGRATION[sp].InitDEN[cohort][mid] / maxstock);
+                                    }
+                                }
+                            } else {
+                                /* Directed to a specific stock */
+                                for(mid = 0; mid < FunctGroupArray[sp].speciesParams[num_migrate_id]; mid++){
+                                    adults_spawning[stock_id] += FunctGroupArray[sp].scaled_FSPB[cohort] * MIGRATION[sp].InitDEN[cohort][mid];
+                                }
+                            }
+
+                            /* Now do those inside the model domain */
+                            den = FunctGroupArray[sp].NumsTracers[cohort];
+
+                            for (i = 0; i < nboxes; i++) {
+                                for (j = 0; j < bm->boxes[i].nz; j++) {
+                                    stock_id = bm->group_stock[sp][i][j];
+                                    adults_spawning[stock_id] += FunctGroupArray[sp].scaled_FSPB[cohort] * bm->boxes[i].tr[j][den];
+                                }
+                            }
+
+                            /* Initialise EMBRYO[sp].Larvae for use below */
+                            for (stock_id = 0; stock_id < FunctGroupArray[sp].numStocks; stock_id++) {
+                                EMBRYO[sp].Larvae[stock_id][ngene][lid] = 0;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (first_year && any_wrap) {
+
+                /* Get actual number of recruits arriving and their settlement sites */
+                for (i = 0; i < nboxes; i++) {
+                    diff = bm->wcnz - bm->boxes[i].nz;
+                    for (j = 0; j < bm->boxes[i].nz; j++) {
+                        if (bm->boxes[i].nz < nlayers) {
+                            diffdeep = nlayers - bm->boxes[i].nz;
+                            sumnzj1 = 0.0;
+                            sumnzj2 = 0.0;
+                            for (k = 0; k < bm->boxes[i].nz; k++) {
+                                layerk = k + diffdeep - 1;
+                                sumnzj1 += recruit_vdistrib[layerk][sp];
+                                sumnzj2 += recruit_vdistrib[k][sp];
+                            }
+                            if (sumnzj1 < sumnzj2) {
+                                vertdistrib = recruit_vdistrib[j][sp] / sumnzj2;
+                            } else if (!sumnzj1) {
+                                /* If demersal and on the bottom */
+                                if (flagdem && (j == 0)) {
+                                    vertdistrib = 1;
+                                    /* If pelagic and at the surface */
+                                } else if (!flagdem && (j == bm->boxes[i].nz - 1)) {
+                                    vertdistrib = 1;
+                                } else
+                                    vertdistrib = 0;
+                            } else {
+                                layerk = j + diffdeep - 1;
+                                vertdistrib = recruit_vdistrib[layerk][sp] / sumnzj1;
+                            }
+                        } else
+                            vertdistrib = recruit_vdistrib[j][sp];
+
+                        stock_id = bm->group_stock[sp][i][j];
+
+                        /* If not fixed_linear_recruit then adults_spawning = 1.0
+                         so effectively just spreading recruits read-in via KDENR
+                         across the model domain (boxes and layers). If
+                         fixed_linear_recruit is in use then adults_spawning
+                         is the number spawning so scaling pups_per_adult by number
+                         of adults to get the final numbers produced */
+                        ngenes = (double)(FunctGroupArray[sp].numGeneTypes);
+                        if(FunctGroupArray[sp].isCultured)
+                            prod_scalar = 1.0;
+                        else
+                            prod_scalar = adults_spawning[stock_id];
+
+                        /* Calculate the number of recruits for each spawning event that will happen before the start of the model */
+                        for(k = lid; k < larval_queue_extension; k++){
+                            EMBRYO[sp].num_recruits[i][j][ngene][k] = KDENR[sp][stock_id] * prod_scalar * vertdistrib * bm->recruit_hdistrib[ngene][i][sp] / ngenes;
+
+                            /* Update total number of potential recruits
+                             that were spawned last year (before model began)
+                             and arriving this year (first year of model run).
+                             All potential recruits spawned year one will
+                             happen explicitly in the run so no calculations
+                             needed here - or will end up with too many of them!!!! */
+                            EMBRYO[sp].Larvae[stock_id][ngene][k] += EMBRYO[sp].num_recruits[i][j][ngene][k];
+
+                            /**/
+                            if (do_debug && (sp == bm->which_check)) {
+                                fprintf(llogfp,
+                                        "%s, num_recruits_old_start-%d-%d: %e, VERTembryo%s-%d: %e (old: %e), KDENR: %e, adults_spawning: %e, vertdistrib: %e, bm->recruit_hdistrib%d-%s: %e, ngenes: %e\n",
+                                        FunctGroupArray[sp].groupCode, i, j, EMBRYO[sp].num_recruits[i][j][ngene][k], FunctGroupArray[sp].groupCode, stock_id,
+                                        EMBRYO[sp].Larvae[stock_id][ngene][k], EMBRYO[sp].Larvae[stock_id][ngene][k], KDENR[sp][stock_id], adults_spawning[stock_id], vertdistrib, i,
+                                        FunctGroupArray[sp].groupCode, bm->recruit_hdistrib[ngene][i][sp], ngenes);
+                            }
+                            /**/
+                        }
+                    }
+                }
+            }
+        }
+    }
+	/* Find date of aging - outside loop so can't get out of whack between cohorts
+	 * TODO: Allow different geneotypes to spawn etc at different times
+	 */
+	qid = EMBRYO[sp].latest_in_spawn_queue;
+	aid = EMBRYO[sp].latest_in_aging_queue;
+	lid = EMBRYO[sp].latest_in_larval_queue;
+
+	for (cohort = 0; cohort < FunctGroupArray[sp].numCohortsXnumGenes; cohort++) {
+		ngene = FunctGroupArray[sp].numGeneTypes;
+		basecohort = (int)floor (cohort / ngene);
+		ngene = cohort - (basecohort * FunctGroupArray[sp].numGeneTypes);
+
+		if (AgeClassSize_sp >= 1.0) {
+            
+            /* This will actually be used for species with cohorts that are < 1 year in length due to multiple spawns per year */
+			if(aid != lid) {
+				fprintf(llogfp,"Aging queue not in line with the larval queue for %s-%d (aid: %d, lid: %d) - might be ok if species who 'wraps' from year to year\n", FunctGroupArray[sp].groupCode, cohort, aid, lid);
+				warn("Aging queue not in line with the larval queue for %s-%d (aid: %d, lid: %d) - might be ok if species who 'wraps' from year to year\n", FunctGroupArray[sp].groupCode, cohort, aid, lid);
+			}
+			if( aid < 0 )
+				quit("Trying to create a -ve index (aid: %d) for %s\n", aid, FunctGroupArray[sp].groupCode);
+
+			if(first_year) {
+				if (sp == bm->which_check) {
+					fprintf(llogfp,"Aging %s-%d queue aid: %d\n", 
+						FunctGroupArray[sp].groupCode, cohort, aid);
+				}
+				for (stid = 0; stid < (aid + 1); stid++) {
+					EMBRYO[sp].Age_Now[cohort][stid] = EMBRYO[sp].StartDay[cohort][stid] - 1;
+
+					if (sp == bm->which_check) {
+						fprintf(llogfp,"Aging %s-%d queue stid: %d age_now: %d, StartDay: %d, EndDay: %d\n", 
+							FunctGroupArray[sp].groupCode, cohort, stid, EMBRYO[sp].Age_Now[cohort][stid], 
+							EMBRYO[sp].StartDay[cohort][stid], EMBRYO[sp].EndDay[cohort][stid]);
+					}
+				}
+			} else {
+				EMBRYO[sp].Age_Now[cohort][aid] = EMBRYO[sp].StartDay[cohort][lid] - 1;
+			}
+		} else {
+            
+            /* TODO Actually allow for AgeClassSize < Cohort age span */
+            
+			/* When doing it a new each time do it as for larger ageclass sizes,
+				*  but over whole queue when updating queue becareful that don't
+				*  lose entries that have wrapped into next calendar year
+				*/
+
+			stepsize = (int) floor(ROUNDGUARD + (364.0 * AgeClassSize_sp));
+			num_steps = (int) ceil(364.0 / AgeClassSize_sp);
+
+			/* TODO: May need to put in a check that not accidentally wiping valid dates created in earlier years */
+			for (stid = aid; stid < aid + num_steps; stid++) {
+				// So start at spawning day and step forward through the year
+				EMBRYO[sp].Age_Now[cohort][stid] = EMBRYO[sp].StartDay[cohort][lid] - 1 + (stid - aid) * stepsize;
+			}
+		}
+
+		if (EMBRYO[sp].Age_Now[cohort][expect_id] < (this_day + 1))
+			EMBRYO[sp].Age_Now[cohort][expect_id] = this_day + 1;
+
+		if (sp == bm->which_check) {
+			fprintf(llogfp,"Aging %s-%d age_now: %d, this_day: %d\n", 
+				FunctGroupArray[sp].groupCode, cohort, EMBRYO[sp].Age_Now[cohort][expect_id], this_day);
+		}
+
+		/* If first year set up first round of aging 
+		if (first_year) {
+			countback = 0;
+			if ((AgeClassSize_sp >= 1.0) && (EMBRYO[sp].Age_Now[cohort][aid] > 364)) {
+
+				if (sp == bm->which_check) {
+					fprintf(llogfp, "Time: %e, %s-%d AgeClassSize_sp: %e, aid: %d, age_now: %d\n", bm->dayt,
+							FunctGroupArray[sp].groupCode, cohort, AgeClassSize_sp, aid, EMBRYO[sp].Age_Now[cohort][aid]);
+				}
+
+				for (stid = 0; stid < aid; stid++) {
+
+					if (sp == bm->which_check) {
+						fprintf(llogfp, "Time: %e, %s-%d stid: %d, aid: %d, age_now: %d\n", bm->dayt,
+								FunctGroupArray[sp].groupCode, cohort, stid, aid, EMBRYO[sp].Age_Now[cohort][aid]);
+					}
+					EMBRYO[sp].Age_Now[cohort][stid] -= 364;
+					if(EMBRYO[sp].Age_Now[cohort][stid] < 0)
+						countback++;
+				}
+				// Adjust in case this contraction slips some off the front of the year (it shouldn't, but just to be safe)				
+				if(aging_queue_extension2 < countback) {
+					temp_val = countback - aging_queue_extension2;
+					EMBRYO[sp].latest_in_aging_queue -= temp_val;
+					aging_queue_extension2 += temp_val;
+				}
+				if (sp == bm->which_check) {
+					fprintf(llogfp, "Time: %e, %s has latest_in_age_queue: %d, aging_queue_extension2: %d\n", bm->dayt,
+							FunctGroupArray[sp].groupCode, cohort, EMBRYO[sp].latest_in_aging_queue, aging_queue_extension2);
+				}
+
+			} 
+			// Don't do it for the other case (<1) as sorted each year anyways
+		}
+		*/
+
+		// Save final spawning and aging info
+		if(EMBRYO[sp].next_spawn > EMBRYO[sp].Spawn_Now[cohort][expect_id])
+		    EMBRYO[sp].next_spawn = EMBRYO[sp].Spawn_Now[cohort][expect_id];
+		if(EMBRYO[sp].next_age > EMBRYO[sp].Age_Now[cohort][expect_id])
+			EMBRYO[sp].next_age = EMBRYO[sp].Age_Now[cohort][expect_id];
+
+		/* Check dates sensible */
+		Pad_The_Demography_Queues(bm, sp, cohort, nspawn, qid, lid, aid, llogfp);
+		CheckDates(bm, sp, cohort, ngene, lid, qid, nspawn, do_debug, this_day, llogfp);
+
+	}
+
+	if (do_debug && (bm->which_check == sp)){
+		fprintf(llogfp,"Set %s next_spawn: %d, next_age: %d next_arrival: %d\n", 
+			FunctGroupArray[sp].groupCode, EMBRYO[sp].next_spawn, EMBRYO[sp].next_age, EMBRYO[sp].StartDay[0][expect_id]);
+	}
+
+	free1d(adults_spawning);
+	return;
+}
+
+/**
+ * \brief Pad out the queue in case age faster than have entries in the queue
+ */
+void Pad_The_Demography_Queues(MSEBoxModel *bm, int sp, int cohort, int nspawn, int qid, int lid, int aid, FILE *llogfp) {
+	int i, step, maxage = 0, maxspawn = 0, maxstart = 0, maxend = 0, maxage_id = 0, maxspawn_id = 0, maxstart_id = 0, maxend_id = 0;
+	int AgeClassSize_sp = FunctGroupArray[sp].ageClassSize;
+    int stepsize;
+
+	if (AgeClassSize_sp < 1.0)   // TODO: ALLOW FOR MULTIPLE SPAWNING PER YEAR - currently only handles when one spawning/aging per year
+		return;
+
+	// First up find the max date in each case
+	for (i = 0; i < EMBRYO[sp].num_in_aging_queue; i++) {
+		if(EMBRYO[sp].Age_Now[cohort][i] > maxage) {
+			maxage = EMBRYO[sp].Age_Now[cohort][i];
+			maxage_id = i;
+		}
+	}
+	for (i = 0; i < EMBRYO[sp].num_in_spawn_queue; i++) {
+		if(EMBRYO[sp].Spawn_Now[cohort][i] > maxspawn) {
+			maxspawn = EMBRYO[sp].Spawn_Now[cohort][i];
+			maxspawn_id = i;
+		}
+	}
+	for (i = 0; i < EMBRYO[sp].num_in_larval_queue; i++) {
+		if(EMBRYO[sp].StartDay[cohort][i] > maxstart) {
+			maxstart = EMBRYO[sp].StartDay[cohort][i];
+			maxstart_id = i;
+		}
+		if(EMBRYO[sp].EndDay[cohort][i] > maxend) {
+			maxend = EMBRYO[sp].EndDay[cohort][i];
+			maxend_id = i;
+		}
+	}
+
+	// Now deal with oddness
+    stepsize = (int)(365 / FunctGroupArray[sp].numSpawns);
+	for (i = (maxage_id + 1); i < EMBRYO[sp].num_in_aging_queue; i++) {
+		step = i - maxage_id;
+		if (EMBRYO[sp].Age_Now[cohort][i] <= maxage) {
+			EMBRYO[sp].Age_Now[cohort][i] = maxage + step * stepsize;
+		}
+	}
+	for (i = (maxspawn_id + 1); i < EMBRYO[sp].num_in_spawn_queue; i++) {
+		step = i - maxspawn_id;
+		if(EMBRYO[sp].Spawn_Now[cohort][i] <= maxspawn) {
+			EMBRYO[sp].Spawn_Now[cohort][i] = maxspawn + step * stepsize;
+		}
+	}
+	for (i = (maxstart_id + 1); i < EMBRYO[sp].num_in_larval_queue; i++) {
+		step = i - maxstart_id;
+		if(EMBRYO[sp].StartDay[cohort][i] <= maxstart) {
+			EMBRYO[sp].StartDay[cohort][i] = maxstart + step * stepsize;
+		}
+	}
+	for (i = (maxend_id + 1); i < EMBRYO[sp].num_in_larval_queue; i++) {
+		step = i - maxend_id;
+		if(EMBRYO[sp].EndDay[cohort][i] <= maxend) {
+			EMBRYO[sp].EndDay[cohort][i] = maxend + step * stepsize;
+		}
+	}
+
+	if(sp == bm->which_check) {
+		fprintf(llogfp, "Time: %e %s-%d maxage: %d maxspawn: %d maxstart: %d maxend: %d maxage_id: %d maxspawn_id: %d maxstart_id: %d maxend_id: %d\n",
+				bm->dayt, FunctGroupArray[sp].groupCode, cohort, maxage, maxspawn, maxstart, maxend,
+				maxage_id, maxspawn_id, maxstart_id, maxend_id);
+	}
+
+	return;
+}
+
+/**
+ * \brief Check on dates so that they make sense and queue not twisted
+ */
+void CheckDates(MSEBoxModel *bm, int sp, int cohort, int ngene, int lid, int qid, int nspawn, int do_debug, int this_day, FILE *llogfp) {
+	int i, k;
+	double AgeClassSize_sp = (double)(FunctGroupArray[sp].ageClassSize);
+	int age_check, startday_check, spawn_check, endday_check;
+	int age_id = expect_id;
+	int spawn_id = expect_id;
+	int days_id = expect_id;
+
+	/* Find which dates to check */
+	age_check = EMBRYO[sp].Age_Now[cohort][expect_id];     // as is just a simple check vs next_age when calling Update_Age_Queue()
+
+	if ((EMBRYO[sp].EndDay[cohort][expect_id] + 1) <= this_day) {
+		startday_check = EMBRYO[sp].StartDay[cohort][expect_id + 1];  // As need to check the coming date, once Ecology_Init_Spawn_Params() updates, is ok
+		endday_check = EMBRYO[sp].EndDay[cohort][expect_id + 1];
+		days_id += 1;
+	} else {
+		startday_check = EMBRYO[sp].StartDay[cohort][expect_id];  // As no weirdness with wrapping over the end of the year so a simple check
+		endday_check = EMBRYO[sp].EndDay[cohort][expect_id];
+	}
+
+	if ((EMBRYO[sp].Spawn_Now[cohort][expect_id] + 2) <= this_day) {
+		spawn_check = EMBRYO[sp].Spawn_Now[cohort][expect_id + 1];    // As need to check the coming date, once Update_Spawn_Queue() updates, is ok
+		spawn_id += 1;
+	} else
+		spawn_check = EMBRYO[sp].Spawn_Now[cohort][expect_id];  // As no weirdness with wrapping over the end of the year so a simple check
+
+	//if ((do_debug && (bm->which_check == sp)) || ((age_check < this_day) || (startday_check < this_day) || (spawn_check < this_day))) {
+	if ((age_check < this_day) || (startday_check < this_day) || (spawn_check < this_day)) {
+
+		fprintf(llogfp, "%s-%d day: %f first_year: %d, AgeClassSize_sp: %f, num_in_yr: %d, Spawn_Now: %d, StartDay: %d, RecruitPeriod: %f, EndDay: %d, Age_now: %d\n",
+				FunctGroupArray[sp].groupCode, cohort, bm->dayt, first_year, AgeClassSize_sp,
+				EMBRYO[sp].num_in_yr, EMBRYO[sp].Spawn_Now[cohort][qid],
+				EMBRYO[sp].StartDay[cohort][days_id], EMBRYO[sp].RecruitPeriod[days_id],
+				EMBRYO[sp].EndDay[cohort][days_id], EMBRYO[sp].Age_Now[cohort][age_id]);
+
+		fprintf(llogfp, "%s-%d now has latest in larval_queue: %d, latest_ageing queue: %d, latest_spawning_queue: %d\n",
+				FunctGroupArray[sp].groupCode, cohort, EMBRYO[sp].latest_in_larval_queue, EMBRYO[sp].latest_in_aging_queue, EMBRYO[sp].latest_in_spawn_queue);
+
+		for (i = 0; i< EMBRYO[sp].num_in_aging_queue; i++)
+			fprintf(llogfp, "%s-%d has Age_now[%d]: %d\n", FunctGroupArray[sp].groupCode, cohort, i, EMBRYO[sp].Age_Now[cohort][i]);
+
+		for (i = 0; i< EMBRYO[sp].num_in_spawn_queue; i++) {
+			fprintf(llogfp, "%s-%d has Spawn_now[%d]: %d, StartDay: %d, EndDay: %d, RecruitPeriod: %e\n",
+				FunctGroupArray[sp].groupCode, cohort, i, EMBRYO[sp].Spawn_Now[cohort][i],
+				EMBRYO[sp].StartDay[cohort][i], EMBRYO[sp].EndDay[cohort][i], EMBRYO[sp].RecruitPeriod[i]);
+		}
+
+		/*
+		if(cohort == ((bm->K_num_max_cohort * bm->K_num_max_genetypes) - 1)){
+			for (i = 0; i< EMBRYO[sp].num_in_larval_queue; i++) {
+				fprintf(llogfp, "%s has Larvae[%d]: %e\n", FunctGroupArray[sp].groupCode, i, EMBRYO[sp].Larvae[0][0][i]);
+				for (b = 0; b < bm->nbox; b++) {
+					for ( k = 0; k < bm->wcnz; k++) {
+						fprintf(llogfp, "%s has num_rec[box: %d][layer: %d][%d]: %e\n",
+							FunctGroupArray[sp].groupCode, b, k, i, EMBRYO[sp].num_recruits[b][k][ngene][i]);
+					}
+				}
+			}
+		}
+		*/
+
+		if((age_check < this_day) || (endday_check < this_day) || (spawn_check < this_day)){
+			fflush(llogfp);
+			quit("There was a spawning/aging date foul up in Annual_biology for %s see log file for details (age_now: %d start_day: %d, end_day: %d spawn_now: %d this_day: %d)\n",
+					FunctGroupArray[sp].groupCode, EMBRYO[sp].Age_Now[cohort][age_id], EMBRYO[sp].StartDay[cohort][days_id],
+					EMBRYO[sp].EndDay[cohort][days_id], EMBRYO[sp].Spawn_Now[cohort][spawn_id], this_day);
+		}
+	}
+
+	/* Calibration helper messages */
+	if (do_debug && (bm->which_check == sp)) {
+
+		for (i = 0; i< EMBRYO[sp].num_in_aging_queue; i++) {
+			fprintf(llogfp, "%s-%d AgeDay: %d\n",
+				FunctGroupArray[sp].groupCode, cohort, EMBRYO[sp].Age_Now[cohort][i]);
+		}
+
+		for (i = 0; i< EMBRYO[sp].num_in_spawn_queue; i++) {
+			fprintf(llogfp, "%s-%d SpawnDay: %d\n",
+				FunctGroupArray[sp].groupCode, cohort, EMBRYO[sp].Spawn_Now[cohort][i]);
+		}
+
+		for (i =0; i < EMBRYO[sp].num_in_larval_queue; i++) {
+			fprintf(llogfp, "%s-%d StartDay: %d RecruitPeriod: %f EndDay: %d ",
+				FunctGroupArray[sp].groupCode, cohort, EMBRYO[sp].StartDay[cohort][i], EMBRYO[sp].RecruitPeriod[i], EMBRYO[sp].EndDay[cohort][i]);
+
+			for (k = 0; k < FunctGroupArray[sp].numStocks; k++) {
+				fprintf(llogfp, " VERTembryo-%d %e", k, EMBRYO[sp].Larvae[k][ngene][i]);
+			}
+
+			fprintf(llogfp, "\n");
+
+		}
+	}
+
+	return;
+}
+
+/******************************************************************************************************************
+ * \brief Calculate the migration dates of the given species, cohort and migrationID combination.
+ * The resulting values are stored in the Leave_now and Return_Now arrays (used to be MigrateAway and MigrateBack).
+ * If the species is the bm->which_Check species and we are debuging this code messages
+ * are written to the log file.
+ *
+ *
+ */
+static void Calculate_Migration_Dates(MSEBoxModel *bm, FILE *llogfp, int sp, int cohort, int migrationID, int do_debug) {
+	int sp_Migrate_Time, sp_Migrate_Return, mig_window, VarTime4, VarTime3;
+	double temp3, temp4;
+
+	sp_Migrate_Time = (int) (MIGRATION[sp].StartDay[cohort][migrationID]);
+	sp_Migrate_Return = (int) (MIGRATION[sp].EndDay[cohort][migrationID]);
+
+	mig_window = (int) floor(ROUNDGUARD + (min(14.0, (abs(sp_Migrate_Return - sp_Migrate_Time) / 2.0))));
+	if (bm->flagrandom) {
+		temp3 = drandom(-mig_window, mig_window);
+		if (temp3 < 0.0)
+			VarTime3 = (int) (ceil(temp3 - 0.5));
+		else
+			VarTime3 = (int) (floor(temp3 + 0.5));
+
+		temp4 = drandom(-mig_window, mig_window);
+		if (temp4 < 0.0)
+			VarTime4 = (int) (ceil(temp4 - 0.5));
+		else
+			VarTime4 = (int) (floor(temp4 + 0.5));
+	} else {
+		VarTime3 = 0;
+		VarTime4 = 0;
+	}
+	MIGRATION[sp].Leave_Now[cohort][migrationID] = sp_Migrate_Time + VarTime3;
+	MIGRATION[sp].Return_Now[cohort][migrationID] = sp_Migrate_Return + VarTime4;
+
+	if (MIGRATION[sp].Leave_Now[cohort][migrationID] > 364)
+		MIGRATION[sp].Leave_Now[cohort][migrationID] = MIGRATION[sp].Leave_Now[cohort][migrationID] - 364;
+	if (MIGRATION[sp].Return_Now[cohort][migrationID] > 364)
+		MIGRATION[sp].Return_Now[cohort][migrationID] = MIGRATION[sp].Return_Now[cohort][migrationID] - 364;
+	if (MIGRATION[sp].Leave_Now[cohort][migrationID] < 1)
+		MIGRATION[sp].Leave_Now[cohort][migrationID] = 1;
+	if (MIGRATION[sp].Return_Now[cohort][migrationID] < 1)
+		MIGRATION[sp].Return_Now[cohort][migrationID] = 1;
+
+	if ((MIGRATION[sp].Leave_Now[cohort][migrationID] > MIGRATION[sp].Return_Now[cohort][migrationID]) && (sp_Migrate_Return > sp_Migrate_Time)) {
+		MIGRATION[sp].Leave_Now[cohort][migrationID] = sp_Migrate_Time;
+		MIGRATION[sp].Return_Now[cohort][migrationID] = sp_Migrate_Return;
+	} else if ((MIGRATION[sp].Return_Now[cohort][migrationID] > MIGRATION[sp].Leave_Now[cohort][migrationID]) && (sp_Migrate_Return < sp_Migrate_Time)) {
+		MIGRATION[sp].Leave_Now[cohort][migrationID] = sp_Migrate_Time;
+		MIGRATION[sp].Return_Now[cohort][migrationID] = sp_Migrate_Return;
+	}
+
+	//if ((do_debug && (sp == bm->which_check)) || (bm->debug == debug_prey_biology_process && bm->dayt >= bm->checkstart && bm->dayt < bm->checkstop)) {
+	if(sp == bm->which_check){
+		fprintf(llogfp, "Time: %e, sp: %s-%d, MigrateAway%d: %d, MigrateBack%d: %d (migwindow%d: %d, VarTime3: %d, sp_Migrate%d_Time: %d, VarTime4: %d, sp_Migrate%d_Return: %d)\n",
+				bm->dayt, FunctGroupArray[sp].groupCode, cohort, migrationID,
+				MIGRATION[sp].Leave_Now[cohort][migrationID], migrationID,
+				MIGRATION[sp].Return_Now[cohort][migrationID],
+				migrationID, mig_window, VarTime3, migrationID,
+				sp_Migrate_Time, VarTime4, migrationID, sp_Migrate_Return);
+	}
+}
+
+/**
+ * \brief Scale the group size based on scaler values read in from the SizeChange ts forcing input file.
+ *
+ *
+ *
+ */
+void Scale_Group_Size(MSEBoxModel *bm, FILE *llogfp){
+
+	int sp;
+	int size_scale_index;
+	int cohort;
+	int b, k, sn, rn;
+	double sizeScaler;
+
+	if(verbose > 2)
+		printf("Scaling group size\n");
+	for(sp = 0; sp < bm->K_num_tot_sp; sp++){
+		if(FunctGroupArray[sp].isVertebrate == TRUE){
+
+			for(cohort = 0; cohort < FunctGroupArray[sp].numCohortsXnumGenes; cohort++){
+				size_scale_index = bm->scaling_indices[size_scale_id][sp][cohort];
+
+				if(size_scale_index > -1){
+					sizeScaler = tsEval(bm->tsSizeChange, size_scale_index, bm->t);
+
+
+					if(fabs(sizeScaler - 1.0) > 1e-100){
+						sn = FunctGroupArray[sp].structNTracers[cohort];
+						rn = FunctGroupArray[sp].resNTracers[cohort];
+
+						for(b = 0; b < bm->nbox; b++){
+
+							if(bm->boxes[b].type == LAND && FunctGroupArray[sp].habitatCoeffs[LAND_BASED] > 0){
+								/* Cover the wc tracers first */
+								fprintf(llogfp, "Before - sizeScaler = %e\n", sizeScaler);
+								fprintf(llogfp, "%s:%d bm->boxes[%d].tr[0][sn] = %e\n", FunctGroupArray[sp].groupCode, cohort, b, bm->boxes[b].tr[0][sn]);
+								fprintf(llogfp, "%s:%d bm->boxes[%d].tr[0][rn] = %e\n", FunctGroupArray[sp].groupCode, cohort, b, bm->boxes[b].tr[0][rn]);
+								bm->boxes[b].tr[0][sn] = bm->boxes[b].tr[0][sn] * sizeScaler;
+								bm->boxes[b].tr[0][rn] = bm->boxes[b].tr[0][rn] * sizeScaler;
+								fprintf(llogfp, "After\n");
+								fprintf(llogfp, "%s:%d bm->boxes[%d].tr[0][sn] = %e\n", FunctGroupArray[sp].groupCode, cohort, b, bm->boxes[b].tr[0][sn]);
+								fprintf(llogfp, "%s:%d bm->boxes[%d].tr[0][rn] = %e\n", FunctGroupArray[sp].groupCode, cohort, b, bm->boxes[b].tr[0][rn]);
+
+								/* No support for SED or EPI yet */
+
+							}else if(bm->boxes[b].type != BOUNDARY){
+									/* Cover the wc tracers first */
+
+									// Loop through each wc layer
+									for (k=0; k<bm->boxes[b].nz; k++) {
+										fprintf(llogfp, "Before - sizeScaler = %e\n", sizeScaler);
+										fprintf(llogfp, "%s:%d bm->boxes[%d].tr[%d][sn] = %e\n", FunctGroupArray[sp].groupCode, cohort, b, k, bm->boxes[b].tr[k][sn]);
+										fprintf(llogfp, "%s:%d bm->boxes[%d].tr[%d][rn] = %e\n", FunctGroupArray[sp].groupCode, cohort, b, k, bm->boxes[b].tr[k][rn]);
+										bm->boxes[b].tr[k][sn] = bm->boxes[b].tr[k][sn] * sizeScaler;
+										bm->boxes[b].tr[k][rn] = bm->boxes[b].tr[k][rn] * sizeScaler;
+										fprintf(llogfp, "After\n");
+										fprintf(llogfp, "%s:%d bm->boxes[%d].tr[%d][sn] = %e\n", FunctGroupArray[sp].groupCode, cohort, b, k, bm->boxes[b].tr[k][sn]);
+										fprintf(llogfp, "%s:%d bm->boxes[%d].tr[%d][rn] = %e\n", FunctGroupArray[sp].groupCode, cohort, b, k, bm->boxes[b].tr[k][rn]);
+									}
+									/* No support for SED or EPI yet */
+								}
+						}
+					}
+				}
+			}
+		}
+	}
+}

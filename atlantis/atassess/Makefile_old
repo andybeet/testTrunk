@@ -1,0 +1,20 @@
+include ../Makefile.inc
+
+#WARN +=-Werror
+OBJECTS = atclassical.o atindices.o atsample.o atsurvey.o \
+	atassessprmIO.o atdatareading.o atmemory.o atsamplesetup.o \
+	atwriting.o atattribute.o atdiet.o atnetwork.o atsolve.o  \
+	outputAssessArrays.o atAssessModule.o	
+SOURCES = $(OBJECTS:.o=.c)
+
+all: libatassess.a
+
+libatassess.a: $(OBJECTS)
+	ar cr libatassess.a $(OBJECTS)
+	ranlib libatassess.a
+	# get rid of the .o files.
+	#rm -f *.o
+
+clean:
+	rm -f *.o *.a
+

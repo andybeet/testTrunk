@@ -1,0 +1,177 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx</Extensions>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\colourtable.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\datafile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\gridlib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mapproj.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\pointsourcesink.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\polyline.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ptrack.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\sjwalloc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\sjwconfig.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\sjwlib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\timeseries.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\txt_param.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\win32.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\xytoij.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="cfft.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="colourtable.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="contour.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="datafile.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="decay.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dfcoords.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dfeval.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="diffusion.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="drandom.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ellipt_coord.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="geodetic.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gridangle.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gridmetric.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gridmisc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="keyfile.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mapproj.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="memory.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="netcdf.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pointsourcesink.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="polar_coord.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="polyline.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ppbfetch.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ptrack.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="quit.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rect_coord.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="spline.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="text_input.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="time.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="timeseries.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="txt_param.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vgrid.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="warn.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="waterprops.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="weight_fn.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="win32.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="xytoij.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="nrcdflib.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="erfc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

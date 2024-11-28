@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="additionalTracer.c" />
+    <ClCompile Include="atannualbiology.c" />
+    <ClCompile Include="atbiolmessage.c" />
+    <ClCompile Include="atbiology.c" />
+    <ClCompile Include="atBiologyXMLParamIO.c" />
+    <ClCompile Include="atbiolsetup.c" />
+    <ClCompile Include="atbiolUtil.c" />
+    <ClCompile Include="atbiophysics.c" />
+    <ClCompile Include="atBuildTracer.c" />
+    <ClCompile Include="atcalibtools.c" />
+    <ClCompile Include="atcoral.c" />
+    <ClCompile Include="atdemography.c" />
+    <ClCompile Include="atdiversity.c" />
+    <ClCompile Include="atecology.c" />
+    <ClCompile Include="atecologyts.c" />
+    <ClCompile Include="atExternalScalar.c" />
+    <ClCompile Include="atfluxbreakdown.c" />
+    <ClCompile Include="atForcedMovement.c" />
+    <ClCompile Include="atGroupProcesses.c" />
+    <ClCompile Include="atImposeRecruit.c" />
+    <ClCompile Include="atmacrophytes.c" />
+    <ClCompile Include="atmovement.c" />
+    <ClCompile Include="atNutrient.c" />
+    <ClCompile Include="atPhysChemIO.c" />
+    <ClCompile Include="atprocess.c" />
+    <ClCompile Include="atq10.c" />
+    <ClCompile Include="attime.c" />
+    <ClCompile Include="atvertprocesses.c" />
+    <ClCompile Include="atIceProcesses.c" />
+    <ClCompile Include="atLandProcess.c" />
+    <ClCompile Include="atContaminants.c" />
+    <ClCompile Include="atexternalpop.c" />
+    <ClCompile Include="atmigration.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\atAdditionalTracer.h" />
+    <ClInclude Include="include\atbiology.h" />
+    <ClInclude Include="include\atecology.h" />
+    <ClInclude Include="include\atEcologyLib.h" />
+    <ClInclude Include="include\atecologyModule.h" />
+    <ClInclude Include="include\atExternalScalar.h" />
+    <ClInclude Include="include\atnamelist.h" />
+    <ClInclude Include="include\atContaminants.h" />
+  </ItemGroup>
+</Project>

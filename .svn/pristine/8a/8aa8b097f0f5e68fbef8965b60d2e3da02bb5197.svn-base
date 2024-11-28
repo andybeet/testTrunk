@@ -1,0 +1,132 @@
+/*
+ *   atnamelist.h is a header file for the variable (tracer) ids/names
+ *   for the ecological module in south east study
+ *
+ *   Author: Beth Fulton
+ *   CSIRO Marine Laboratories
+ *   2004
+ *
+ *   Revisions: 13/9/2004 Created msenamelist.h from the msebiolsetup.h file
+ *
+ *              21/9/2004 Created atnamelist.h from msenamelist.h. And renamed
+ *				FSL, FSO, FSF, FST and FSG to generic names so apply to
+ *				other models/generic case.
+ *				FSL -> FDC  (Ling -> Demersal_DC_Fish)
+ *				FSO -> FDO  (Orange_Roughy -> Demersal_O_Fish)
+ *				FSF -> FDB  (Flathead -> Demersal_B_Fish)
+ *				FST -> FVO  (Bluefin_Tuna -> Pisciv_O_Fish)
+ *				FSG -> SHB  (Gummy_Shark -> Shark_B)
+ *
+ *              22/9/2004 Added age structure to cephalopods.
+ *
+ *              26/9/2004 Added Megazoobenthos
+ *
+ *              30/9/2004 Added Prawns
+ *
+ *              3/10/2004 Added index names for the additional biological groups
+ *				(other filter feeders, megazoobenthos, estuarine demersal fish,
+ *				flat deep demersal fish, benthopelagics, other piscivores, penguins,
+ *				skates and rays, reptiles and dugongs) and their diagnostic variables
+ *
+ *				25/3/2005 Added 3 as option for TolFlag in namelist so that densities
+ *              of vertebrates aren't set to min_pool in the adaptive differencing
+ *				so that better handled during aging without creeping reintroductions.
+ *
+ *             	28/3/2005 Added Bioflag[ij] (indicating whether the variable is one
+ *				that may be switched off and so should be set to 0.0 non min_pool)
+ *				and Activeflag[ij] (flag indicating whether the variable is active
+ *				or not) so that can better handle  groups that aren't active,
+ *				so that avoid rounding errors in backwaters where the 1e-8 min_pools
+ *				can accumulate through advection to be a problem.
+ *
+ *              28/05/2008 Bec Gorton
+ *              The trnamelist array is now generated in atbuildTracer.c
+ *              All of the vertebrate *_N_i, *_StructN_i, *_ResN_i and _Nums_i tracers
+ *              are no longer used. The index values are stored directly into the
+ *              tracer arrays associated with each functional group in the FunctionalGroupStruct
+ *              structure.
+ *
+ *              13/06/2008 Bec Gorton
+ *              Fixed a bug in the diagnamelist. The GelatZooProd and GelatZooGrazer were
+ *              using the CarnivZoo index pointers.
+ *                  Changeed:
+ *                  {"GelatZooProdn",   &CarnivZooProdn_i, 0, 2, 0},
+ *                  to
+ *                  {"GelatZooProdn",   &GelatZooProdn_i, 0, 2, 0},
+ *              and the same for Grazing.
+ *
+ *
+ *              12/08/2008 Bec Gorton
+ *              Added Light_Adaptn_SG_i and Light_Adaptn_MA_i. These will just be 0 but it will mean i can
+ *              loop the call to PrimaryProduction.
+ *
+ *				22-04-2009 Bec Gorton
+ *				Removed many tracer definitions that were no longer required.
+ *
+ *				25-01-2010 Bec Gorton
+ *				Removed all the fish tracers as these are now automatically generated.
+ *
+ *				17-04-2013 Bec Gorton
+ *				ATL-346 - Added support of tracking P:N:C ratios in groups.
+ *
+ */
+
+Namelist  *trnamelist;
+Namelist  *epinamelist;
+Namelist  *landnamelist;
+
+int nEpiSize;
+int nTrSize;
+int nLandSize;
+
+
+/*******************************************************************************
+Tracer indices
+*/
+
+int
+	NO3_i,
+	NH3_i,
+	MicroNut_i,
+	DON_i,
+	Oxygen_i,
+	Si_i,
+	Det_Si_i,
+	Light_i,
+	Temp_i,
+	pH_i,
+	init_pH_i,
+    SED_i,
+	Denitrification_i,
+	Nitrification_i,
+	PercentDenitri_i,
+	Nitrif_eff_i,
+	Denitrif_eff_i,
+	Stress_i,
+	Water_i,
+	Salinity_i,
+	Light_Adaptn_PL_i,
+	Light_Adaptn_PS_i,
+	Light_Adaptn_MB_i,
+	Light_Adaptn_DF_i,
+    Light_Adaptn_SG_i,
+    Light_Adaptn_MA_i,
+	Chl_a_i,
+	Recyc_N_i,
+	Don_Prod_i,
+	DiagNGain_i,
+	DiagNLoss_i,
+	DiagNFlux_i,
+	PelDem_ratio_i,
+	PiscPlank_ratio_i,
+	InfEpi_ratio_i,
+	DivCount_i,
+	C_i,
+	P_i,
+	TOP_i,
+	CO2_i,			/* Pop this in for now */
+    Rugosity_i,
+	AragoniteSat_i,
+	Soil_i,
+    Noise_Pollution_i,
+    Light_Pollution_i;

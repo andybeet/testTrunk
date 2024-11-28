@@ -1,0 +1,8 @@
+09-03-2010
+
+Change the biolbiom = (FPTYPE **)alloc2d(bm->nbox,bm->K_num_invert+bm->K_num_detritus); array to:
+
+biolbiom = (FPTYPE ***)alloc3d(2, bm->nbox,bm->K_num_tot_sp);
+
+To allow for wc and sed detritus values.
+

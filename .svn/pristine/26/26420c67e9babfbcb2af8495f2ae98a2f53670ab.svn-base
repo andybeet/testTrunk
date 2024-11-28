@@ -1,0 +1,50 @@
+/**
+  \defgroup atManageLib atManageLib
+  \brief  The library that handles the management decisions.
+
+
+
+	Bec Gorton
+	CSIRO Marine and Atmospheric Research 2009
+
+	Revisions
+
+		28-10-2009 Bec Gorton
+		Added the Manage_Get_Max_Fishery_Param and Manage_Get_Max_Species_Fishery_Param - these functions find the max value for a given parameter in the appropriate array.
+
+ **/
+
+/**
+ * Annual Management Functions.
+ *
+ */
+void Manage_Annual_Calculations(MSEBoxModel *bm, FILE *llogfp);
+void Manage_Update_Indices(MSEBoxModel *bm, FILE *llogfp);
+int Manage_Get_Max_Fishery_Param ( MSEBoxModel *bm, int paramIndex );
+int Manage_Get_Max_Species_Fishery_Param ( MSEBoxModel *bm, int paramIndex );
+
+void Manage_Init(MSEBoxModel *bm, FILE *llogfp);
+void Manage_Free(MSEBoxModel *bm);
+
+int Manage_Get_Max_Fishery_Param(MSEBoxModel *bm, int paramIndex);
+int Manage_Get_Max_Species_Fishery_Param(MSEBoxModel *bm, int paramIndex);
+
+/* Effort calculations */
+void	Manage_Calculate_Total_Effort(MSEBoxModel *bm, FILE *llogfp);
+
+/* Performance measures */
+void Manage_Set_Manage_Index(MSEBoxModel *bm, int nf, int index, double value);
+double Manage_Get_Manage_Index(MSEBoxModel *bm, int nf, int index);
+
+void Manage_Visit_Council(MSEBoxModel *bm, FILE *llogfp);
+void Manage_Output_Indices(MSEBoxModel *bm);
+
+extern double ***p_fishi, **k_cover, ***Effort_vdistrib, ****p_fish_origi,
+	**FC_hdistrib, **MPAendangered, **SEASONAL, **effort_scale, ***qSTOCK,
+	*oldFishEndDay, *scale_effort, *prev_mult, **FC_case, *DistPeak, *FrefAi,
+    *FrefHi, *FreStarti, *LeverUsei;
+
+/* Per shot CPUE generation initialisation */
+void GenerateCPUEDistribution(MSEBoxModel *bm, FILE *llogfp);
+void CreateCPUEGenArrays(MSEBoxModel *bm, FILE *llogfp);
+
