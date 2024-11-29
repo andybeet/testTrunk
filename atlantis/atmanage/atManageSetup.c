@@ -806,6 +806,11 @@ void Manage_Init(MSEBoxModel *bm, FILE *llogfp) {
             FunctGroupArray[sp].speciesParams[flag_systcap_sp_id] = FlagSystCapSPi[sp];
             FunctGroupArray[sp].speciesParams[sp_fishery_pref_id] = SystCapSPprefi[sp];
             
+            if(!do_assess) {
+                FunctGroupArray[sp].speciesParams[assess_nat_mort_id] = AssessMorti[sp];
+            }
+            
+            
     /* Also check to see if shot-by-shot CPUE is needed */
             max_F = 0.0;
 			for (fishery_id = 0; fishery_id < bm->K_num_fisheries; fishery_id++) {
@@ -925,6 +930,10 @@ void Manage_Init(MSEBoxModel *bm, FILE *llogfp) {
     
     free1d(FlagSystCapSPi);
     free1d(SystCapSPprefi);
+    
+    if(!do_assess) {
+        free1d(AssessMorti);
+    }
 
     /* Generate CPUE data negative biominal distributions - moved to economics library as need subfleet array which not created here yet
     if(bm->flagStoreShotCPUE){

@@ -850,15 +850,22 @@ void readTACXML(MSEBoxModel *bm, char *fileName, xmlNodePtr rootnode) {
     if(    Util_XML_Read_Array_Double(ATLANTIS_ATTRIBUTE, fileName, "TAC_Parameters/Reference_Points",childGroupingNode, no_checking, "FrefLim", &FrefLimi, bm->K_num_tot_sp) == FALSE){
         quit("Error: Unable to find parameter 'TAC_Parameters/Reference_Points/FrefLim' in input file %s\n",  fileName);
     }
-    if(	Util_XML_Read_Array_Double(ATLANTIS_ATTRIBUTE, fileName, "TAC_Parameters/Frestart_scalar",childGroupingNode, no_checking, "Frestart_scalar", &FreStarti, bm->K_num_tot_sp) == FALSE){
+    if(	Util_XML_Read_Array_Double(ATLANTIS_ATTRIBUTE, fileName, "TAC_Parameters/Reference_Points",childGroupingNode, no_checking, "Frestart_scalar", &FreStarti, bm->K_num_tot_sp) == FALSE){
         quit("Error: Unable to find parameter 'TAC_Parameters/Reference_Points/Frestart_scalar' in input file %s\n",  fileName);
     }
-    if( Util_XML_Read_Array_Double(ATLANTIS_ATTRIBUTE, fileName, "SystemCap_Parameters/FlagSystCapSP",childGroupingNode, no_checking, "FlagSystCapSP", &FlagSystCapSPi, bm->K_num_tot_sp) == FALSE){
+    if( Util_XML_Read_Array_Double(ATLANTIS_ATTRIBUTE, fileName, "SystemCap_Parameters/",childGroupingNode, no_checking, "FlagSystCapSP", &FlagSystCapSPi, bm->K_num_tot_sp) == FALSE){
         quit("Error: Unable to find parameter 'SystemCap_Parameters/FlagSystCapSP' in input file %s\n",  fileName);
     }
-    if( Util_XML_Read_Array_Double(ATLANTIS_ATTRIBUTE, fileName, "SystemCap_Parameters/SystCapSPpref",childGroupingNode, no_checking, "SystCapSPpref", &FlagSystCapSPi, bm->K_num_tot_sp) == FALSE){
+    if( Util_XML_Read_Array_Double(ATLANTIS_ATTRIBUTE, fileName, "SystemCap_Parameters/",childGroupingNode, no_checking, "SystCapSPpref", &SystCapSPprefi, bm->K_num_tot_sp) == FALSE){
         quit("Error: Unable to find parameter 'SystemCap_Parameters/SystCapSPpref' in input file %s\n",  fileName);
     }
+    
+    if(!do_assess) {
+        if( Util_XML_Read_Array_Double(ATLANTIS_ATTRIBUTE, fileName, "SystemCap_Parameters/",childGroupingNode, no_checking, "FixedAssessMort", &AssessMorti, bm->K_num_tot_sp) == FALSE){
+            quit("Error: Unable to find parameter 'SystemCap_Parameters/FixedAssessMort' in input file %s\n",  fileName);
+        }
+    }
+    
 
     Util_XML_Read_Species_Param(bm, fileName, groupingNode, tier_id);
     

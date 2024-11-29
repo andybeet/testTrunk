@@ -792,6 +792,10 @@ void TACXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr doc, xmlNodePtr
     
     Util_XML_Create_Node_Next_Line(fp, fileName, childGroupingNode, "SystCapSPpref", "Weighting on species to consider in reallocaiton and ductions in response to exceeding the cap - 1 is low prioroity, number greater than 1 is a higher priority", "", XML_TYPE_FLOAT);
     
+    if(!do_assess) {
+        Util_XML_Create_Node_Next_Line(fp, fileName, childGroupingNode, "FixedAssessMort", "Fixed assessment M assumed for use in calculating the System Cap associated expected catches - overwritten with the assess_nat_mort vector values if assess.prm included in the run command", "", XML_TYPE_FLOAT);
+    }
+ 
 	node = Create_Species_ParamXML(bm, fileName, fp, groupingNode, tier_id,
 				"Harvest strategy tier for RBC setting (only >0 if dynamically setting TACs). \n0 = whinging harvest strategy, 1-4 = tier 1-4, tier 5 = ecological indicator based",
 				"", XML_TYPE_LOOKUP, "0");
