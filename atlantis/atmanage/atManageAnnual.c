@@ -1479,7 +1479,7 @@ void Guild_Frescale (MSEBoxModel *bm, FILE *llogfp, int sp) {
 
 void Ecosystem_Cap_Frescale(MSEBoxModel *bm, FILE *llogfp) {
     int sp, nf, nc, b, k, flagF, tier, er_case, maxstock, mFC_end_age, mFC_start_age, flagfcmpa, sel_curve, stage, basechrt;
-    double max_mFC, F_rescale, FTARG, Bcurr, calcM, survival, Fcurr, calcF, Fstep1, this_mFC, M, est_bias, est_cv, BrefA, BrefB, Blim, FrefA, FrefH, FrefLim, Braw, sel, this_expect_catch, sp_fishery_pref_weight, w_inv, tot_w_inv, counter, mFC, mFC_change_scale, mpa_scale, mpa_infringe, Wgt, li, gear_change_scale, this_Num, this_start, this_end, this_Biom, Z_Est, expectF, Catch_Eqn_Denom, orig_expected_catch, excess, deductions, new_expected_catch, rescale_scalar;
+    double max_mFC, F_rescale, FTARG, Bcurr, calcM, survival, Fcurr, calcF, Fstep1, this_mFC, M, est_bias, est_cv, BrefA, BrefB, Blim, FrefA, FrefH, FrefLim, Braw, sel, this_expect_catch, sp_fishery_pref_weight, w_inv, tot_w_inv, counter, mFC, mFC_change_scale, mpa_scale, mpa_infringe, Wgt, li, gear_change_scale, this_Num, this_start, this_end, this_Biom, Z_Est, expectF, Catch_Eqn_Denom, orig_expected_catch, excess, deductions, new_expected_catch, rescale_scalar,tot_area, fishable_area;
     //double calcM;
     
     /* Initialise weights if has not been done previously */
@@ -1516,6 +1516,27 @@ void Ecosystem_Cap_Frescale(MSEBoxModel *bm, FILE *llogfp) {
         }
         bm->sp_pref_inv_norm_done = 1;
     }
+    
+    /* Prep the mpa calcs needed - as required per fleet not species so do up front - only update if need to */
+    
+    for (nf = 0; nf < bm->K_num_fisheries; nf++) {
+        
+        /* Correct for presence of mpas */
+        flagfcmpa = (int) (bm->FISHERYprms[nf][flagmpa_id]);
+        if (flagfcmpa) {
+            tot_area = 0.0;
+            fishable_area = 0.0;
+            for (b = 0; b < bm->nbox; b++) {
+                tot_area += bm->boxes[b].area;
+                fishable_area += bm->boxes[b].area * bm->MPA[b][nf];
+            }
+            bm->FISHERYprms[nf][mpascale_cap_id] = fishable_area / tot_area;
+        } else {
+            bm->FISHERYprms[nf][mpascale_cap_id] = 1.0;
+        }
+            
+    }
+
 
     /* Steps:
     1. Determine FTARG using single species approach (so how rescale mFC so to be in line with single species harvest cnotrol rule)
@@ -1690,7 +1711,7 @@ void Ecosystem_Cap_Frescale(MSEBoxModel *bm, FILE *llogfp) {
                     /* Get fishing mortality - corrected from (day-1) to (s-1) */
                     mFC_start_age = (int) (bm->SP_FISHERYprms[sp][nf][mFC_start_age_id]);
                     mFC_end_age = (int) (bm->SP_FISHERYprms[sp][nf][mFC_end_age_id]);
-                    mFC = bm->SP_FISHERYprms[sp][nf][mFC_id] / 86400.0;
+                    mFC = bm->SP_FISHERYprms[sp][nf][mFC_id] * 365.0;
                     mFC *= bm->SP_FISHERYprms[sp][nf][mFC_scale_id];  // Apply the broken stick scalar from above
                     
                     /* Get scenario scalars */
@@ -1703,7 +1724,7 @@ void Ecosystem_Cap_Frescale(MSEBoxModel *bm, FILE *llogfp) {
                     /* Correct for presence of mpas */
                     flagfcmpa = (int) (bm->FISHERYprms[nf][flagmpa_id]);
                     if (flagfcmpa)
-                        mpa_scale = bm->MPA[bm->current_box][nf];
+                        mpa_scale = bm->FISHERYprms[nf][mpascale_cap_id];
                     else
                         mpa_scale = 1.0;
 
@@ -1722,6 +1743,12 @@ void Ecosystem_Cap_Frescale(MSEBoxModel *bm, FILE *llogfp) {
                         /* Convert model weight (mg AFDSW) into g wet weight and then length in cm */
                         if (FunctGroupArray[sp].isVertebrate == TRUE) {
                             if (!bm->use_time_avg_wgt) {
+                                if (FunctGroupArray[sp].min_wgt[nc] > 1.0e+100) {
+                                    quit("Ecosystem_Cap_Frescale: Time %e min_wgt for %s-%d is larger than is feasible (%e) something has gone wrong\n", bm->dayt, FunctGroupArray[sp].groupCode, nc, FunctGroupArray[sp].min_wgt[nc]);
+                                }
+                                if (FunctGroupArray[sp].max_wgt[nc] < 1.0e-100) {
+                                    quit("Ecosystem_Cap_Frescale: Time %e max_wgt for %s-%d is smaller than is feasible (%e) something has gone wrong\n", bm->dayt, FunctGroupArray[sp].groupCode, nc, FunctGroupArray[sp].max_wgt[nc]);
+                                }
                                 Wgt = (FunctGroupArray[sp].min_wgt[nc] + FunctGroupArray[sp].max_wgt[nc]) / 2.0;
                             } else {
                                 Wgt = FunctGroupArray[sp].rolling_wgt[nc];
@@ -1769,7 +1796,7 @@ void Ecosystem_Cap_Frescale(MSEBoxModel *bm, FILE *llogfp) {
                                     } else {
                                         this_Biom = 0.0;
                                         for (k = 0; k < maxstock; k++) {
-                                            this_start = bm->calcTrackedMort[sp][nc][k][start_id];
+                                            this_start += bm->calcTrackedMort[sp][nc][k][start_id];
                                             this_end += bm->calcTrackedMort[sp][nc][k][endNum_id];
                                         }
                                     }
@@ -1827,6 +1854,12 @@ void Ecosystem_Cap_Frescale(MSEBoxModel *bm, FILE *llogfp) {
                             }
                         } else {
                             if (!bm->use_time_avg_biom) {
+                                if (FunctGroupArray[sp].min_B[nc] > 1.0e+100) {
+                                    quit("Ecosystem_Cap_Frescale: Time %e min_B for %s-%d is larger than is feasible (%e) something has gone wrong\n", bm->dayt, FunctGroupArray[sp].groupCode, nc, FunctGroupArray[sp].min_B[nc]);
+                                }
+                                if (FunctGroupArray[sp].max_B[nc] < 1.0e-100) {
+                                    quit("Ecosystem_Cap_Frescale: Time %e max_B for %s-%d is smaller than is feasible (%e) something has gone wrong\n", bm->dayt, FunctGroupArray[sp].groupCode, nc, FunctGroupArray[sp].max_B[nc]);
+                                }
                                 this_Biom = (FunctGroupArray[sp].min_B[nc] + FunctGroupArray[sp].max_B[nc]) / 2.0;
                             } else {
                                 this_Biom = FunctGroupArray[sp].rolling_B[nc];
@@ -1859,8 +1892,10 @@ void Ecosystem_Cap_Frescale(MSEBoxModel *bm, FILE *llogfp) {
                 if (orig_expected_catch) { // only both of expected catch is non-zero
                     new_expected_catch = orig_expected_catch - deductions;
                     rescale_scalar = (new_expected_catch / orig_expected_catch);
-                    bm->SP_FISHERYprms[sp][nf][orig_mFC_scale_id] = bm->SP_FISHERYprms[sp][nf][mFC_scale_id]; // For reporting purposes
-                    bm->SP_FISHERYprms[sp][nf][mFC_scale_id] *= rescale_scalar;
+                    for (nf = 0; nf < bm->K_num_fisheries; nf++) {
+                        bm->SP_FISHERYprms[sp][nf][orig_mFC_scale_id] = bm->SP_FISHERYprms[sp][nf][mFC_scale_id]; // For reporting purposes
+                        bm->SP_FISHERYprms[sp][nf][mFC_scale_id] *= rescale_scalar;
+                    }
                 }
             }
         }

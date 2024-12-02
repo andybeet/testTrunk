@@ -2153,11 +2153,11 @@ void Store_Recruitment_Diagnostics(MSEBoxModel *bm, int species, int use_aggrega
 			bm->calcTrackedMort[species][ngene][k][start_id] = 0.0;
             
             if (!k) {
-                FunctGroupArray[species].min_B[ngene] = 0.0;
-                FunctGroupArray[species].max_B[ngene] = 0.0;
+                FunctGroupArray[species].min_B[ngene] = MAXDOUBLE;
+                FunctGroupArray[species].max_B[ngene] = MINDOUBLE;
                 
-                FunctGroupArray[species].min_wgt[ngene] = 0.0;
-                FunctGroupArray[species].max_wgt[ngene] = 0.0;
+                FunctGroupArray[species].min_wgt[ngene] = MAXDOUBLE;
+                FunctGroupArray[species].max_wgt[ngene] = MINDOUBLE;
             }
 		}
 		// Now initialise the calcN and starting numbers in bm->calcTrackedMort
@@ -4071,11 +4071,11 @@ void Reset_Mortality(MSEBoxModel *bm, int species) {
 			bm->calcTrackedMort[species][cohort][k][start_id] = 0.0;
             
             if (!k) {
-                FunctGroupArray[species].min_B[cohort] = 0.0;
-                FunctGroupArray[species].max_B[cohort] = 0.0;
+                FunctGroupArray[species].min_B[cohort] = MAXDOUBLE;
+                FunctGroupArray[species].max_B[cohort] = MINDOUBLE;
                 
-                FunctGroupArray[species].min_wgt[cohort] = 0.0;
-                FunctGroupArray[species].max_wgt[cohort] = 0.0;
+                FunctGroupArray[species].min_wgt[cohort] = MAXDOUBLE;
+                FunctGroupArray[species].max_wgt[cohort] = MINDOUBLE;
             }
 		}
 
@@ -4746,8 +4746,8 @@ void Ecology_Update_Invert_Cohorts(MSEBoxModel *bm, FILE *llogfp) {
 						bm->calcTrackedMort[species][n][k][ongoingF_id] = 0.0;
 						bm->calcTrackedMort[species][n][k][start_id] = 0.0;
                         
-                        FunctGroupArray[species].min_B[n] = 0.0;
-                        FunctGroupArray[species].max_B[n] = 0.0;
+                        FunctGroupArray[species].min_B[n] = MAXDOUBLE;
+                        FunctGroupArray[species].max_B[n] = MINDOUBLE;
 
 					}
 					for (ij = 0; ij < bm->nbox; ij++) {
