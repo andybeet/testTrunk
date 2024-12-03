@@ -1303,7 +1303,13 @@ void Per_Sp_Frescale (MSEBoxModel *bm, FILE *llogfp, int sp) {
 
         flagF = (int) (bm->SP_FISHERYprms[sp][nf][flagF_id]);
         if (flagF) {
-            bm->SP_FISHERYprms[sp][nf][mFC_scale_id] = F_rescale;
+
+            if(!tier){
+                bm->SP_FISHERYprms[sp][nf][mFC_scale_id] = 1.0;
+            } else {
+                bm->SP_FISHERYprms[sp][nf][mFC_scale_id] = F_rescale;
+            }
+
             WriteAnnBrokenStickFile(bm, sp, nf, tier, FrefLim, FrefA, FrefH, Blim, BrefA, BrefB, Fcurr, FTARG, Bcurr, F_rescale);
 
             if (bm->checkstart) {
@@ -1739,7 +1745,13 @@ void Ecosystem_Cap_Frescale(MSEBoxModel *bm, FILE *llogfp) {
 
                 flagF = (int) (bm->SP_FISHERYprms[sp][nf][flagF_id]);
                 if (flagF) {
-                    bm->SP_FISHERYprms[sp][nf][mFC_scale_id] = F_rescale;
+
+                    if(!tier){
+                        bm->SP_FISHERYprms[sp][nf][mFC_scale_id] = 1.0;
+                    } else {
+                        bm->SP_FISHERYprms[sp][nf][mFC_scale_id] = F_rescale;
+                    }
+                    
                     
                     /* Write out end result of original species focused assessment */
                     WriteAnnBrokenStickFile(bm, sp, nf, tier, FrefLim, FrefA, FrefH, Blim, BrefA, BrefB, Fcurr, FTARG, Bcurr, F_rescale);
