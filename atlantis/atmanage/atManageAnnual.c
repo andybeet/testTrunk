@@ -1109,6 +1109,7 @@ void Per_Sp_Frescale (MSEBoxModel *bm, FILE *llogfp, int sp) {
     
     double BrefA = FunctGroupArray[sp].speciesParams[BrefA_id] * bm->estBo[sp];
     double BrefB = FunctGroupArray[sp].speciesParams[BrefB_id] * bm->estBo[sp];
+    double BrefE = FunctGroupArray[sp].speciesParams[BrefE_id] * bm->estBo[sp];
     double Blim = FunctGroupArray[sp].speciesParams[Blim_id] * bm->estBo[sp];
     double FrefA = FunctGroupArray[sp].speciesParams[FrefA_id];
     double FrefH = FunctGroupArray[sp].speciesParams[FrefH_id];
@@ -1231,6 +1232,22 @@ void Per_Sp_Frescale (MSEBoxModel *bm, FILE *llogfp, int sp) {
                 FTARG = 0;
             }
             break;
+        case tier14: // Same as tier 1 but allows for truncating the descending limb and closing the fishery below BrefE, Alaska pollock and cod style
+            if (Bcurr >= BrefA) {
+                /* Greater than BrefA (e.g. B48) so use F48 */
+                FTARG = FrefA;
+                //FTARG = Fcurr;
+            } else if ((Bcurr < BrefA) && (Bcurr >= BrefB)) {
+                /* Less than BrefA and greater than BrefB (e.g. B40), for stability remain at F48 */
+                FTARG = FrefA;
+            } else if ((Bcurr < BrefB) && (Bcurr > BrefE)) {
+                /* Less than BrefB and greater than BrefE (usually B20 for Alaska pollock and cod) so reduce F rate linearly towards Blim */
+                FTARG = FrefA * ((Bcurr - Blim) / (BrefB - Blim));
+            } else {
+                /* Less than BrefE so set F = 0 */
+               FTARG = 0;
+            }
+            break;
         default:
             quit("Per_Sp_Frescale: We do not have any code for tier %d\n", tier);
             break;
@@ -1253,6 +1270,7 @@ void Per_Sp_Frescale (MSEBoxModel *bm, FILE *llogfp, int sp) {
             case dyntier1B0:
             case sp_rollover:
             case tier13:
+            case tier14:
                 Fstep1 = Fcurr / (FunctGroupArray[sp].speciesParams[maxmFC_id] * 365.0);  // As Fcurr is annual but mFC is daily
                 F_rescale = Fstep1 * (FTARG / (Fcurr + small_num));  // Re-scale existing F
                 break;
@@ -1479,7 +1497,7 @@ void Guild_Frescale (MSEBoxModel *bm, FILE *llogfp, int sp) {
 
 void Ecosystem_Cap_Frescale(MSEBoxModel *bm, FILE *llogfp) {
     int sp, nf, nc, b, k, flagF, tier, er_case, maxstock, mFC_end_age, mFC_start_age, flagfcmpa, sel_curve, stage, basechrt;
-    double max_mFC, F_rescale, FTARG, Bcurr, calcM, survival, Fcurr, calcF, Fstep1, this_mFC, M, est_bias, est_cv, BrefA, BrefB, Blim, FrefA, FrefH, FrefLim, Braw, sel, this_expect_catch, sp_fishery_pref_weight, w_inv, tot_w_inv, counter, mFC, mFC_change_scale, mpa_scale, mpa_infringe, Wgt, li, gear_change_scale, this_Num, this_start, this_end, this_Biom, Z_Est, expectF, Catch_Eqn_Denom, orig_expected_catch, excess, deductions, new_expected_catch, rescale_scalar,tot_area, fishable_area;
+    double max_mFC, F_rescale, FTARG, Bcurr, calcM, survival, Fcurr, calcF, Fstep1, this_mFC, M, est_bias, est_cv, BrefA, BrefB, BrefE, Blim, FrefA, FrefH, FrefLim, Braw, sel, this_expect_catch, sp_fishery_pref_weight, w_inv, tot_w_inv, counter, mFC, mFC_change_scale, mpa_scale, mpa_infringe, Wgt, li, gear_change_scale, this_Num, this_start, this_end, this_Biom, Z_Est, expectF, Catch_Eqn_Denom, orig_expected_catch, excess, deductions, new_expected_catch, rescale_scalar,tot_area, fishable_area;
     //double calcM;
     
     /* Initialise weights if has not been done previously */
@@ -1562,6 +1580,7 @@ void Ecosystem_Cap_Frescale(MSEBoxModel *bm, FILE *llogfp) {
             maxstock = FunctGroupArray[sp].numStocks;
             BrefA = FunctGroupArray[sp].speciesParams[BrefA_id] * bm->estBo[sp];
             BrefB = FunctGroupArray[sp].speciesParams[BrefB_id] * bm->estBo[sp];
+            BrefE = FunctGroupArray[sp].speciesParams[BrefE_id] * bm->estBo[sp];
             Blim = FunctGroupArray[sp].speciesParams[Blim_id] * bm->estBo[sp];
             FrefA = FunctGroupArray[sp].speciesParams[FrefA_id];
             FrefH = FunctGroupArray[sp].speciesParams[FrefH_id];
@@ -1649,6 +1668,22 @@ void Ecosystem_Cap_Frescale(MSEBoxModel *bm, FILE *llogfp) {
                         FTARG = 0;
                     }
                     break;
+               case tier14: // Same as tier 1 but allows for truncating the descending limb and closing the fishery below BrefE, Alaska pollock and cod style
+                    if (Bcurr >= BrefA) {
+                        /* Greater than BrefA (e.g. B48) so use F48 */
+                        FTARG = FrefA;
+                        //FTARG = Fcurr;
+                    } else if ((Bcurr < BrefA) && (Bcurr >= BrefB)) {
+                        /* Less than BrefA and greater than BrefB (e.g. B40), for stability remain at F48 */
+                        FTARG = FrefA;
+                    } else if ((Bcurr < BrefB) && (Bcurr > BrefE)) {
+                        /* Less than BrefB and greater than BrefE (usually B20 for Alaska pollock and cod) so reduce F rate linearly towards Blim */
+                        FTARG = FrefA * ((Bcurr - Blim) / (BrefB - Blim));
+                    } else {
+                        /* Less than BrefE so set F = 0 */
+                        FTARG = 0;
+                    }
+                    break;
                 default:
                     quit("Per_Sp_Frescale: We do not have any code for tier %d\n", tier);
                     break;
@@ -1671,6 +1706,7 @@ void Ecosystem_Cap_Frescale(MSEBoxModel *bm, FILE *llogfp) {
                     case dyntier1B0:
                     case sp_rollover:
                     case tier13:
+                    case tier14:
                         Fstep1 = Fcurr / (FunctGroupArray[sp].speciesParams[maxmFC_id] * 365.0);  // As Fcurr is annual but mFC is daily
                         F_rescale = Fstep1 * (FTARG / (Fcurr + small_num));  // Re-scale existing F (need to do vs mFC rather than just Fcurr as code applies it against mFC)
                         break;
