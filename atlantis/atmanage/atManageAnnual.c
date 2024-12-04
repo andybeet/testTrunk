@@ -1095,7 +1095,7 @@ void Check_F_Harvest_Control_Rule(MSEBoxModel *bm, FILE *llogfp) {
 *
 *******************************************************************************/
 void Per_Sp_Frescale (MSEBoxModel *bm, FILE *llogfp, int sp) {
-    int nf, flagF, nc, k;
+    int cohort, ij, b, nf, flagF, nc, k;
     double FTARG, F_rescale, Fcurr, calcF, Fstep1, this_mFC, counter;
     //double M;
     //double calcM;
@@ -1118,7 +1118,26 @@ void Per_Sp_Frescale (MSEBoxModel *bm, FILE *llogfp, int sp) {
     double Braw, Bcurr;
 
     if(!do_assess) {  // Where do_assess set at atlantismain.c level as requires Assess_Resources() call in atasseess lib
-        Braw = bm->totfishpop[sp] * bm->X_CN * mg_2_tonne;
+        if (bm->flagSSBforHCR){
+            /* Using SSB in the HCR - HAP 2024 - I wrote this using script from atSSBDataGen.c */
+            for (cohort = 0; cohort < FunctGroupArray[sp].numCohortsXnumGenes; cohort++) {
+                for (ij = 0; ij < bm->nbox; ij++) {
+                    for (b = 0; b < bm->boxes[ij].nz; b++) {
+                            Braw += ((bm->boxes[ij].tr[b][FunctGroupArray[sp].structNTracers[cohort]] + bm->boxes[ij].tr[b][FunctGroupArray[sp].resNTracers[cohort]]) *
+                                    bm->boxes[ij].tr[b][FunctGroupArray[sp].NumsTracers[cohort]] *
+                                    FunctGroupArray[sp].habitatCoeffs[WC] *
+                                    bm->X_CN *
+                                    mg_2_tonne) *
+                                    FunctGroupArray[sp].scaled_FSPB[cohort];
+                                // Note, HAP tried this withough FSPB and it produced the same value as bm->totfishpop[sp] * bm->X_CN * mg_2_tonne
+                            }
+                    }
+                }
+                    fprintf(llogfp, "Time: %e %s, Braw (total SSB) before Assess_Add_Error() - %e\n", bm->dayt, FunctGroupArray[sp].groupCode, Braw);
+        } else {
+            Braw = bm->totfishpop[sp] * bm->X_CN * mg_2_tonne;
+            fprintf(llogfp, "Time: %e %s, Braw (total stock biomass) before Assess_Add_Error() - %e\n", bm->dayt, FunctGroupArray[sp].groupCode, Braw);
+        }
         Bcurr = Assess_Add_Error(bm, er_case, Braw, est_bias, est_cv);
     } else {
         Bcurr = bm->NAssess[sp][est_med_stock_id];
@@ -1502,7 +1521,7 @@ void Guild_Frescale (MSEBoxModel *bm, FILE *llogfp, int sp) {
 *******************************************************************************/
 
 void Ecosystem_Cap_Frescale(MSEBoxModel *bm, FILE *llogfp) {
-    int sp, nf, nc, b, k, flagF, tier, er_case, maxstock, mFC_end_age, mFC_start_age, flagfcmpa, sel_curve, stage, basechrt;
+    int sp, nf, nc, cohort, ij, b, k, flagF, tier, er_case, maxstock, mFC_end_age, mFC_start_age, flagfcmpa, sel_curve, stage, basechrt;
     double max_mFC, F_rescale, FTARG, Bcurr, calcM, survival, Fcurr, calcF, Fstep1, this_mFC, M, est_bias, est_cv, BrefA, BrefB, BrefE, Blim, FrefA, FrefH, FrefLim, Braw, sel, this_expect_catch, sp_fishery_pref_weight, w_inv, tot_w_inv, counter, mFC, mFC_change_scale, mpa_scale, mpa_infringe, Wgt, li, gear_change_scale, this_Num, this_start, this_end, this_Biom, Z_Est, expectF, Catch_Eqn_Denom, orig_expected_catch, excess, deductions, new_expected_catch, rescale_scalar,tot_area, fishable_area;
     //double calcM;
     
@@ -1593,7 +1612,26 @@ void Ecosystem_Cap_Frescale(MSEBoxModel *bm, FILE *llogfp) {
             FrefLim = FunctGroupArray[sp].speciesParams[FrefLim_id];
             
             if(!do_assess) {  // Where do_assess set at atlantismain.c level as requires Assess_Resources() call in atasseess lib
-                Braw = bm->totfishpop[sp] * bm->X_CN * mg_2_tonne;
+                if (bm->flagSSBforHCR){
+                    /* Using SSB in the HCR - HAP 2024 - I wrote this using script from atSSBDataGen.c */
+                    for (cohort = 0; cohort < FunctGroupArray[sp].numCohortsXnumGenes; cohort++) {
+                        for (ij = 0; ij < bm->nbox; ij++) {
+                            for (b = 0; b < bm->boxes[ij].nz; b++) {
+                                 Braw += ((bm->boxes[ij].tr[b][FunctGroupArray[sp].structNTracers[cohort]] + bm->boxes[ij].tr[b][FunctGroupArray[sp].resNTracers[cohort]]) *
+                                 bm->boxes[ij].tr[b][FunctGroupArray[sp].NumsTracers[cohort]] *
+                                 FunctGroupArray[sp].habitatCoeffs[WC] *
+                                 bm->X_CN *
+                                 mg_2_tonne) *
+                                 FunctGroupArray[sp].scaled_FSPB[cohort];
+                                // Note, HAP tried this withough FSPB and it produced the same value as bm->totfishpop[sp] * bm->X_CN * mg_2_tonne
+                            }
+                        }
+                    }
+                    fprintf(llogfp, "Time: %e %s, Braw (total SSB) before Assess_Add_Error() - %e\n", bm->dayt, FunctGroupArray[sp].groupCode, Braw);
+                } else {
+                    Braw = bm->totfishpop[sp] * bm->X_CN * mg_2_tonne;
+                    fprintf(llogfp, "Time: %e %s, Braw (total stock biomass) before Assess_Add_Error() - %e\n", bm->dayt, FunctGroupArray[sp].groupCode, Braw);
+                }
                 Bcurr = Assess_Add_Error(bm, er_case, Braw, est_bias, est_cv);
             } else {
                 Bcurr = bm->NAssess[sp][est_med_stock_id];

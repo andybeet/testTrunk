@@ -4956,6 +4956,7 @@ typedef struct {
 	int flagfinfish; /* Flag inficating fish fin-fish */
 	int flagincidmort; /* Flag indicating incidental mortality on */
 	int flagendangered; /* Flag indicating whether using management based on PET groups */
+	int flagSSBforHCR; /* Flag indicating whether using SSB for HCR (1) or total B (0) */
 	int flagmpa; /* Flag indicating form of spatial management used */
 	int flagrollingmpa; /* Flag indicating whether have rolling spatial management or not */
 	int flaginfringe; /* Flag indicating whether there are management infringements */

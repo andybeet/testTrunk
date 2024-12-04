@@ -564,7 +564,8 @@ void readManamentFlagTimeXML(MSEBoxModel *bm, char *fileName, xmlNodePtr rootnod
 	bm->flagreinitpop = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, binary_check, "flagreinitpop"));
 	bm->pseudo_assess = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, binary_check, "pseudo_assess"));
     bm->do_sumB_HCR = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, integer_check, "do_sumB_HCR"));
-    
+    bm->flagSSBforHCR = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, binary_check, "flagSSBforHCR"));
+
 	/* Scenario painting switches */
 	bm->flagbuffereffort = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, binary_check, "flagbuffereffort"));
 	bm->flagchangeeffort = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, binary_check, "flagchangeeffort"));
