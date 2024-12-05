@@ -744,9 +744,12 @@ double Get_Enviro_Move_Scalar(int flag_sensitive_sp, double current_enviro, doub
 
 
 void Store_Min_Max_Avg(MSEBoxModel *bm, int sp) {
-    int n;
-    double this_wgt, this_biom, orig_wgt, orig_biom;
-    
+    int n, nlist;
+    double this_wgt, this_biom;
+    double this_denom = (double)(bm->K_rolling_cap_num);
+    double this_sum_W = 0.0;
+    double this_sum_B = 0.0;
+
     if (FunctGroupArray[sp].isFished == TRUE) {
         if((!FunctGroupArray[sp].speciesParams[flagFonly_id]) || (!FunctGroupArray[sp].speciesParams[flag_systcap_sp_id]))
             return;  // Nothing to do here
@@ -763,10 +766,7 @@ void Store_Min_Max_Avg(MSEBoxModel *bm, int sp) {
                     FunctGroupArray[sp].max_wgt[n] = this_wgt;
                 }
                 
-                orig_wgt = FunctGroupArray[sp].rolling_wgt[n];
-                FunctGroupArray[sp].rolling_wgt[n] = (orig_wgt + this_wgt) / 2.0;
-                
-                // Now biomass
+                /* Now their biomass */
                 this_biom = this_wgt * totden[sp][n];
                 
                 if (FunctGroupArray[sp].min_B[n] > this_biom) {
@@ -775,11 +775,34 @@ void Store_Min_Max_Avg(MSEBoxModel *bm, int sp) {
                 if (FunctGroupArray[sp].max_B[n] < this_biom) {
                     FunctGroupArray[sp].max_B[n] = this_biom;
                 }
-                
-                orig_biom = FunctGroupArray[sp].rolling_B[n];
-                FunctGroupArray[sp].rolling_B[n] = (orig_biom + this_biom) / 2.0;
-
-                /* TODO: make this avergae over a user specified period */
+ 
+                /* And now the rollign values - Iterate the list and get new values */
+                this_sum_W = 0.0;
+                this_sum_B = 0.0;
+                if (!bm->rolling_cap_initialised[sp][n]) { // Initialise if the first time through
+                    for ( nlist = 0; nlist < bm->K_rolling_cap_num; nlist++) {
+                        FunctGroupArray[sp].rolling_wgt[n][nlist] = this_wgt;
+                        FunctGroupArray[sp].rolling_B[n][nlist] = this_biom;
+                    }
+                    FunctGroupArray[sp].rolling_wgt[n][bm->K_rolling_cap_num] = this_wgt;
+                    FunctGroupArray[sp].rolling_B[n][bm->K_rolling_cap_num] = this_biom;
+                    bm->rolling_cap_initialised[n][sp] = 1;
+                } else {
+                    if ( bm->newmonth) {
+                        for ( nlist = 0; nlist < (bm->K_rolling_cap_num - 1); nlist++) {
+                            FunctGroupArray[sp].rolling_wgt[n][nlist] = FunctGroupArray[sp].rolling_wgt[n][nlist + 1];
+                            FunctGroupArray[sp].rolling_B[n][nlist] = FunctGroupArray[sp].rolling_B[n][nlist + 1];
+                            this_sum_W += FunctGroupArray[sp].rolling_wgt[n][nlist];
+                            this_sum_B += FunctGroupArray[sp].rolling_B[n][nlist];
+                        }
+                        FunctGroupArray[sp].rolling_wgt[n][bm->K_rolling_cap_num - 1] = this_wgt;
+                        FunctGroupArray[sp].rolling_B[n][bm->K_rolling_cap_num - 1] = this_biom;
+                        this_sum_W += this_wgt;
+                        this_sum_B += this_biom;
+                        FunctGroupArray[sp].rolling_wgt[n][bm->K_rolling_cap_num] = this_sum_W / this_denom;
+                        FunctGroupArray[sp].rolling_B[n][bm->K_rolling_cap_num] = this_sum_B / this_denom;
+                    }
+                }
 
             } else {
                 /* Invertebrate biomass */
@@ -792,9 +815,25 @@ void Store_Min_Max_Avg(MSEBoxModel *bm, int sp) {
                     FunctGroupArray[sp].max_B[n] = this_biom;
                 }
                 
-                orig_biom = FunctGroupArray[sp].rolling_B[n];
-                FunctGroupArray[sp].rolling_B[n] = (orig_biom + this_biom) / 2.0;
-
+                /* And now the rollign values - Iterate the list and get new values */
+                this_sum_B = 0.0;
+                if (!bm->rolling_cap_initialised[sp][n]) { // Initialise if the first time through
+                    for ( nlist = 0; nlist < bm->K_rolling_cap_num; nlist++) {
+                        FunctGroupArray[sp].rolling_B[n][nlist] = this_biom;
+                    }
+                    FunctGroupArray[sp].rolling_B[n][bm->K_rolling_cap_num] = this_biom;
+                    bm->rolling_cap_initialised[sp][n] = 1;
+                } else {
+                    if ( bm->newmonth) {
+                        for ( nlist = 0; nlist < (bm->K_rolling_cap_num - 1); nlist++) {
+                            FunctGroupArray[sp].rolling_B[n][nlist] = FunctGroupArray[sp].rolling_B[n][nlist + 1];
+                            this_sum_B += FunctGroupArray[sp].rolling_B[n][nlist];
+                        }
+                        FunctGroupArray[sp].rolling_B[n][bm->K_rolling_cap_num - 1] = this_biom;
+                        this_sum_B += this_biom;
+                        FunctGroupArray[sp].rolling_B[n][bm->K_rolling_cap_num] = this_sum_B / this_denom;
+                    }
+                }
             }
         }
     }

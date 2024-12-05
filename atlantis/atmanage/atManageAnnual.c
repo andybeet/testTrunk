@@ -1751,7 +1751,7 @@ void Ecosystem_Cap_Frescale(MSEBoxModel *bm, FILE *llogfp) {
                                 }
                                 Wgt = (FunctGroupArray[sp].min_wgt[nc] + FunctGroupArray[sp].max_wgt[nc]) / 2.0;
                             } else {
-                                Wgt = FunctGroupArray[sp].rolling_wgt[nc];
+                                Wgt = FunctGroupArray[sp].rolling_wgt[nc][bm->K_rolling_cap_num];
                             }
                             if (Wgt < small_num)
                                 Wgt = small_num; /* To avoid divide by zero problems  */
@@ -1862,7 +1862,7 @@ void Ecosystem_Cap_Frescale(MSEBoxModel *bm, FILE *llogfp) {
                                 }
                                 this_Biom = (FunctGroupArray[sp].min_B[nc] + FunctGroupArray[sp].max_B[nc]) / 2.0;
                             } else {
-                                this_Biom = FunctGroupArray[sp].rolling_B[nc];
+                                this_Biom = FunctGroupArray[sp].rolling_B[nc][bm->K_rolling_cap_num];
                             }
                             this_expect_catch = mFC * mpa_scale * mFC_change_scale * sel * this_Biom * bm->X_CN * mg_2_tonne;
                             tot_expect_catch += this_expect_catch;

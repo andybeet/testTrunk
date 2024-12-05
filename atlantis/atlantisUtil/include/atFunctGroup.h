@@ -286,10 +286,10 @@ typedef struct {
     /* Used in tracking informaiton for calcualting system cap in fisheries */
     double *min_wgt;
     double *max_wgt;
-    double *rolling_wgt;
+    double **rolling_wgt;
     double *min_B;
     double *max_B;
-    double *rolling_B;
+    double **rolling_B;
 
     /** Reproduction related */
     double *FSPB; /* Spawning ogives for vertebrates. This is the original value read in. This is then scaled and then the scaled array is the one that is used. */
