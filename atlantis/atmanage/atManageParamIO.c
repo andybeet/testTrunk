@@ -582,8 +582,9 @@ void readManamentFlagTimeXML(MSEBoxModel *bm, char *fileName, xmlNodePtr rootnod
     bm->syst_cap_calc_method = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, integer_check, "syst_cap_calc_method"));
     bm->M_est_method = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, integer_check, "M_est_method"));
     bm->Ecosystm_Cap_tonnes = (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, no_checking, "Ecosystm_Cap_tonnes"));
+    bm->K_cap_rolling_period = (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, no_checking, "K_cap_rolling_period"));
     bm->sp_pref_inv_norm_done = 0;
-    
+
 	/** Fisheries flags **/
 	bm->DynDAS = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, binary_check, "dynDAS"));
 

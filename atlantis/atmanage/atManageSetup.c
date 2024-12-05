@@ -328,7 +328,7 @@ void Manage_Init(MSEBoxModel *bm, FILE *llogfp) {
 		/* Create basket quota management arrays */
 		bm->sp_basket = Util_Alloc_Init_2D_Int(1, bm->K_num_basket, bm->K_num_tot_sp);
 		bm->TAC_over = Util_Alloc_Init_3D_Int(1, bm->K_num_fisheries, bm->K_num_tot_sp, 0);
-
+        bm->rolling_cap_initialised = Util_Alloc_Init_2D_Int((bm->K_num_max_cohort * bm->K_num_max_genetypes), bm->K_num_tot_sp, 0);
 		return;
 	}
 

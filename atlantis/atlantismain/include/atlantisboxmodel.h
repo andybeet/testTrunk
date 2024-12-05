@@ -4996,7 +4996,11 @@ typedef struct {
     int sp_pref_inv_norm_done; /**< Flag to do with system cap calculations - whether the normalised weighting has been done for later use in ecosystem cap HCR */
     int M_est_method; /**< Flag to do with system cap calculations - which option for calculating M */
     double Ecosystm_Cap_tonnes; /**< Value of ecosystem catch cap in tonnes */
+    int K_rolling_cap_num; /**< Value used to create array and refer to values - will be ceil(12 * bm->K_cap_rolling_period) */
+    double K_cap_rolling_period; /**< Length of the period to using for the roling average in years */
 
+    int **rolling_cap_initialised; /**< Flag so know whether initialised or not as yet */
+    
     int flagSimpleStartStopMPAs; /**< Flag indicating simple start and stop dates for MPAs un use */
     int MPAstartyr; /**< Run day that MPAs start */
     int MPAendyr; /**< Run day that MPAs end */

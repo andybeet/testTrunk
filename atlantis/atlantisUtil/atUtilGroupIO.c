@@ -839,10 +839,10 @@ int Util_Read_Functional_Group_XML(MSEBoxModel *bm, char *fileName, FILE *llogfp
                 
             FunctGroupArray[i].min_wgt = Util_Alloc_Init_1D_Double(FunctGroupArray[i].numCohortsXnumGenes, 0.0);
             FunctGroupArray[i].max_wgt = Util_Alloc_Init_1D_Double(FunctGroupArray[i].numCohortsXnumGenes, 0.0);
-            FunctGroupArray[i].rolling_wgt = Util_Alloc_Init_1D_Double(FunctGroupArray[i].numCohortsXnumGenes, 0.0);
+            FunctGroupArray[i].rolling_wgt = Util_Alloc_Init_2D_Double(bm->K_rolling_cap_num + 1, FunctGroupArray[i].numCohortsXnumGenes, 0.0);
             FunctGroupArray[i].min_B = Util_Alloc_Init_1D_Double(FunctGroupArray[i].numCohortsXnumGenes, 0.0);
             FunctGroupArray[i].max_B = Util_Alloc_Init_1D_Double(FunctGroupArray[i].numCohortsXnumGenes, 0.0);
-            FunctGroupArray[i].rolling_B = Util_Alloc_Init_1D_Double(FunctGroupArray[i].numCohortsXnumGenes, 0.0);
+            FunctGroupArray[i].rolling_B = Util_Alloc_Init_2D_Double(bm->K_rolling_cap_num + 1, FunctGroupArray[i].numCohortsXnumGenes, 0.0);
 			break;
 		case AGE_STRUCTURED_BIOMASS:
 			FunctGroupArray[i].cohortSpeciesParams = Util_Alloc_Init_2D_Double(cohortDepParams, FunctGroupArray[i].numStages, 0.0);
@@ -862,7 +862,7 @@ int Util_Read_Functional_Group_XML(MSEBoxModel *bm, char *fileName, FILE *llogfp
 
             FunctGroupArray[i].min_B = Util_Alloc_Init_1D_Double(FunctGroupArray[i].numCohortsXnumGenes, 0.0);
             FunctGroupArray[i].max_B = Util_Alloc_Init_1D_Double(FunctGroupArray[i].numCohortsXnumGenes, 0.0);
-            FunctGroupArray[i].rolling_B = Util_Alloc_Init_1D_Double(FunctGroupArray[i].numCohortsXnumGenes, 0.0);
+            FunctGroupArray[i].rolling_B = Util_Alloc_Init_2D_Double(bm->K_rolling_cap_num + 1, FunctGroupArray[i].numCohortsXnumGenes, 0.0);
 			break;
 		case BIOMASS:
 			/* Allow a slot per cohort for seagrass. Most groups this will be cohort == 1*/
@@ -874,7 +874,7 @@ int Util_Read_Functional_Group_XML(MSEBoxModel *bm, char *fileName, FILE *llogfp
                 
             FunctGroupArray[i].min_B = Util_Alloc_Init_1D_Double(FunctGroupArray[i].numCohortsXnumGenes, 0.0);
             FunctGroupArray[i].max_B = Util_Alloc_Init_1D_Double(FunctGroupArray[i].numCohortsXnumGenes, 0.0);
-            FunctGroupArray[i].rolling_B = Util_Alloc_Init_1D_Double(FunctGroupArray[i].numCohortsXnumGenes, 0.0);
+            FunctGroupArray[i].rolling_B = Util_Alloc_Init_2D_Double(bm->K_rolling_cap_num + 1, FunctGroupArray[i].numCohortsXnumGenes, 0.0);
 
 			break;
 		}
@@ -1273,10 +1273,10 @@ void Free_Functional_Group_Memory(MSEBoxModel *bm) {
             free2d(FunctGroupArray[i].RAssessAutumnSurvey);
             free1d(FunctGroupArray[i].min_wgt);
             free1d(FunctGroupArray[i].max_wgt);
-            free1d(FunctGroupArray[i].rolling_wgt);
+            free2d(FunctGroupArray[i].rolling_wgt);
             free1d(FunctGroupArray[i].min_B);
             free1d(FunctGroupArray[i].max_B);
-            free1d(FunctGroupArray[i].rolling_B);
+            free2d(FunctGroupArray[i].rolling_B);
 			break;
 		case AGE_STRUCTURED_BIOMASS:
 			free2d(FunctGroupArray[i].cohortSpeciesParams);
@@ -1292,7 +1292,7 @@ void Free_Functional_Group_Memory(MSEBoxModel *bm) {
             free1d(FunctGroupArray[i].X_RS);
             free1d(FunctGroupArray[i].min_B);
             free1d(FunctGroupArray[i].max_B);
-            free1d(FunctGroupArray[i].rolling_B);
+            free2d(FunctGroupArray[i].rolling_B);
 			break;
 		case BIOMASS:
 			free2d(FunctGroupArray[i].cohortSpeciesParams);
@@ -1302,7 +1302,7 @@ void Free_Functional_Group_Memory(MSEBoxModel *bm) {
             free1d(FunctGroupArray[i].X_RS);
             free1d(FunctGroupArray[i].min_B);
             free1d(FunctGroupArray[i].max_B);
-            free1d(FunctGroupArray[i].rolling_B);
+            free2d(FunctGroupArray[i].rolling_B);
 			break;
 		}
 

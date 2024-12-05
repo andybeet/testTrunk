@@ -460,6 +460,14 @@ void ManamentFlagTimeXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr do
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "syst_cap_calc_method", "Flag to do with system cap calculations  - whether use numbers based application of the catch equation or just average B", "", XML_TYPE_INTEGER,"0");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "M_est_method", "Flag to do with system cap calculations - which option for calculating M", "", XML_TYPE_INTEGER,"0");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "Ecosystm_Cap_tonnes", "Value of ecosystem catch cap in tonnes", "", XML_TYPE_FLOAT,"0");
+    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "K_cap_rolling_period", "Period in years of the period used in calculating rollign average weight and biomass", "", XML_TYPE_FLOAT,"0");
+
+    // Needed in defining arrays so read in immediately - use K_rolling_cap_num to define size of the array assumign monthly updates
+    bm->K_cap_rolling_period = (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, groupingNode, no_checking, "K_cap_rolling_period"));
+    bm->K_rolling_cap_num = (int)(ceil(bm->K_cap_rolling_period * 12.0));
+    if(!bm->K_rolling_cap_num) {
+        bm->K_rolling_cap_num = 1;
+    }
 
 	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "dynDAS", "Dynamic Days at Sea flag.", "", XML_TYPE_BOOLEAN,"0");
 
