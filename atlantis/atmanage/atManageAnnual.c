@@ -1829,10 +1829,10 @@ void Ecosystem_Cap_Frescale(MSEBoxModel *bm, FILE *llogfp) {
                         /* Convert model weight (mg AFDSW) into g wet weight and then length in cm */
                         if (FunctGroupArray[sp].isVertebrate == TRUE) {
                             if (!bm->use_time_avg_wgt) {
-                                if (FunctGroupArray[sp].min_wgt[nc] > 1.0e+100) {
+                                if (bm->dayt>0 && FunctGroupArray[sp].min_wgt[nc] > MAXDOUBLE) {
                                     quit("Ecosystem_Cap_Frescale: Time %e min_wgt for %s-%d is larger than is feasible (%e) something has gone wrong\n", bm->dayt, FunctGroupArray[sp].groupCode, nc, FunctGroupArray[sp].min_wgt[nc]);
                                 }
-                                if (FunctGroupArray[sp].max_wgt[nc] < 1.0e-100) {
+                                if (bm->dayt>0 && FunctGroupArray[sp].max_wgt[nc] < MINDOUBLE) {
                                     quit("Ecosystem_Cap_Frescale: Time %e max_wgt for %s-%d is smaller than is feasible (%e) something has gone wrong\n", bm->dayt, FunctGroupArray[sp].groupCode, nc, FunctGroupArray[sp].max_wgt[nc]);
                                 }
                                 Wgt = (FunctGroupArray[sp].min_wgt[nc] + FunctGroupArray[sp].max_wgt[nc]) / 2.0;
@@ -1940,10 +1940,10 @@ void Ecosystem_Cap_Frescale(MSEBoxModel *bm, FILE *llogfp) {
                             }
                         } else {
                             if (!bm->use_time_avg_biom) {
-                                if (FunctGroupArray[sp].min_B[nc] > 1.0e+100) {
+                                if (bm->dayt>0 && FunctGroupArray[sp].min_B[nc] > MAXDOUBLE) {
                                     quit("Ecosystem_Cap_Frescale: Time %e min_B for %s-%d is larger than is feasible (%e) something has gone wrong\n", bm->dayt, FunctGroupArray[sp].groupCode, nc, FunctGroupArray[sp].min_B[nc]);
                                 }
-                                if (FunctGroupArray[sp].max_B[nc] < 1.0e-100) {
+                                if (bm->dayt>0 && FunctGroupArray[sp].max_B[nc] < MINDOUBLE) {
                                     quit("Ecosystem_Cap_Frescale: Time %e max_B for %s-%d is smaller than is feasible (%e) something has gone wrong\n", bm->dayt, FunctGroupArray[sp].groupCode, nc, FunctGroupArray[sp].max_B[nc]);
                                 }
                                 this_Biom = (FunctGroupArray[sp].min_B[nc] + FunctGroupArray[sp].max_B[nc]) / 2.0;
