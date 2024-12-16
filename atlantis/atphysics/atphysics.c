@@ -492,7 +492,7 @@ void initPhysics(MSEBoxModel *bm) {
     bm->avg_cell_vol = base_cell_vol / ((double)bm->nbox);
 
 	/* Ice related info */
-	//readkeyprm_i(pfp, "ice_on", &bm->ice_on);
+	//readkeyprm_i(pfp, "ice_on", &bm->ice_on);  Removed as now set in tracerinfo read if it finds icenz in the in.nc file
 
 	if(bm->ice_on){
 		//readkeyprm_i(pfp, "icenz", &bm->icenz);

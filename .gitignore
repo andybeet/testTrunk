@@ -36,3 +36,4 @@ atlantis/atecology/atq10.o
 atlantis/atecology/attime.o
 atlantis/atecology/atvertprocesses.o
 *.o
+.DS_Store
