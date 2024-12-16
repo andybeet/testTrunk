@@ -231,7 +231,7 @@ void readBMTracerInfo(int fid, char *fileName, MSEBoxModel *bm) {
 				// just means ice is not active in this model.
 
 	/* Check numbers of layers from attributes against geometry */
-    ncattget(fid, NC_GLOBAL, "icenz", &n)
+    ncattget(fid, NC_GLOBAL, "icenz", &n);
     if(n!= 0){
 	//if(ncattinq(fid, NC_GLOBAL, "icenz", &t_type, &t_len) != -1){  //icenz is not a variable its a global dimension
 		bm->ice_on = TRUE;
