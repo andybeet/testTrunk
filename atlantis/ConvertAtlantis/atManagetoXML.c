@@ -744,12 +744,14 @@ void TACXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr doc, xmlNodePtr
 	Util_XML_Parse_Create_Node(fp, fileName, childGroupingNode, "targ_refB", "Target reference point - tier2", "", XML_TYPE_FLOAT, "");
 	Util_XML_Parse_Create_Node(fp, fileName, childGroupingNode, "targ_refC", "Target reference point - tier3", "", XML_TYPE_FLOAT, "");
 	Util_XML_Parse_Create_Node(fp, fileName, childGroupingNode, "targ_refD", "Target reference point - tier4", "", XML_TYPE_FLOAT, "");
+    Util_XML_Parse_Create_Node(fp, fileName, childGroupingNode, "targ_refE", "Target reference point - tier4", "", XML_TYPE_FLOAT, "");
 	Util_XML_Parse_Create_Node(fp, fileName, childGroupingNode, "lim_ref", "Limit reference point", "", XML_TYPE_FLOAT, "");
 
 	Util_XML_Parse_Create_Node(fp, fileName, childGroupingNode, "forage_refA", "Forage target reference point - tier1", "", XML_TYPE_FLOAT, "");
 	Util_XML_Parse_Create_Node(fp, fileName, childGroupingNode, "forage_refB", "Forage target reference point - tier2", "", XML_TYPE_FLOAT, "");
 	Util_XML_Parse_Create_Node(fp, fileName, childGroupingNode, "forage_refC", "Forage target reference point - tier3", "", XML_TYPE_FLOAT, "");
 	Util_XML_Parse_Create_Node(fp, fileName, childGroupingNode, "forage_refD", "Forage target reference point - tier4", "", XML_TYPE_FLOAT, "");
+    Util_XML_Parse_Create_Node(fp, fileName, childGroupingNode, "forage_refE", "Forage target reference point - tier4", "", XML_TYPE_FLOAT, "");
 	Util_XML_Parse_Create_Node(fp, fileName, childGroupingNode, "forage_lim_ref", "Forage limit reference point", "", XML_TYPE_FLOAT, "");
 
     Util_XML_Parse_Create_Node(fp, fileName, childGroupingNode, "byproduct_refA", "Byproduct target reference point - tier1", "", XML_TYPE_FLOAT, "");

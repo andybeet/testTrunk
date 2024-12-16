@@ -7987,11 +7987,13 @@ targ_refA 0.48                Target reference point - tier 1
 targ_refB 0.40                Target reference point - tier 1
 targ_refC 0.60                Target reference point - tier 2
 targ_refD 0.50                Target reference point - tier 2
+targ_refE 0.50                Target reference point - tier 14
 lim_ref   0.20                Limit reference point
 forage_refA 0.48              Forage target reference point - tier1
 forage_refB 0.40              Forage target reference point - tier1
 forage_refC 0.60              Forage target reference point - tier2
 forage_refD 0.50              Forage target reference point - tier2
+forage_refE 0.50              Forage target reference point - tier14
 forage_lim_ref 0.20           Forage limit reference point
 
 
