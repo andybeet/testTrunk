@@ -440,6 +440,7 @@ void ManamentFlagTimeXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr do
 
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flagkeepZeroCatchTS", "", "", XML_TYPE_BOOLEAN,"0");
     
+	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flagSSBforHCR", "1=use SBB for HCR, 0=use total B for HCR", "", XML_TYPE_BOOLEAN,"0");
 	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flagendangered", "1=endangered group status effect effort allocation, 0=off", "", XML_TYPE_BOOLEAN,"0");
 	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flagmpa", " 0=no mpa for any group, 1=mpas for at least one group", "", XML_TYPE_BOOLEAN,"0");
 	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flaginfringe", "0=no infringement, 1=infringement of mpas", "", XML_TYPE_BOOLEAN,"0");

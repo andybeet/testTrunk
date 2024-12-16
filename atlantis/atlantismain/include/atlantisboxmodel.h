@@ -1306,6 +1306,7 @@ typedef enum {
 #define dyntier1B0 11
 #define sp_rollover 12
 #define tier13 13
+#define tier14 14
 
 #define orig_tier_rule 1
 #define new_tier_rule 2
@@ -1723,6 +1724,7 @@ typedef enum {
 	BrefB_id,
 	BrefC_id,
 	BrefD_id,
+	BrefE_id,
 	Blim_id,
     flag_systcap_sp_id,  /* Ecosystem cap related */
     sp_fishery_deduction_id,
@@ -4954,6 +4956,7 @@ typedef struct {
 	int flagfinfish; /* Flag inficating fish fin-fish */
 	int flagincidmort; /* Flag indicating incidental mortality on */
 	int flagendangered; /* Flag indicating whether using management based on PET groups */
+	int flagSSBforHCR; /* Flag indicating whether using SSB for HCR (1) or total B (0) */
 	int flagmpa; /* Flag indicating form of spatial management used */
 	int flagrollingmpa; /* Flag indicating whether have rolling spatial management or not */
 	int flaginfringe; /* Flag indicating whether there are management infringements */
@@ -5163,11 +5166,13 @@ typedef struct {
 	double targ_refB; /* Target reference point B (e.g. B40) for tiered harvest rules */
 	double targ_refC; /* Target reference point C (e.g. B60) for tiered harvest rules */
 	double targ_refD; /* Target reference point D (e.g. B50) for tiered harvest rules */
+  double targ_refE; /* Target reference point E (e.g. B20) for tiered harvest rules */
 	double lim_ref; /* Limit reference point for assessments and TAC setting */
 	double forage_refA; /* Target reference point A (e.g. B48) for forage species in tiered harvest rules */
 	double forage_refB; /* Target reference point B (e.g. B40) for forage species in tiered harvest rules */
 	double forage_refC; /* Target reference point C (e.g. B60) for forage species in tiered harvest rules */
 	double forage_refD; /* Target reference point D (e.g. B50) for forage species in tiered harvest rules */
+  double forage_refE; /* Target reference point E (e.g. B20) for forage species in tiered harvest rules */
 	double forage_lim_ref; /* Limit reference point for forage species in assessments and TAC setting */
     double byproduct_refA; /* Target reference point A (e.g. B48) for byproduct species in tiered harvest rules */
     double byproduct_refB; /* Target reference point B (e.g. B40) for byproduct species in tiered harvest rules */

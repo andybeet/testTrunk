@@ -523,6 +523,7 @@ void Manage_Init(MSEBoxModel *bm, FILE *llogfp) {
                 FunctGroupArray[sp].speciesParams[BrefB_id] = bm->forage_refB;
                 FunctGroupArray[sp].speciesParams[BrefC_id] = bm->forage_refC;
                 FunctGroupArray[sp].speciesParams[BrefD_id] = bm->forage_refD;
+                FunctGroupArray[sp].speciesParams[BrefE_id] = bm->forage_refE;
                 FunctGroupArray[sp].speciesParams[Blim_id] = bm->forage_lim_ref;
                 break;
             case target_tier: /* Target species reference points */
@@ -530,6 +531,7 @@ void Manage_Init(MSEBoxModel *bm, FILE *llogfp) {
 				FunctGroupArray[sp].speciesParams[BrefB_id] = bm->targ_refB;
 				FunctGroupArray[sp].speciesParams[BrefC_id] = bm->targ_refC;
 				FunctGroupArray[sp].speciesParams[BrefD_id] = bm->targ_refD;
+				FunctGroupArray[sp].speciesParams[BrefE_id] = bm->targ_refE;
 				FunctGroupArray[sp].speciesParams[Blim_id] = bm->lim_ref;
                 break;
             case byproduct_tier: /* Byproduct species reference points */

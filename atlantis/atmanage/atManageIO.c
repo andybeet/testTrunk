@@ -61,6 +61,8 @@ void Close_Manage_Output_Files(MSEBoxModel *bm) {
 	Util_Close_Output_File(anntacfp);
 	/* Close the broken stick output file */
 	Util_Close_Output_File(annBrokenfp);
+    /* Close the ecosystem caps output file */
+    Util_Close_Output_File(annCapResultfp);
 }
 
 /**
@@ -210,7 +212,7 @@ void WriteAnnCapResultFile(MSEBoxModel *bm, int species, int nf)
     if(annCapResultfp == NULL){
         annCapResultfp = initCapResultStickFile(bm);
     }
-    fprintf(annBrokenfp, "%e %s %s %e %e %e %e\n", bm->dayt, FunctGroupArray[species].groupCode, FisheryArray[nf].fisheryCode, bm->SP_FISHERYprms[species][nf][orig_mFC_scale_id], bm->SP_FISHERYprms[species][nf][mFC_scale_id], FunctGroupArray[species].speciesParams[sp_fishery_expected_catch_id], FunctGroupArray[species].speciesParams[sp_fishery_deduction_id]);
+    fprintf(annCapResultfp, "%e %s %s %e %e %e %e\n", bm->dayt, FunctGroupArray[species].groupCode, FisheryArray[nf].fisheryCode, bm->SP_FISHERYprms[species][nf][orig_mFC_scale_id], bm->SP_FISHERYprms[species][nf][mFC_scale_id], FunctGroupArray[species].speciesParams[sp_fishery_expected_catch_id], FunctGroupArray[species].speciesParams[sp_fishery_deduction_id]);
 }
 
 

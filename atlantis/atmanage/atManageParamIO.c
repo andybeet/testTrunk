@@ -564,7 +564,8 @@ void readManamentFlagTimeXML(MSEBoxModel *bm, char *fileName, xmlNodePtr rootnod
 	bm->flagreinitpop = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, binary_check, "flagreinitpop"));
 	bm->pseudo_assess = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, binary_check, "pseudo_assess"));
     bm->do_sumB_HCR = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, integer_check, "do_sumB_HCR"));
-    
+    bm->flagSSBforHCR = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, binary_check, "flagSSBforHCR"));
+
 	/* Scenario painting switches */
 	bm->flagbuffereffort = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, binary_check, "flagbuffereffort"));
 	bm->flagchangeeffort = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, binary_check, "flagchangeeffort"));
@@ -796,11 +797,13 @@ void readTACXML(MSEBoxModel *bm, char *fileName, xmlNodePtr rootnode) {
 	bm->targ_refB = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, childGroupingNode, proportion_check, "targ_refB");
 	bm->targ_refC = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, childGroupingNode, proportion_check, "targ_refC");
 	bm->targ_refD = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, childGroupingNode, proportion_check, "targ_refD");
+	bm->targ_refE = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, childGroupingNode, proportion_check, "targ_refE");
 	bm->lim_ref = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, childGroupingNode, proportion_check, "lim_ref");
 	bm->forage_refA = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, childGroupingNode, proportion_check, "forage_refA");
 	bm->forage_refB = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, childGroupingNode, proportion_check, "forage_refB");
 	bm->forage_refC = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, childGroupingNode, proportion_check, "forage_refC");
 	bm->forage_refD = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, childGroupingNode, proportion_check, "forage_refD");
+	bm->forage_refE = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, childGroupingNode, proportion_check, "forage_refE");
 	bm->forage_lim_ref = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, childGroupingNode, proportion_check, "forage_lim_ref");
     bm->byproduct_refA = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, childGroupingNode, proportion_check, "byproduct_refA");
     bm->byproduct_refB = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, childGroupingNode, proportion_check, "byproduct_refB");
@@ -854,7 +857,12 @@ void readTACXML(MSEBoxModel *bm, char *fileName, xmlNodePtr rootnode) {
     if(	Util_XML_Read_Array_Double(ATLANTIS_ATTRIBUTE, fileName, "TAC_Parameters/Reference_Points",childGroupingNode, no_checking, "Frestart_scalar", &FreStarti, bm->K_num_tot_sp) == FALSE){
         quit("Error: Unable to find parameter 'TAC_Parameters/Reference_Points/Frestart_scalar' in input file %s\n",  fileName);
     }
-    if( Util_XML_Read_Array_Double(ATLANTIS_ATTRIBUTE, fileName, "SystemCap_Parameters/",childGroupingNode, no_checking, "FlagSystCapSP", &FlagSystCapSPi, bm->K_num_tot_sp) == FALSE){
+    
+	childGroupingNode = Util_XML_Get_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, rootnode, "SystemCap_Parameters");
+	if (childGroupingNode == NULL)
+		quit("readTACXML: SystemCap_Parameters attribute group not found in input file %s.\n", fileName);
+
+	if( Util_XML_Read_Array_Double(ATLANTIS_ATTRIBUTE, fileName, "SystemCap_Parameters/",childGroupingNode, no_checking, "FlagSystCapSP", &FlagSystCapSPi, bm->K_num_tot_sp) == FALSE){
         quit("Error: Unable to find parameter 'SystemCap_Parameters/FlagSystCapSP' in input file %s\n",  fileName);
     }
     if( Util_XML_Read_Array_Double(ATLANTIS_ATTRIBUTE, fileName, "SystemCap_Parameters/",childGroupingNode, no_checking, "SystCapSPpref", &SystCapSPprefi, bm->K_num_tot_sp) == FALSE){

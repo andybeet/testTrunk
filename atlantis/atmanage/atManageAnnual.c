@@ -1095,7 +1095,7 @@ void Check_F_Harvest_Control_Rule(MSEBoxModel *bm, FILE *llogfp) {
 *
 *******************************************************************************/
 void Per_Sp_Frescale (MSEBoxModel *bm, FILE *llogfp, int sp) {
-    int nf, flagF, nc, k;
+    int cohort, ij, b, nf, flagF, nc, k;
     double FTARG, F_rescale, Fcurr, calcF, Fstep1, this_mFC, counter;
     //double M;
     //double calcM;
@@ -1109,6 +1109,7 @@ void Per_Sp_Frescale (MSEBoxModel *bm, FILE *llogfp, int sp) {
     
     double BrefA = FunctGroupArray[sp].speciesParams[BrefA_id] * bm->estBo[sp];
     double BrefB = FunctGroupArray[sp].speciesParams[BrefB_id] * bm->estBo[sp];
+    double BrefE = FunctGroupArray[sp].speciesParams[BrefE_id] * bm->estBo[sp];
     double Blim = FunctGroupArray[sp].speciesParams[Blim_id] * bm->estBo[sp];
     double FrefA = FunctGroupArray[sp].speciesParams[FrefA_id];
     double FrefH = FunctGroupArray[sp].speciesParams[FrefH_id];
@@ -1117,7 +1118,26 @@ void Per_Sp_Frescale (MSEBoxModel *bm, FILE *llogfp, int sp) {
     double Braw, Bcurr;
 
     if(!do_assess) {  // Where do_assess set at atlantismain.c level as requires Assess_Resources() call in atasseess lib
-        Braw = bm->totfishpop[sp] * bm->X_CN * mg_2_tonne;
+        if (bm->flagSSBforHCR){
+            /* Using SSB in the HCR - HAP 2024 - I wrote this using script from atSSBDataGen.c */
+            for (cohort = 0; cohort < FunctGroupArray[sp].numCohortsXnumGenes; cohort++) {
+                for (ij = 0; ij < bm->nbox; ij++) {
+                    for (b = 0; b < bm->boxes[ij].nz; b++) {
+                            Braw += ((bm->boxes[ij].tr[b][FunctGroupArray[sp].structNTracers[cohort]] + bm->boxes[ij].tr[b][FunctGroupArray[sp].resNTracers[cohort]]) *
+                                    bm->boxes[ij].tr[b][FunctGroupArray[sp].NumsTracers[cohort]] *
+                                    FunctGroupArray[sp].habitatCoeffs[WC] *
+                                    bm->X_CN *
+                                    mg_2_tonne) *
+                                    FunctGroupArray[sp].scaled_FSPB[cohort];
+                                // Note, HAP tried this withough FSPB and it produced the same value as bm->totfishpop[sp] * bm->X_CN * mg_2_tonne
+                            }
+                    }
+                }
+                    fprintf(llogfp, "Time: %e %s, Braw (total SSB) before Assess_Add_Error() - %e\n", bm->dayt, FunctGroupArray[sp].groupCode, Braw);
+        } else {
+            Braw = bm->totfishpop[sp] * bm->X_CN * mg_2_tonne;
+            fprintf(llogfp, "Time: %e %s, Braw (total stock biomass) before Assess_Add_Error() - %e\n", bm->dayt, FunctGroupArray[sp].groupCode, Braw);
+        }
         Bcurr = Assess_Add_Error(bm, er_case, Braw, est_bias, est_cv);
     } else {
         Bcurr = bm->NAssess[sp][est_med_stock_id];
@@ -1231,6 +1251,22 @@ void Per_Sp_Frescale (MSEBoxModel *bm, FILE *llogfp, int sp) {
                 FTARG = 0;
             }
             break;
+        case tier14: // Same as tier 1 but allows for truncating the descending limb and closing the fishery below BrefE, Alaska pollock and cod style
+            if (Bcurr >= BrefA) {
+                /* Greater than BrefA (e.g. B48) so use F48 */
+                FTARG = FrefA;
+                //FTARG = Fcurr;
+            } else if ((Bcurr < BrefA) && (Bcurr >= BrefB)) {
+                /* Less than BrefA and greater than BrefB (e.g. B40), for stability remain at F48 */
+                FTARG = FrefA;
+            } else if ((Bcurr < BrefB) && (Bcurr > BrefE)) {
+                /* Less than BrefB and greater than BrefE (usually B20 for Alaska pollock and cod) so reduce F rate linearly towards Blim */
+                FTARG = FrefA * ((Bcurr - Blim) / (BrefB - Blim));
+            } else {
+                /* Less than BrefE so set F = 0 */
+               FTARG = 0;
+            }
+            break;
         default:
             quit("Per_Sp_Frescale: We do not have any code for tier %d\n", tier);
             break;
@@ -1253,6 +1289,7 @@ void Per_Sp_Frescale (MSEBoxModel *bm, FILE *llogfp, int sp) {
             case dyntier1B0:
             case sp_rollover:
             case tier13:
+            case tier14:
                 Fstep1 = Fcurr / (FunctGroupArray[sp].speciesParams[maxmFC_id] * 365.0);  // As Fcurr is annual but mFC is daily
                 F_rescale = Fstep1 * (FTARG / (Fcurr + small_num));  // Re-scale existing F
                 break;
@@ -1285,7 +1322,13 @@ void Per_Sp_Frescale (MSEBoxModel *bm, FILE *llogfp, int sp) {
 
         flagF = (int) (bm->SP_FISHERYprms[sp][nf][flagF_id]);
         if (flagF) {
-            bm->SP_FISHERYprms[sp][nf][mFC_scale_id] = F_rescale;
+
+            if(!tier){
+                bm->SP_FISHERYprms[sp][nf][mFC_scale_id] = 1.0;
+            } else {
+                bm->SP_FISHERYprms[sp][nf][mFC_scale_id] = F_rescale;
+            }
+
             WriteAnnBrokenStickFile(bm, sp, nf, tier, FrefLim, FrefA, FrefH, Blim, BrefA, BrefB, Fcurr, FTARG, Bcurr, F_rescale);
 
             if (bm->checkstart) {
@@ -1478,8 +1521,8 @@ void Guild_Frescale (MSEBoxModel *bm, FILE *llogfp, int sp) {
 *******************************************************************************/
 
 void Ecosystem_Cap_Frescale(MSEBoxModel *bm, FILE *llogfp) {
-    int sp, nf, nc, b, k, flagF, tier, er_case, maxstock, mFC_end_age, mFC_start_age, flagfcmpa, sel_curve, stage, basechrt;
-    double max_mFC, F_rescale, FTARG, Bcurr, calcM, survival, Fcurr, calcF, Fstep1, this_mFC, M, est_bias, est_cv, BrefA, BrefB, Blim, FrefA, FrefH, FrefLim, Braw, sel, this_expect_catch, sp_fishery_pref_weight, w_inv, tot_w_inv, counter, mFC, mFC_change_scale, mpa_scale, mpa_infringe, Wgt, li, gear_change_scale, this_Num, this_start, this_end, this_Biom, Z_Est, expectF, Catch_Eqn_Denom, orig_expected_catch, excess, deductions, new_expected_catch, rescale_scalar,tot_area, fishable_area;
+    int sp, nf, nc, cohort, ij, b, k, flagF, tier, er_case, maxstock, mFC_end_age, mFC_start_age, flagfcmpa, sel_curve, stage, basechrt;
+    double max_mFC, F_rescale, FTARG, Bcurr, calcM, survival, Fcurr, calcF, Fstep1, this_mFC, M, est_bias, est_cv, BrefA, BrefB, BrefE, Blim, FrefA, FrefH, FrefLim, Braw, sel, this_expect_catch, sp_fishery_pref_weight, w_inv, tot_w_inv, counter, mFC, mFC_change_scale, mpa_scale, mpa_infringe, Wgt, li, gear_change_scale, this_Num, this_start, this_end, this_Biom, Z_Est, expectF, Catch_Eqn_Denom, orig_expected_catch, excess, deductions, new_expected_catch, rescale_scalar,tot_area, fishable_area;
     //double calcM;
     
     /* Initialise weights if has not been done previously */
@@ -1562,13 +1605,33 @@ void Ecosystem_Cap_Frescale(MSEBoxModel *bm, FILE *llogfp) {
             maxstock = FunctGroupArray[sp].numStocks;
             BrefA = FunctGroupArray[sp].speciesParams[BrefA_id] * bm->estBo[sp];
             BrefB = FunctGroupArray[sp].speciesParams[BrefB_id] * bm->estBo[sp];
+            BrefE = FunctGroupArray[sp].speciesParams[BrefE_id] * bm->estBo[sp];
             Blim = FunctGroupArray[sp].speciesParams[Blim_id] * bm->estBo[sp];
             FrefA = FunctGroupArray[sp].speciesParams[FrefA_id];
             FrefH = FunctGroupArray[sp].speciesParams[FrefH_id];
             FrefLim = FunctGroupArray[sp].speciesParams[FrefLim_id];
             
             if(!do_assess) {  // Where do_assess set at atlantismain.c level as requires Assess_Resources() call in atasseess lib
-                Braw = bm->totfishpop[sp] * bm->X_CN * mg_2_tonne;
+                if (bm->flagSSBforHCR){
+                    /* Using SSB in the HCR - HAP 2024 - I wrote this using script from atSSBDataGen.c */
+                    for (cohort = 0; cohort < FunctGroupArray[sp].numCohortsXnumGenes; cohort++) {
+                        for (ij = 0; ij < bm->nbox; ij++) {
+                            for (b = 0; b < bm->boxes[ij].nz; b++) {
+                                 Braw += ((bm->boxes[ij].tr[b][FunctGroupArray[sp].structNTracers[cohort]] + bm->boxes[ij].tr[b][FunctGroupArray[sp].resNTracers[cohort]]) *
+                                 bm->boxes[ij].tr[b][FunctGroupArray[sp].NumsTracers[cohort]] *
+                                 FunctGroupArray[sp].habitatCoeffs[WC] *
+                                 bm->X_CN *
+                                 mg_2_tonne) *
+                                 FunctGroupArray[sp].scaled_FSPB[cohort];
+                                // Note, HAP tried this withough FSPB and it produced the same value as bm->totfishpop[sp] * bm->X_CN * mg_2_tonne
+                            }
+                        }
+                    }
+                    fprintf(llogfp, "Time: %e %s, Braw (total SSB) before Assess_Add_Error() - %e\n", bm->dayt, FunctGroupArray[sp].groupCode, Braw);
+                } else {
+                    Braw = bm->totfishpop[sp] * bm->X_CN * mg_2_tonne;
+                    fprintf(llogfp, "Time: %e %s, Braw (total stock biomass) before Assess_Add_Error() - %e\n", bm->dayt, FunctGroupArray[sp].groupCode, Braw);
+                }
                 Bcurr = Assess_Add_Error(bm, er_case, Braw, est_bias, est_cv);
             } else {
                 Bcurr = bm->NAssess[sp][est_med_stock_id];
@@ -1649,6 +1712,22 @@ void Ecosystem_Cap_Frescale(MSEBoxModel *bm, FILE *llogfp) {
                         FTARG = 0;
                     }
                     break;
+               case tier14: // Same as tier 1 but allows for truncating the descending limb and closing the fishery below BrefE, Alaska pollock and cod style
+                    if (Bcurr >= BrefA) {
+                        /* Greater than BrefA (e.g. B48) so use F48 */
+                        FTARG = FrefA;
+                        //FTARG = Fcurr;
+                    } else if ((Bcurr < BrefA) && (Bcurr >= BrefB)) {
+                        /* Less than BrefA and greater than BrefB (e.g. B40), for stability remain at F48 */
+                        FTARG = FrefA;
+                    } else if ((Bcurr < BrefB) && (Bcurr > BrefE)) {
+                        /* Less than BrefB and greater than BrefE (usually B20 for Alaska pollock and cod) so reduce F rate linearly towards Blim */
+                        FTARG = FrefA * ((Bcurr - Blim) / (BrefB - Blim));
+                    } else {
+                        /* Less than BrefE so set F = 0 */
+                        FTARG = 0;
+                    }
+                    break;
                 default:
                     quit("Per_Sp_Frescale: We do not have any code for tier %d\n", tier);
                     break;
@@ -1671,6 +1750,7 @@ void Ecosystem_Cap_Frescale(MSEBoxModel *bm, FILE *llogfp) {
                     case dyntier1B0:
                     case sp_rollover:
                     case tier13:
+                    case tier14:
                         Fstep1 = Fcurr / (FunctGroupArray[sp].speciesParams[maxmFC_id] * 365.0);  // As Fcurr is annual but mFC is daily
                         F_rescale = Fstep1 * (FTARG / (Fcurr + small_num));  // Re-scale existing F (need to do vs mFC rather than just Fcurr as code applies it against mFC)
                         break;
@@ -1703,7 +1783,13 @@ void Ecosystem_Cap_Frescale(MSEBoxModel *bm, FILE *llogfp) {
 
                 flagF = (int) (bm->SP_FISHERYprms[sp][nf][flagF_id]);
                 if (flagF) {
-                    bm->SP_FISHERYprms[sp][nf][mFC_scale_id] = F_rescale;
+
+                    if(!tier){
+                        bm->SP_FISHERYprms[sp][nf][mFC_scale_id] = 1.0;
+                    } else {
+                        bm->SP_FISHERYprms[sp][nf][mFC_scale_id] = F_rescale;
+                    }
+                    
                     
                     /* Write out end result of original species focused assessment */
                     WriteAnnBrokenStickFile(bm, sp, nf, tier, FrefLim, FrefA, FrefH, Blim, BrefA, BrefB, Fcurr, FTARG, Bcurr, F_rescale);
@@ -1743,10 +1829,10 @@ void Ecosystem_Cap_Frescale(MSEBoxModel *bm, FILE *llogfp) {
                         /* Convert model weight (mg AFDSW) into g wet weight and then length in cm */
                         if (FunctGroupArray[sp].isVertebrate == TRUE) {
                             if (!bm->use_time_avg_wgt) {
-                                if (FunctGroupArray[sp].min_wgt[nc] > 1.0e+100) {
+                                if (bm->dayt>0 && FunctGroupArray[sp].min_wgt[nc] > MAXDOUBLE) {
                                     quit("Ecosystem_Cap_Frescale: Time %e min_wgt for %s-%d is larger than is feasible (%e) something has gone wrong\n", bm->dayt, FunctGroupArray[sp].groupCode, nc, FunctGroupArray[sp].min_wgt[nc]);
                                 }
-                                if (FunctGroupArray[sp].max_wgt[nc] < 1.0e-100) {
+                                if (bm->dayt>0 && FunctGroupArray[sp].max_wgt[nc] < MINDOUBLE) {
                                     quit("Ecosystem_Cap_Frescale: Time %e max_wgt for %s-%d is smaller than is feasible (%e) something has gone wrong\n", bm->dayt, FunctGroupArray[sp].groupCode, nc, FunctGroupArray[sp].max_wgt[nc]);
                                 }
                                 Wgt = (FunctGroupArray[sp].min_wgt[nc] + FunctGroupArray[sp].max_wgt[nc]) / 2.0;
@@ -1854,10 +1940,10 @@ void Ecosystem_Cap_Frescale(MSEBoxModel *bm, FILE *llogfp) {
                             }
                         } else {
                             if (!bm->use_time_avg_biom) {
-                                if (FunctGroupArray[sp].min_B[nc] > 1.0e+100) {
+                                if (bm->dayt>0 && FunctGroupArray[sp].min_B[nc] > MAXDOUBLE) {
                                     quit("Ecosystem_Cap_Frescale: Time %e min_B for %s-%d is larger than is feasible (%e) something has gone wrong\n", bm->dayt, FunctGroupArray[sp].groupCode, nc, FunctGroupArray[sp].min_B[nc]);
                                 }
-                                if (FunctGroupArray[sp].max_B[nc] < 1.0e-100) {
+                                if (bm->dayt>0 && FunctGroupArray[sp].max_B[nc] < MINDOUBLE) {
                                     quit("Ecosystem_Cap_Frescale: Time %e max_B for %s-%d is smaller than is feasible (%e) something has gone wrong\n", bm->dayt, FunctGroupArray[sp].groupCode, nc, FunctGroupArray[sp].max_B[nc]);
                                 }
                                 this_Biom = (FunctGroupArray[sp].min_B[nc] + FunctGroupArray[sp].max_B[nc]) / 2.0;

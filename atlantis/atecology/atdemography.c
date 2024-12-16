@@ -3585,7 +3585,7 @@ void Ecology_Update_Vertebrate_Cohorts(MSEBoxModel *bm, FILE *llogfp) {
 
 			if (need_update) {
                 /* Record final numbers if needed */
-                if(bm->syst_cap_calc_method == Z_and_F_based) {
+                if(bm->M_est_method == Z_and_F_based) {
                     Record_End_Num(bm, species);
                 }
                 
@@ -4389,7 +4389,7 @@ void Invertebrate_Reproduction(MSEBoxModel *bm, int wclayer, int maxdeep, int to
 				// TODO: Make this work for more than two age stages for biomass pools
 				if (sp_Age_Now) {
                     /* Record final numbers if needed */
-                    if(bm->syst_cap_calc_method == Z_and_F_based) {
+                    if(bm->M_est_method == Z_and_F_based) {
                         Record_End_Num(bm, species);
                     }
                     
