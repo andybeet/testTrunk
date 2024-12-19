@@ -5627,6 +5627,7 @@ typedef struct {
  *********************************************************************/
 extern double **dvol, ***dtr;
 extern double **CatchSum;
+extern double ****mFCchange;
 
 extern int it_count, waterboundary;
 

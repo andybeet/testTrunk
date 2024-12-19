@@ -218,6 +218,7 @@ int sp;
 double **dvol, ***dtr;
 double **CatchSum;
 int **FisherySpeciesCatchFlags; /* Array to hold a flag for each fishery/species combinations to indicate which species are fished by which fisheries */
+double ****mFCchange;
 
 int runNextTimeStep(MSEBoxModel *bm){
 	int b, halt = 0;

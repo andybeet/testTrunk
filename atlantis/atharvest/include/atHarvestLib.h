@@ -82,4 +82,3 @@ double Get_Catch_Selectivity(MSEBoxModel *bm, int sp, int stage, int nf, double 
 
 /* Array needed for tracking fisheries interactions */
 extern int **FisherySpeciesCatchFlags; /* Array to hold a flag for each fishery/species combinations to indicate which species are fished by which fisheries */
-double ****mFCchange;
