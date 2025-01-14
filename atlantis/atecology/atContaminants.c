@@ -48,6 +48,7 @@ void Free_Contaminants(MSEBoxModel *bm) {
 
         free(bm->contaminantStructure[cIndex]->sp_uptake_rate);
         free(bm->contaminantStructure[cIndex]->sp_uptake_option);
+        free(bm->contaminantStructure[cIndex]->sp_decay_half_life);
         free2d(bm->contaminantStructure[cIndex]->sp_amount_decayed);
         free3d(bm->contaminantStructure[cIndex]->sp_uptake);
         free3d(bm->contaminantStructure[cIndex]->sp_transfer);
@@ -110,6 +111,7 @@ void Allocate_Contaiminants(MSEBoxModel *bm) {
 
         bm->contaminantStructure[cIndex]->expose_time =  Util_Alloc_Init_4D_Double((bm->wcnz+bm->sednz), bm->nbox, max_chrt, bm->K_num_tot_sp, 0.0);
 		bm->contaminantStructure[cIndex]->sp_amount_decayed = Util_Alloc_Init_2D_Double(max_chrt, bm->K_num_tot_sp, 0.0);
+        bm->contaminantStructure[cIndex]->sp_decay_half_life = Util_Alloc_Init_1D_Double(bm->K_num_tot_sp, 0.0);
 
         bm->contaminantStructure[cIndex]->sp_ContamScalar = Util_Alloc_Init_1D_Double(bm->K_num_tot_sp, 0.0);
 
@@ -1099,12 +1101,18 @@ int Calculate_Species_Contaminant_Decay(MSEBoxModel *bm, BoxLayerValues *boxLaye
 	double newValue, time_step;
     double *tracerArray;
     //double newValue;
-    double local_cGroupLevel;
+    double local_cGroupLevel, this_half_life;
     //double decay_constant;
 
 	for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
         
         tracerArray = getTracerArray(boxLayerInfo, habitat);
+        
+        if(bm->flag_contam_halflife_spbased) {
+            this_half_life = bm->contaminantStructure[cIndex]->sp_decay_half_life[sp];
+        } else {
+            this_half_life = bm->contaminantStructure[cIndex]->half_life;
+        }
 
 		/* Contact can occur for all active groups that are present in this habitat */
 		if (FunctGroupArray[sp].speciesParams[flag_id] == TRUE && FunctGroupArray[sp].habitatCoeffs[habitat] > 0) {
@@ -1126,7 +1134,8 @@ int Calculate_Species_Contaminant_Decay(MSEBoxModel *bm, BoxLayerValues *boxLaye
                 local_cGroupLevel = tracerArray[FunctGroupArray[sp].contaminantTracers[cohort][cIndex]];  // Need to use local cGroupLevel as needs to be per cohort not at species level
 
                 /* The current concentration in the group */
-                newValue = local_cGroupLevel * pow(0.5, time_step / bm->contaminantStructure[cIndex]->half_life);
+                
+                newValue = local_cGroupLevel * pow(0.5, time_step / this_half_life);
                 bm->contaminantStructure[cIndex]->sp_amount_decayed[sp][cohort] = (local_cGroupLevel - newValue) / time_step;
                 
                 /* Alternative code -- Using the decay constant instead of the half life

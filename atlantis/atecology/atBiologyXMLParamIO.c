@@ -3680,6 +3680,7 @@ static void Read_Contaminant_Values(MSEBoxModel *bm, char *fileName, xmlNodePtr 
     bm->flag_contamOnlyAmplify = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, integer_check, "flag_contamOnlyAmplify");
     bm->flag_contamMove = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, integer_check, "flag_contamMove");
     bm->flag_contamMinTemp = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, "flag_contamMinTemp");
+    bm->flag_contam_halflife_spbased = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, "flag_contam_halflife_spbased");
     
     bm->biopools_dodge_contam = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, integer_check, "biopools_dodge_contam");
     
@@ -3696,6 +3697,9 @@ static void Read_Contaminant_Values(MSEBoxModel *bm, char *fileName, xmlNodePtr 
 		for(sp = 0; sp < bm->K_num_tot_sp; sp++){
 			//if(FunctGroupArray[sp].speciesParams[flag_id] == TRUE && FunctGroupArray[sp].isDetritus == FALSE){
 			if((FunctGroupArray[sp].speciesParams[flag_id] == TRUE) && (FunctGroupArray[sp].isDetritus == FALSE)){
+
+                sprintf(varStr, "%s_%s_decay_half_life", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
+                bm->contaminantStructure[cIndex]->sp_decay_half_life[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
 
 				sprintf(varStr, "%s_%s_uptake_rate", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
 				bm->contaminantStructure[cIndex]->sp_uptake_rate[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
@@ -4148,6 +4152,9 @@ static void Read_KMIG_INVERT_XML(MSEBoxModel *bm, char *fileName, xmlNodePtr par
     char parameterNameMigNum[STRLEN];
     char errorString[STRLEN];
     
+    qid = 0; // As assume only one lot outside the model at start time.
+    // TODO: May need to change this - to allow for multiple queue entries at the start
+
     if (verbose)
         printf("Reading %s values\n", parameterName);
     
@@ -4165,9 +4172,16 @@ static void Read_KMIG_INVERT_XML(MSEBoxModel *bm, char *fileName, xmlNodePtr par
             
             // Load those migrations that do happen
             if (FunctGroupArray[guild].isVertebrate == FALSE && FunctGroupArray[guild].sp_geo_move == TRUE) {
+                
+                printf("Reading %s values for %s with %d genotypes and %d cohorts - %s\n", parameterName, FunctGroupArray[guild].groupCode, FunctGroupArray[guild].numGeneTypes, FunctGroupArray[guild].numCohortsXnumGenes, errorString);
+                
                 if (Util_XML_Read_Array_Double(ATLANTIS_GROUP_ATTRIBUTE, fileName, errorString, attributeNode, no_checking, FunctGroupArray[guild].groupCode, &values, FunctGroupArray[guild].numCohorts) == FALSE) {
                     quit("Error: Unable to find parameter '%s/%s' in input file %s\n", errorString, FunctGroupArray[guild].groupCode, fileName);
                 }
+                
+                printf("Read %s values for %s now to assign\n", parameterName, FunctGroupArray[guild].groupCode, FunctGroupArray[guild].numGeneTypes, FunctGroupArray[guild].numCohortsXnumGenes);
+
+                
                 for (b = 0; b < FunctGroupArray[guild].numCohortsXnumGenes; b++){
                     basechrt = (int)floor(b / FunctGroupArray[guild].numGeneTypes);
                     MIGRATION[guild].InitDEN[b][qid] = values[basechrt];

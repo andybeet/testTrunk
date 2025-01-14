@@ -3920,6 +3920,7 @@ typedef struct {
     
     double fishery_thresh_level;   /** Threshold level of contaminant for fishery closure */
     
+    double *sp_decay_half_life;
     double **sp_amount_decayed;
     
     //double *lost;
@@ -4779,6 +4780,7 @@ typedef struct {
     int contam_fishery_closure_period;
     int contam_fishery_closure_option;
     int flag_contam_fisheries_mgmt;
+    int flag_contam_halflife_spbased;
     
     double contam_sig_uptake_const;
     double contam_tau;

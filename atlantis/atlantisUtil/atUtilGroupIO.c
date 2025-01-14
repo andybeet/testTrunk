@@ -294,7 +294,9 @@ int Util_Read_Functional_Group_XML(MSEBoxModel *bm, char *fileName, FILE *llogfp
 			if(FunctGroupArray[groupIndex].numStages < 1)
 				quit("%s has less than one stage - which is not possible, please set to 1 or more (in the groups.csv file)\n", FunctGroupArray[groupIndex].groupCode);
 
-			//printf("Loaded %s with numCohorts: %d, numGeneTypes: %d, numStages: %d, numSpawns: %d\n", FunctGroupArray[groupIndex].groupCode, FunctGroupArray[groupIndex].numCohorts, FunctGroupArray[groupIndex].numGeneTypes, FunctGroupArray[groupIndex].numStages, FunctGroupArray[groupIndex].numSpawns);
+			printf("Loaded %s with numCohorts: %d, numGeneTypes: %d, numStages: %d, numSpawns: %d\n", FunctGroupArray[groupIndex].groupCode, FunctGroupArray[groupIndex].numCohorts, FunctGroupArray[groupIndex].numGeneTypes, FunctGroupArray[groupIndex].numStages, FunctGroupArray[groupIndex].numSpawns);
+
+            fprintf(bm->logFile, "Loaded %s with numCohorts: %d, numGeneTypes: %d, numStages: %d, numSpawns: %d\n", FunctGroupArray[groupIndex].groupCode, FunctGroupArray[groupIndex].numCohorts, FunctGroupArray[groupIndex].numGeneTypes, FunctGroupArray[groupIndex].numStages, FunctGroupArray[groupIndex].numSpawns);
 
 			/* See if this is the max number of cohorts so far */
 			bm->K_num_max_cohort = max(bm->K_num_max_cohort, FunctGroupArray[groupIndex].numCohorts );
