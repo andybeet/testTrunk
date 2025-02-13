@@ -194,7 +194,7 @@ void deposit(MSEBoxModel *bm, Box *bp, double *m, double **newwc, double **newse
     }
 
     /* Calculate updated sediment layer coordinates */
-    fprintf(bm->logFile,"Doing deposition in box %d ");
+    //fprintf(bm->logFile,"Doing deposition in box %d \n");
     sed_layer_coords(sm, bm->logFile);
 
     /* Remove water from bottom water column layer

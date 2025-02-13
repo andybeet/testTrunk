@@ -413,6 +413,8 @@ void Manage_Calculate_Total_Effort(MSEBoxModel *bm, FILE *llogfp) {
 					/* Spatial management */
 					orig_FCpressure = FCpressure;
 					FCpressure = FCpressure * bm->MPA[ij][fishery_id];
+                    
+                    /* Effort displacement */
 
                     /*
 					if (do_debug_nf) {
@@ -1915,6 +1917,9 @@ void Check_For_Active_MPA(MSEBoxModel *bm, int fishery_id) {
 	flagfcmpa = (int) (bm->FISHERYprms[fishery_id][flagmpa_id]);
 
 	for (ij = 0; ij < bm->nbox; ij++) {
+        
+        fprintf(bm->logFile, "Doing fishery %s, By the way bm->ContamClosed for box %d is %e\n", FisheryArray[fishery_id].fisheryCode, ij, bm->ContamClosed[ij]);
+        
 		switch (flagfcmpa) {
 		case no_mpa: /* No spatial management - so set = 1.0 */
 			bm->MPA[ij][fishery_id] = 1.0;

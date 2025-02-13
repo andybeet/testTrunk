@@ -358,7 +358,6 @@ void Manage_Init(MSEBoxModel *bm, FILE *llogfp) {
 	Convert_Management_To_XML(bm, bm->fishprmIfname, convertedXMLFileName);
 
 	Read_Manage_Paramaters(bm, convertedXMLFileName);
-
 	Init_Manage_Flags(bm, llogfp);
 
 	/* Allocate the arrays where the size is based on values read in from input file */
@@ -438,7 +437,7 @@ void Manage_Init(MSEBoxModel *bm, FILE *llogfp) {
 //		fprintf(llogfp, "Manage_Init: size-based selectivity curve set for ptrawlPWN fishery so stage based selectivity constants adopted for PWN\n");
 //		warn("Manage_Init: size-based selectivity curve set for ptrawlPWN fishery so stage based selectivity constants adopted for PWN\n");
 //	}
-
+    
 	/* initialised the effort scale array */
 	for (sp = 0; sp < bm->K_num_fisheries; sp++) {
 		for (i = 0; i < 2; i++) {
@@ -578,7 +577,7 @@ void Manage_Init(MSEBoxModel *bm, FILE *llogfp) {
 			}
 		}
 	}
-
+    
 	/* Get discard co-occuring ids if needed */
 	need_discard = 0;
 	for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
@@ -1178,8 +1177,6 @@ void Calculate_Effort_Depth(MSEBoxModel *bm) {
 		}
 	}
 	free2d(origEffort_vdistrib);
-    
-    free1d(bm->ContamClosed);
 
 }
 
@@ -1432,6 +1429,8 @@ void Manage_Free(MSEBoxModel *bm) {
 	free2d(gear_conflict);
 	free3d(MPAendangeredlist);
 	free2d(MPAoverfishedlist);
+    
+    free1d(bm->ContamClosed);
 
 	if (bm->flag_fisheries_on == TRUE) {
 		free3d(CAPchange);

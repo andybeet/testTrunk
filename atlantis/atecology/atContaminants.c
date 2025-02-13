@@ -795,7 +795,7 @@ int Species_Contaminant_Uptake(MSEBoxModel *bm, BoxLayerValues *boxLayerInfo, HA
                     }
 
                     
-                    fprintf(bm->logFile,"Time: %e box%d-%d %s-%d vs %s has uptake_option: %d cUptake: %e uptake_rate: %e cLevel: %e\n", bm->dayt, bm->current_box, bm->current_layer, FunctGroupArray[sp].groupCode, cohort, bm->contaminantStructure[cIndex]->contaminant_name, uptake_option, cUptake, uptake_rate, cLevel);
+                    //fprintf(bm->logFile,"Time: %e box%d-%d %s-%d vs %s has uptake_option: %d cUptake: %e uptake_rate: %e cLevel: %e\n", bm->dayt, bm->current_box, bm->current_layer, FunctGroupArray[sp].groupCode, cohort, bm->contaminantStructure[cIndex]->contaminant_name, uptake_option, cUptake, uptake_rate, cLevel);
                     
                     bm->contaminantStructure[cIndex]->sp_uptake[sp][cohort][habitat] = cUptake;
 

@@ -3517,6 +3517,7 @@ void createContaminantsXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr 
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_contamMove", "Flag indicating avoidance scalar used - none (0), knife-edge (1), sigmoidal (2), left shoulder flat top (3)", "", XML_TYPE_INTEGER,"0");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_contamMinTemp", "Minimum temperature to consider in contaminants relationships that involve temperature corrections", "", XML_TYPE_FLOAT,"0");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_contam_halflife_spbased", "Whether half life of contaminants is species specific", "", XML_TYPE_FLOAT,"0");
+    bm->flag_contam_halflife_spbased = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, no_checking, "flag_contam_halflife_spbased");
 
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "biopools_dodge_contam", "Flag to turn on whetehr biomass pool groups can dodge contaminants..", "", XML_TYPE_BOOLEAN,"0");
     
@@ -3530,10 +3531,11 @@ void createContaminantsXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr 
 		for(sp = 0; sp < bm->K_num_tot_sp; sp++){
 			if(FunctGroupArray[sp].speciesParams[flag_id] == TRUE && FunctGroupArray[sp].isDetritus == FALSE){
 
-                sprintf(varStr, "%s_%s_decay_half_life", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-                sprintf(longStr, "Species specific half life value of group %s for contaminant %s.", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-                Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
-                
+                if(bm->flag_contam_halflife_spbased) {
+                    sprintf(varStr, "%s_%s_decay_half_life", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
+                    sprintf(longStr, "Species specific half life value of group %s for contaminant %s.", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
+                    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
+                }
 				sprintf(varStr, "%s_%s_uptake_rate", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
 				sprintf(longStr, "Uptake rate of group %s of contaminant %s.", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
 				Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");

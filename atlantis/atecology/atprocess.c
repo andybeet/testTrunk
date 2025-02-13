@@ -356,7 +356,7 @@ double Get_Gape_Lim_Prey(MSEBoxModel *bm, FILE *llogfp, int predatorID, int coho
 	}
 
 	/**
-	if ((predatorID == bm->which_check) && (cohort == 4)) {
+	if ((predatorID == bm->which_check) && (preyID == 16)) {
 		fprintf(llogfp,"Time: %e box%d-%d %s-%d eating %s-%d in habitat %d with preyinfo: %e, avail: %e (pSPVERT: %e, spPreyAvail: %e)\n",
 				bm->dayt, bm->current_box, bm->current_layer, FunctGroupArray[predatorID].groupCode, cohort,
 				FunctGroupArray[preyID].groupCode, prey_chrt, habitat, spPREYinfo[preyID][prey_chrt][habitat],
@@ -464,11 +464,11 @@ static void Calculate_PreyAvail(MSEBoxModel *bm, FILE *llogfp, int predatorGuild
 		EATINGinfo[preyGuildID][prey_chrt][habitat] = (double)prey_eat;
 
 		/**
-		//if (((predatorGuildID == bm->which_check) || (preyGuildID == bm->which_check)) && (EATINGinfo[preyGuildID][prey_chrt][habitat] > 0)){
-			fprintf(llogfp,"Time: %e hab: %d, pred %s-%d on %s-%d has EATINGinfo: %.20e, CATCHEATINGinfo: %.20e\n",
+		if ((predatorGuildID == bm->which_check) || (preyGuildID == bm->which_check)){
+			fprintf(llogfp,"Time: %e hab: %d, pred %s-%d on %s-%d has EATINGinfo: %.20e, CATCHEATINGinfo: %.20e, prey_avail: %.20e, pHscalar: %.20e\n",
 				bm->dayt, habitat, FunctGroupArray[predatorGuildID].groupCode, cohort,
 				FunctGroupArray[preyGuildID].groupCode, prey_chrt, EATINGinfo[preyGuildID][prey_chrt][habitat],
-				CATCHEATINGinfo[preyGuildID][prey_chrt]);
+				CATCHEATINGinfo[preyGuildID][prey_chrt], prey_avail, pHscalar);
 		}
 		**/
 
@@ -895,6 +895,7 @@ void Eat(MSEBoxModel *bm, FILE *llogfp, int flagcase, int sp_id, int cohort, dou
 
             tprey = 1.0;
 			for (kij = 0; kij < FunctGroupArray[preyID].numCohortsXnumGenes; kij++) {
+                
 				switch (flagcase) {  /* calculate the biomass actually eaten of each prey group */
 				case eat_parslow_holling2:
 					for (habitat = WC; habitat <= max_hab; habitat++) {
@@ -993,6 +994,15 @@ void Eat(MSEBoxModel *bm, FILE *llogfp, int flagcase, int sp_id, int cohort, dou
 					break;
 
 				}
+                
+                /**
+                
+                if((bm->which_check == sp_id ) && (bm->checkbox == bm->current_box)) {
+                    fprintf(bm->logFile, "In Eat for group %s, cohort %d in box%d-%d. Amount of %s-%d eaten is first %e\n",
+                            FunctGroupArray[sp_id].groupCode, cohort, bm->current_box, bm->current_layer, FunctGroupArray[preyID].groupCode, kij, spGRAZEinfo[preyID][kij][WC]);
+                }
+                 
+                 **/
 
 				/* Corrections when dealing with epibenthic predators or prey */
 				/* if not epibenthic predator convert epibenthic prey back to m-2 */
@@ -1012,6 +1022,13 @@ void Eat(MSEBoxModel *bm, FILE *llogfp, int flagcase, int sp_id, int cohort, dou
 					}
 				}
 
+                /**
+                if((bm->which_check == sp_id ) && (bm->checkbox == bm->current_box)) {
+                    fprintf(bm->logFile, "In Eat for group %s, cohort %d in box%d-%d. Amount of %s-%d eaten is %e wcLayerThick: %e\n", FunctGroupArray[sp_id].groupCode, cohort, bm->current_box, bm->current_layer, FunctGroupArray[preyID].groupCode, kij, spGRAZEinfo[preyID][kij][WC], wcLayerThick);
+                }
+                 
+                 **/
+                
                 /** Update GrazeLive - units in m-3 **/
 
 				/* Add the epibenthic prey to graze_live in m-3 */
@@ -1040,8 +1057,9 @@ void Eat(MSEBoxModel *bm, FILE *llogfp, int flagcase, int sp_id, int cohort, dou
 
 				/** Add in a check to make sure things are still in control **/
 					if(!_finite(spGRAZEinfo[preyID][kij][habitat] )){
-						printf("In Eat for group %s, cohort %d in box%d-%d. Amount of %s eaten is infinite\n",
-								FunctGroupArray[sp_id].groupCode, cohort, bm->current_box, bm->current_layer, FunctGroupArray[preyID].groupCode);
+						printf("In Eat for group %s, cohort %d in box%d-%d habitat %d. Amount of %s-%d eaten is infinite\n",
+								FunctGroupArray[sp_id].groupCode, cohort, bm->current_box, bm->current_layer, habitat, FunctGroupArray[preyID].groupCode, kij);
+                        fprintf(bm->logFile, "In Eat for group %s, cohort %d in box%d-%d habitat %d-%d. Amount of %s eaten is infinite\n", FunctGroupArray[sp_id].groupCode, cohort, bm->current_box, bm->current_layer, habitat, FunctGroupArray[preyID].groupCode, kij);
 						quit("");
 					}
 				}

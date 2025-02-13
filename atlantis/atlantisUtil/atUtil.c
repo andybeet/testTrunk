@@ -1056,7 +1056,7 @@ int Util_ncopen(const char *destFolder, const char* name ,int mode){
 	}
 	trim(fileName);
     
-    printf("Opening %s\n", fileName);
+    //printf("Opening %s\n", fileName);
 
 	/**
 	 *	Open the file to check that it exists if the mode is NC_NOWRITE.

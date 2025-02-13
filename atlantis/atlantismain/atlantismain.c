@@ -334,6 +334,7 @@ int runNextTimeStep(MSEBoxModel *bm){
 		memcpy(newlandtr[0], bm->landtr[0], sizeof(double) * (long unsigned int)bm->nbox * (long unsigned int)bm->nland);
 	}
 
+    
     /* Calculate stock values for each group */
 	Util_Calculate_StockID(bm);
     
@@ -364,7 +365,7 @@ int runNextTimeStep(MSEBoxModel *bm){
         }
 #endif
 	}
-
+    
     /* Annual fisheries management decisions (TACS and seasonal closure dates)
 	 - has to occur after migrations as that's when total biomasses calculated
 	 when using perfect knowledge managers */
@@ -400,7 +401,7 @@ int runNextTimeStep(MSEBoxModel *bm){
 		}
 
 	}
-
+    
     /* Calculate total effort */
 	if (verbose > 1)
 		printf("Call effort allocation and economics (if appropriate)\n");
@@ -519,7 +520,7 @@ int runNextTimeStep(MSEBoxModel *bm){
 
 		Harvest_Update_Temp_Catch_Array(bm, logfp);
 	}
-
+    
     /*
 	 check_vals(&bm,newwctr,bm->wcnz,"water, after biology\n");
 	 check_vals(&bm,newsedtr,bm->sednz,"sediment, after biology\n");
@@ -582,7 +583,7 @@ int runNextTimeStep(MSEBoxModel *bm){
     /* Update time and step number */
 	bm->t += bm->dt;
 	bm->nt++;
-
+    
 	/* Check to see if can continue run or need to come to premature stop.
 	To do this check to see if can open dummy halt file in current directory */
 	if( (haltfp=Util_fopen(bm, "delete_to_halt_run","r")) == NULL ){
@@ -1449,7 +1450,7 @@ void setupMSEBoxModel(int argc, char *argv[], MSEBoxModel *bm) {
 			Economic_Init(bm, logfp);
 		}
 	}
-
+    
     /* Open the general tracer output file */
     printf("Create general output file with fid %d flagreusefile: %d\n", fid, bm->flagreusefile);
 	ncopts = 0;
@@ -1460,7 +1461,7 @@ void setupMSEBoxModel(int argc, char *argv[], MSEBoxModel *bm) {
 	} else if (bm->flagreusefile == 2) {
 		/* Create file anew */
 		ncopts = NC_CLOBBER;
-		ncclose(fid);
+		ncclose(fid);        
 		fid = createBMDataFile(bm->destFolder, bm->ncOfname, bm, 0);
 		bm->ncOfdump = 0;
 	} else if (bm->flagreusefile == 1) {
@@ -1497,7 +1498,7 @@ void setupMSEBoxModel(int argc, char *argv[], MSEBoxModel *bm) {
     /* Open the fisheries output files */
 	if (bm->fishout) {
 		printf("Create fisheries output file\n");
-
+        
 		/* Overall fisheries output file */
 		ncopts = 0;
 		if (fid2 == -1) {
@@ -1531,8 +1532,8 @@ void setupMSEBoxModel(int argc, char *argv[], MSEBoxModel *bm) {
 		}
 		bm->ncOfishfid = fid2;
 		ncopts = NC_VERBOSE | NC_FATAL;
-
-		/* Detailed fisheries output file */
+        
+ 		/* Detailed fisheries output file */
 		ncopts = 0;
 		if (fid5 == -1) {
 			fid5 = createBMDataFile(bm->destFolder, bm->ncODetFishfname, bm, 3);
@@ -1610,7 +1611,7 @@ void setupMSEBoxModel(int argc, char *argv[], MSEBoxModel *bm) {
 	}
 	bm->ncOsumfid = fid3;
 	ncopts = NC_VERBOSE | NC_FATAL;
-
+    
 	/* Open the growth/consumption tracer output file */
 	printf("Create growth and consumption output file\n");
 	ncopts = 0;
@@ -1656,7 +1657,7 @@ void setupMSEBoxModel(int argc, char *argv[], MSEBoxModel *bm) {
 	}
 	bm->ncOpcfid = fid4;
 	ncopts = NC_VERBOSE | NC_FATAL;
-
+    
     /* Open the annual age structured output files - if required */
     if(bm->flag_age_output > 1) {
         printf("Create annual age structured output file\n");
@@ -1734,8 +1735,8 @@ void setupMSEBoxModel(int argc, char *argv[], MSEBoxModel *bm) {
         }
 
     }
-
-    /* Open the spatial diet output file - now in a text file
+    
+   /* Open the spatial diet output file - now in a text file
     printf("Create spatial output file\n");
     ncopts = 0;
     if (fid8 == -1) {
@@ -1820,7 +1821,6 @@ void setupMSEBoxModel(int argc, char *argv[], MSEBoxModel *bm) {
 			}
 		}
 	}
-    
     return;
 }
 

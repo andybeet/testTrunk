@@ -82,7 +82,7 @@ int createBMDataFile(char *destFolder, char *name, MSEBoxModel *bm, int dtype) {
 	ncattput(fid, NC_GLOBAL, "parameters", NC_CHAR, (int) strlen(bm->params) + 1, bm->params);
 	ncattput(fid, NC_GLOBAL, "wcnz", NC_LONG, 1, &bm->wcnz);
 	ncattput(fid, NC_GLOBAL, "sednz", NC_LONG, 1, &bm->sednz);
-
+    
 	/* Variables and their attributes
 	 Note that dtype streaming will mean appropriate data entered in
 	 each case
@@ -100,6 +100,7 @@ int createBMDataFile(char *destFolder, char *name, MSEBoxModel *bm, int dtype) {
 	if (bm->terrestrial_on){
 		writeBMLandInfo(fid, bm, dtype);
 	}
+    
 	/* Exit from netCDF define mode */
 	ncendef(fid);
 	ncsync(fid);
@@ -530,6 +531,8 @@ void writeBMTracerInfo(int fid, MSEBoxModel *bm, int dtype) {
 					continue;
 			}
 
+            fprintf(bm->logFile, "writeBMTracerInfo B for %s ContamClosed in 55 of %e (id %d)\n", bm->tinfo[i].name,  bm->ContamClosed[55], i);
+
 			/* Define the variable */
 			if (verbose > 1)
 				printf("bm->tinfo[%d].name = %s\n", i, bm->tinfo[i].name);
@@ -540,10 +543,13 @@ void writeBMTracerInfo(int fid, MSEBoxModel *bm, int dtype) {
 				}else{
 					vid = ncvardef(fid, bm->tinfo[i].name, dt, 3, dim);
 				}
-			}else{
-				vid = ncvardef(fid, bm->tinfo[i].name, dt, 3, dim);
-			}
+			} else{
+				vid = ncvardef(fid, bm->tinfo[i].name, dt, 3, dim);  // This line causing the memory issues
+                
+                fprintf(bm->logFile, "writeBMTracerInfo D ContamClosed in 55 of %e while doing %s\n", bm->ContamClosed[55], bm->tinfo[i].name);
 
+			}
+            
 			/* Set the attributes */
 			ncattput(fid, vid, "bmtype", NC_CHAR, (int) strlen("tracer") + 1, "tracer");
 			ncattput(fid, vid, "units", NC_CHAR, (int) strlen(bm->tinfo[i].units) + 1, bm->tinfo[i].units);

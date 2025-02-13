@@ -1182,7 +1182,6 @@ void readContaminantFisheryXML(MSEBoxModel *bm, char *fileName, xmlNodePtr rootn
         sprintf(varStr, "%s_fishery_thresh_level", bm->contaminantStructure[cIndex]->contaminant_name);
         bm->contaminantStructure[cIndex]->fishery_thresh_level = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, integer_check, varStr);
     }
-                         
 }
 
 /**
@@ -1216,8 +1215,7 @@ int Read_Manage_Paramaters(MSEBoxModel *bm, char *filename) {
 	readGearConflictXML(bm, filename, inputDoc->children);
     if(bm->track_contaminants){
         readContaminantFisheryXML(bm, filename, inputDoc->children);
-    }
-    
+    }    
 	// Used to do tiered read-in here but moved to the assessment library
 
 	xmlFreeDoc(inputDoc);

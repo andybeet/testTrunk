@@ -370,6 +370,9 @@ INCLUDES = $(shell pkg-config --cflags libxml-2.0) \
 #OPT = -msse2 -mfpmath=sse
 #OPT = -mcpu=apple-m1
 OPT = -mtune=native
+
+# Uncomment this if want to use mac valgrin equivalent
+#OPT = -mtune=native -fsanitize=address -fno-omit-frame-pointer
 DBG = -g
 #-pg
 # if you don't want small log files get rid of the defintion of SMALL_LOG_FILE_SIZE
