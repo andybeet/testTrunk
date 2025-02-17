@@ -454,7 +454,19 @@ void Manage_Calculate_Total_Effort(MSEBoxModel *bm, FILE *llogfp) {
 						FCpressure = tsEval(&this_tsEffort->ts, bm->tseffortid[fishery_id], bm->t);
 					else
 						FCpressure = tsEvalEx(&this_tsEffort->ts, bm->tseffortid[fishery_id], bm->t);
-					FCdisplaced = 0.0;
+                    
+                    if (bm->flagdisplace) {
+                        orig_FCpressure = FCpressure;
+                        Effort_Displacement(bm, fishery_id, ij, orig_FCpressure, &FCpressure, &FCdisplaced, &new_fish_loc, llogfp);
+                        
+                        if (FCpressure < 0.0)
+                            FCpressure = 0.0;
+
+                        if (FCdisplaced < 0.0)
+                            FCdisplaced = 0.0;
+                    } else {
+                        FCdisplaced = 0.0;
+                    }
 				}
 
 				//fprintf(bm->logFile, "FCpressure = %.20e, active_scale = %.20e\n",FCpressure, active_scale);
