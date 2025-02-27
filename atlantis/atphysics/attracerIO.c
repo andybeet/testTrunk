@@ -531,8 +531,6 @@ void writeBMTracerInfo(int fid, MSEBoxModel *bm, int dtype) {
 					continue;
 			}
 
-            fprintf(bm->logFile, "writeBMTracerInfo B for %s ContamClosed in 55 of %e (id %d)\n", bm->tinfo[i].name,  bm->ContamClosed[55], i);
-
 			/* Define the variable */
 			if (verbose > 1)
 				printf("bm->tinfo[%d].name = %s\n", i, bm->tinfo[i].name);
@@ -545,9 +543,6 @@ void writeBMTracerInfo(int fid, MSEBoxModel *bm, int dtype) {
 				}
 			} else{
 				vid = ncvardef(fid, bm->tinfo[i].name, dt, 3, dim);  // This line causing the memory issues
-                
-                fprintf(bm->logFile, "writeBMTracerInfo D ContamClosed in 55 of %e while doing %s\n", bm->ContamClosed[55], bm->tinfo[i].name);
-
 			}
             
 			/* Set the attributes */

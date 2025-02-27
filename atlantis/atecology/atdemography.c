@@ -2156,8 +2156,10 @@ void Store_Recruitment_Diagnostics(MSEBoxModel *bm, int species, int use_aggrega
                 FunctGroupArray[species].min_B[ngene] = MAXDOUBLE;
                 FunctGroupArray[species].max_B[ngene] = MINDOUBLE;
                 
-                FunctGroupArray[species].min_wgt[ngene] = MAXDOUBLE;
-                FunctGroupArray[species].max_wgt[ngene] = MINDOUBLE;
+                if(FunctGroupArray[species].groupAgeType == AGE_STRUCTURED) {
+                    FunctGroupArray[species].min_wgt[ngene] = MAXDOUBLE;
+                    FunctGroupArray[species].max_wgt[ngene] = MINDOUBLE;
+                }
             }
 		}
 		// Now initialise the calcN and starting numbers in bm->calcTrackedMort
@@ -4074,8 +4076,10 @@ void Reset_Mortality(MSEBoxModel *bm, int species) {
                 FunctGroupArray[species].min_B[cohort] = MAXDOUBLE;
                 FunctGroupArray[species].max_B[cohort] = MINDOUBLE;
                 
-                FunctGroupArray[species].min_wgt[cohort] = MAXDOUBLE;
-                FunctGroupArray[species].max_wgt[cohort] = MINDOUBLE;
+                if(FunctGroupArray[species].groupAgeType == AGE_STRUCTURED) {
+                    FunctGroupArray[species].min_wgt[cohort] = MAXDOUBLE;
+                    FunctGroupArray[species].max_wgt[cohort] = MINDOUBLE;
+                }
             }
 		}
 

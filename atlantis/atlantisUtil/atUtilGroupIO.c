@@ -865,6 +865,7 @@ int Util_Read_Functional_Group_XML(MSEBoxModel *bm, char *fileName, FILE *llogfp
             FunctGroupArray[i].min_B = Util_Alloc_Init_1D_Double(FunctGroupArray[i].numCohortsXnumGenes, 0.0);
             FunctGroupArray[i].max_B = Util_Alloc_Init_1D_Double(FunctGroupArray[i].numCohortsXnumGenes, 0.0);
             FunctGroupArray[i].rolling_B = Util_Alloc_Init_2D_Double(bm->K_rolling_cap_num + 1, FunctGroupArray[i].numCohortsXnumGenes, 0.0);
+                
 			break;
 		case BIOMASS:
 			/* Allow a slot per cohort for seagrass. Most groups this will be cohort == 1*/

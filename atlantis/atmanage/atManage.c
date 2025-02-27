@@ -1928,10 +1928,7 @@ void Check_For_Active_MPA(MSEBoxModel *bm, int fishery_id) {
 
 	flagfcmpa = (int) (bm->FISHERYprms[fishery_id][flagmpa_id]);
 
-	for (ij = 0; ij < bm->nbox; ij++) {
-        
-        fprintf(bm->logFile, "Doing fishery %s, By the way bm->ContamClosed for box %d is %e\n", FisheryArray[fishery_id].fisheryCode, ij, bm->ContamClosed[ij]);
-        
+	for (ij = 0; ij < bm->nbox; ij++) {        
 		switch (flagfcmpa) {
 		case no_mpa: /* No spatial management - so set = 1.0 */
 			bm->MPA[ij][fishery_id] = 1.0;
