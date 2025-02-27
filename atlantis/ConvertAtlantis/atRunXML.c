@@ -108,8 +108,9 @@ void Convert_Run_To_XML(MSEBoxModel *bm, char *fileName, char *outputFileName) {
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "store_aggregate_yoy", "Flag as to what YOY stored", "", XML_TYPE_BOOLEAN,"0");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "store_mig_array", "Flag as to what Migration Array stored", "", XML_TYPE_BOOLEAN,"0");
     
-	groupingNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, rootnode, "ContaminantSettings", "Contaminant Settings", "", "");
-    
+    /* Removed as was chucking up an odd ATTRIBUTE read that was had to sort out so just left the information with the Scenario options instead
+ 	groupingNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, rootnode, "ContaminantSettings", "Contaminant Settings", "", "");
+    */
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "track_contaminants", "Flag to turn on tracking of contaminants", "", XML_TYPE_BOOLEAN,"0");
     bm->track_contaminants = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, integer_check, "track_contaminants");
   
