@@ -1808,7 +1808,7 @@ void Find_Final_Recruit_Distribution(MSEBoxModel *bm, int species, double enviro
         /**
         if (do_debug && (bm->which_check == species)) {
 			fprintf( llogfp,
-					"Time: %e, box%d-%d, species %s ngene: %d, recruit_Type: %d, BulkRecruits: %e, enviro_scalar: %e, hab_scalar: %e, vertdistrib: %e, recruit_hdistrib[box%d][%s]: %e, recryut_type: %d (EMBRYO[%s][%d]: %e)\n",
+					"Final recruit distrib Time: %e, box%d-%d, species %s ngene: %d, recruit_Type: %d, BulkRecruits: %e, enviro_scalar: %e, hab_scalar: %e, vertdistrib: %e, recruit_hdistrib[box%d][%s]: %e, recryut_type: %d (EMBRYO[%s][%d]: %e)\n",
 					bm->dayt, bm->current_box, bm->current_layer, FunctGroupArray[species].groupCode, ngene,FunctGroupArray[species].recruitType, EMBRYO[species].BulkRecruits[ngene],
 					enviro_scalar, hab_scalar, vertdistrib, bm->current_box, FunctGroupArray[species].groupCode, bm->recruit_hdistrib[ngene][bm->current_box][species],
                     FunctGroupArray[species].recruitType, FunctGroupArray[species].groupCode, stock_id, EMBRYO[species].Larvae[stock_id][ngene][qid]);
@@ -1826,13 +1826,12 @@ void Find_Final_Recruit_Distribution(MSEBoxModel *bm, int species, double enviro
 			EMBRYO[species].num_recruits[bm->current_box][wclayer][ngene][qid] = EMBRYO[species].BulkRecruits[ngene] * enviro_scalar * vertdistrib * bm->recruit_hdistrib[ngene][bm->current_box][species];
 			totrecruit[species][stock_id][ngene] += EMBRYO[species].num_recruits[bm->current_box][wclayer][ngene][qid];
 
-            /**/
-            //if (do_debug && (species == bm->which_check)) {
-            //if (species == 33) {
-            if (species < 6) {
+            /**
+            if (do_debug && (species == bm->which_check)) {
+            //if (species < 6) {
                 fprintf(llogfp,"Time: %e, %s box%d-%d ngene: %d, qid: %d, totrecruit: %e num_rec: %e (Bulkrecruits: %e, enviro_scalar: %e, vdistrib: %e, hdistrib: %e)\n", bm->dayt, FunctGroupArray[species].groupCode, bm->current_box, wclayer, ngene, qid, totrecruit[species][stock_id][ngene], EMBRYO[species].num_recruits[bm->current_box][wclayer][ngene][qid], EMBRYO[species].BulkRecruits[ngene], enviro_scalar, vertdistrib, bm->recruit_hdistrib[ngene][bm->current_box][species]);
             }
-            /**/
+            **/
                 
 			break;
 		case external_recruit:
@@ -1883,7 +1882,7 @@ void Find_Final_Recruit_Distribution(MSEBoxModel *bm, int species, double enviro
                     totrecruit[species][stock_id][ngene] += EMBRYO[species].num_recruits[bm->current_box][wclayer][ngene][qid];
                     
                     /**
-                    if ((species == 64) || (species == 69)) {
+                    //if ((species == 64) || (species == 69)) {
                         fprintf(bm->logFile, "Time: %e %s ngene: %d qid: %d box: %d-%d num_recruit: %e BulkRecruits: %e enviro_scalar: %e vertdistrib: %e hdistrib: %e\n",
                             bm->dayt, FunctGroupArray[species].groupCode, ngene, qid, bm->current_box, wclayer, EMBRYO[species].num_recruits[bm->current_box][wclayer][ngene][qid], EMBRYO[species].BulkRecruits[ngene], enviro_scalar, vertdistrib, bm->recruit_hdistrib[ngene][bm->current_box][species]);
                     }

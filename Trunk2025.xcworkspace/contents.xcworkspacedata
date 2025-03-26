@@ -1,0 +1,2118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <Group
+      location = "group:atlantis"
+      name = "atlantis">
+      <Group
+         location = "group:sjwlib"
+         name = "sjwlib">
+         <FileRef
+            location = "group:timeseries.c">
+         </FileRef>
+         <FileRef
+            location = "group:polar_coord.c">
+         </FileRef>
+         <FileRef
+            location = "group:gridmisc.c">
+         </FileRef>
+         <FileRef
+            location = "group:libsjwlib.pc">
+         </FileRef>
+         <FileRef
+            location = "group:ellipt_coord.c">
+         </FileRef>
+         <FileRef
+            location = "group:erfc.c">
+         </FileRef>
+         <FileRef
+            location = "group:ptrack.c">
+         </FileRef>
+         <FileRef
+            location = "group:memory.c">
+         </FileRef>
+         <FileRef
+            location = "group:txt_param.c">
+         </FileRef>
+         <FileRef
+            location = "group:ppbfetch.c">
+         </FileRef>
+         <FileRef
+            location = "group:pointsourcesink.c">
+         </FileRef>
+         <FileRef
+            location = "group:contour.c">
+         </FileRef>
+         <FileRef
+            location = "group:keyfile.c">
+         </FileRef>
+         <FileRef
+            location = "group:sjwlib_2008.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:colourtable.c">
+         </FileRef>
+         <FileRef
+            location = "group:netcdf.c">
+         </FileRef>
+         <FileRef
+            location = "group:convertFileFormats.c">
+         </FileRef>
+         <Group
+            location = "group:include"
+            name = "include">
+            <FileRef
+               location = "group:datafile.h">
+            </FileRef>
+            <FileRef
+               location = "group:dos2unix.h">
+            </FileRef>
+            <FileRef
+               location = "group:sjwlib.h">
+            </FileRef>
+            <FileRef
+               location = "group:nrcdflib.h">
+            </FileRef>
+            <FileRef
+               location = "group:xytoij.h">
+            </FileRef>
+            <FileRef
+               location = "group:sjwalloc.h">
+            </FileRef>
+            <FileRef
+               location = "group:unix2dos.h">
+            </FileRef>
+            <FileRef
+               location = "group:win32.h">
+            </FileRef>
+            <FileRef
+               location = "group:polyline.h">
+            </FileRef>
+            <FileRef
+               location = "group:sjwconfig.h">
+            </FileRef>
+            <FileRef
+               location = "group:common.h">
+            </FileRef>
+            <FileRef
+               location = "group:timeseries.h">
+            </FileRef>
+            <FileRef
+               location = "group:pointsourcesink.h">
+            </FileRef>
+            <FileRef
+               location = "group:txt_param.h">
+            </FileRef>
+            <FileRef
+               location = "group:ptrack.h">
+            </FileRef>
+            <FileRef
+               location = "group:mapproj.h">
+            </FileRef>
+            <FileRef
+               location = "group:colourtable.h">
+            </FileRef>
+            <FileRef
+               location = "group:gridlib.h">
+            </FileRef>
+         </Group>
+         <FileRef
+            location = "group:mapproj.c">
+         </FileRef>
+         <FileRef
+            location = "group:weight_fn.c">
+         </FileRef>
+         <FileRef
+            location = "group:sjwlib_2015.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:sjwlib_2013.vcxproj.bec">
+         </FileRef>
+         <FileRef
+            location = "group:drandom.c">
+         </FileRef>
+         <FileRef
+            location = "group:#">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile.am">
+         </FileRef>
+         <FileRef
+            location = "group:sjwlib.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:datafile.c">
+         </FileRef>
+         <FileRef
+            location = "group:sjwlib_2010.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:quit.c">
+         </FileRef>
+         <FileRef
+            location = "group:warn.c">
+         </FileRef>
+         <FileRef
+            location = "group:time.c">
+         </FileRef>
+         <FileRef
+            location = "group:waterprops.c">
+         </FileRef>
+         <FileRef
+            location = "group:spline.c">
+         </FileRef>
+         <FileRef
+            location = "group:vgrid.c">
+         </FileRef>
+         <FileRef
+            location = "group:nrcdflib.c">
+         </FileRef>
+         <FileRef
+            location = "group:am--include-marker">
+         </FileRef>
+         <FileRef
+            location = "group:diffusion.c">
+         </FileRef>
+         <FileRef
+            location = "group:sjwlib_2010.vcxproj.filters">
+         </FileRef>
+         <FileRef
+            location = "group:cfft.c">
+         </FileRef>
+         <FileRef
+            location = "group:text_input.c">
+         </FileRef>
+         <FileRef
+            location = "group:dfcoords.c">
+         </FileRef>
+         <FileRef
+            location = "group:geodetic.c">
+         </FileRef>
+         <FileRef
+            location = "group:decay.c">
+         </FileRef>
+         <FileRef
+            location = "group:sjwlib_2013.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:xytoij.c">
+         </FileRef>
+         <FileRef
+            location = "group:sjwlib_2005.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:rect_coord.c">
+         </FileRef>
+         <FileRef
+            location = "group:win32.c">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile.in">
+         </FileRef>
+         <FileRef
+            location = "group:polyline.c">
+         </FileRef>
+         <FileRef
+            location = "group:sjwlib_2012.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:gridmetric.c">
+         </FileRef>
+         <FileRef
+            location = "group:gridangle.c">
+         </FileRef>
+         <FileRef
+            location = "group:dfeval.c">
+         </FileRef>
+      </Group>
+      <FileRef
+         location = "group:VS2010_windowsBuild.bat">
+      </FileRef>
+      <FileRef
+         location = "group:atlantis_VS2013.sdf.bak">
+      </FileRef>
+      <FileRef
+         location = "group:configure~">
+      </FileRef>
+      <Group
+         location = "group:atassess"
+         name = "atassess">
+         <FileRef
+            location = "group:atassess_2010.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:atsolve.c">
+         </FileRef>
+         <FileRef
+            location = "group:atassessParamIO.c">
+         </FileRef>
+         <FileRef
+            location = "group:atassess_2013.vcxproj.user">
+         </FileRef>
+         <FileRef
+            location = "group:atsample.c">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile_old">
+         </FileRef>
+         <FileRef
+            location = "group:atclassical.c">
+         </FileRef>
+         <FileRef
+            location = "group:atassess_2010.vcxproj.filters">
+         </FileRef>
+         <FileRef
+            location = "group:atindices.c">
+         </FileRef>
+         <Group
+            location = "group:include"
+            name = "include">
+            <FileRef
+               location = "group:atsamplesetup.h">
+            </FileRef>
+            <FileRef
+               location = "group:atAssessLib.h">
+            </FileRef>
+            <FileRef
+               location = "group:atsample.h">
+            </FileRef>
+         </Group>
+         <FileRef
+            location = "group:atdiet.c">
+         </FileRef>
+         <FileRef
+            location = "group:atnetwork.c">
+         </FileRef>
+         <FileRef
+            location = "group:atassess_2013.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:atsurvey.c">
+         </FileRef>
+         <FileRef
+            location = "group:atwriting.c">
+         </FileRef>
+         <FileRef
+            location = "group:atassess_2012.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:atassess_2008.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:doolittle.c">
+         </FileRef>
+         <FileRef
+            location = "group:#">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile.am">
+         </FileRef>
+         <FileRef
+            location = "group:atsamplesetup.c">
+         </FileRef>
+         <FileRef
+            location = "group:unit_lower_triangular.c">
+         </FileRef>
+         <FileRef
+            location = "group:atdatareading.c">
+         </FileRef>
+         <FileRef
+            location = "group:am--include-marker">
+         </FileRef>
+         <FileRef
+            location = "group:atattribute.c">
+         </FileRef>
+         <FileRef
+            location = "group:atAssessTierSetup.c">
+         </FileRef>
+         <FileRef
+            location = "group:ChangeNotes">
+         </FileRef>
+         <FileRef
+            location = "group:atassess_2013.vcxproj.bec">
+         </FileRef>
+         <FileRef
+            location = "group:atassess.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile.in">
+         </FileRef>
+         <FileRef
+            location = "group:upper_triangular.c">
+         </FileRef>
+         <FileRef
+            location = "group:atassess_2005.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:atassess_2015.vcxproj">
+         </FileRef>
+      </Group>
+      <FileRef
+         location = "group:install-sh">
+      </FileRef>
+      <FileRef
+         location = "group:configure.ac">
+      </FileRef>
+      <Group
+         location = "group:atSS3Link"
+         name = "atSS3Link">
+         <FileRef
+            location = "group:atSS3Link_2005.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:atSS3Link.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:atSS3Link.vcxproj.filters">
+         </FileRef>
+         <FileRef
+            location = "group:atSS3Link_2015.vcxproj">
+         </FileRef>
+         <Group
+            location = "group:include"
+            name = "include">
+            <FileRef
+               location = "group:atSS3Util.h">
+            </FileRef>
+            <FileRef
+               location = "group:atSS3LinkPrivate.h">
+            </FileRef>
+            <FileRef
+               location = "group:atSS3LinkLib.h">
+            </FileRef>
+         </Group>
+         <FileRef
+            location = "group:atSS3Test.c">
+         </FileRef>
+         <FileRef
+            location = "group:atSS3LinkIO.c">
+         </FileRef>
+         <FileRef
+            location = "group:#">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile.am">
+         </FileRef>
+         <FileRef
+            location = "group:atSS3Util.c">
+         </FileRef>
+         <FileRef
+            location = "group:atSS3Link_2012.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:atCloseKin.c">
+         </FileRef>
+         <FileRef
+            location = "group:atSS3Link_2008.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:am--include-marker">
+         </FileRef>
+         <FileRef
+            location = "group:atSS3Link_2013.vcxproj.bec">
+         </FileRef>
+         <FileRef
+            location = "group:atSS3Link_2013.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:atSS3DataGen.c">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile.in">
+         </FileRef>
+         <FileRef
+            location = "group:atSS3Link.c">
+         </FileRef>
+         <FileRef
+            location = "group:atSS3Link.vcxproj">
+         </FileRef>
+      </Group>
+      <Group
+         location = "group:atmanage"
+         name = "atmanage">
+         <FileRef
+            location = "group:atmanage_2012.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:atRlinkRedus.c">
+         </FileRef>
+         <FileRef
+            location = "group:atRlinkRBC.c">
+         </FileRef>
+         <FileRef
+            location = "group:atSS3assess.c">
+         </FileRef>
+         <FileRef
+            location = "group:atmanage_2013.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:atmanage_2008.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:atManageParamIO.c">
+         </FileRef>
+         <FileRef
+            location = "group:atmanage_2010.vcxproj.filters">
+         </FileRef>
+         <Group
+            location = "group:include"
+            name = "include">
+            <FileRef
+               location = "group:atManagePrivate.h">
+            </FileRef>
+            <FileRef
+               location = "group:atRlink.h">
+            </FileRef>
+            <FileRef
+               location = "group:atManageLib.h">
+            </FileRef>
+            <FileRef
+               location = "group:atManage.h">
+            </FileRef>
+         </Group>
+         <FileRef
+            location = "group:atManageAnnual.c">
+         </FileRef>
+         <FileRef
+            location = "group:atmanage.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:atmanage_2010.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:atManageIndex.c">
+         </FileRef>
+         <FileRef
+            location = "group:atManageSetup.c">
+         </FileRef>
+         <FileRef
+            location = "group:atredus_conf.R">
+         </FileRef>
+         <FileRef
+            location = "group:#">
+         </FileRef>
+         <FileRef
+            location = "group:atManageMPATS.c">
+         </FileRef>
+         <FileRef
+            location = "group:atManageIO.c">
+         </FileRef>
+         <FileRef
+            location = "group:atRlink.c">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile.am">
+         </FileRef>
+         <FileRef
+            location = "group:atmanage_2008.vcproj.VB_XPSP2_01.ful072.user">
+         </FileRef>
+         <FileRef
+            location = "group:atredus.R">
+         </FileRef>
+         <FileRef
+            location = "group:atmanage_2013.vcxproj.bec">
+         </FileRef>
+         <FileRef
+            location = "group:atRlinkRAssess.c">
+         </FileRef>
+         <FileRef
+            location = "group:atmanage_2015.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:am--include-marker">
+         </FileRef>
+         <FileRef
+            location = "group:atmanage_2005.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:atManageTier.c">
+         </FileRef>
+         <FileRef
+            location = "group:atPGMSY.c">
+         </FileRef>
+         <FileRef
+            location = "group:atManage.c">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile.in">
+         </FileRef>
+      </Group>
+      <Group
+         location = "group:ateconomic"
+         name = "ateconomic">
+         <FileRef
+            location = "group:ateconts.c">
+         </FileRef>
+         <FileRef
+            location = "group:ateconomic_2013.vcxproj.bec">
+         </FileRef>
+         <FileRef
+            location = "group:ateconomic_2010.vcxproj.filters">
+         </FileRef>
+         <FileRef
+            location = "group:ateconio.c">
+         </FileRef>
+         <FileRef
+            location = "group:ateconhelp.c">
+         </FileRef>
+         <FileRef
+            location = "group:ateconomicsetup.c">
+         </FileRef>
+         <FileRef
+            location = "group:atquota.c">
+         </FileRef>
+         <FileRef
+            location = "group:atEconomicUtil.c">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile_old">
+         </FileRef>
+         <FileRef
+            location = "group:ateconomic.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:ateconomic_2015.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:ateconomic.c">
+         </FileRef>
+         <FileRef
+            location = "group:atEconomicAnnual.c">
+         </FileRef>
+         <Group
+            location = "group:include"
+            name = "include">
+            <FileRef
+               location = "group:atEconomicLib.h">
+            </FileRef>
+            <FileRef
+               location = "group:atEconomicSetup.h">
+            </FileRef>
+            <FileRef
+               location = "group:atEconomic.h">
+            </FileRef>
+         </Group>
+         <FileRef
+            location = "group:ateconParamIO.c">
+         </FileRef>
+         <FileRef
+            location = "group:ateconomic_2008.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:ateconeffort.c">
+         </FileRef>
+         <FileRef
+            location = "group:ateconindicator.c">
+         </FileRef>
+         <FileRef
+            location = "group:ateffortquota.c">
+         </FileRef>
+         <FileRef
+            location = "group:#">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile.am">
+         </FileRef>
+         <FileRef
+            location = "group:ateconomic_2013.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:am--include-marker">
+         </FileRef>
+         <FileRef
+            location = "group:ateconomic_2012.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:ateconomic_2010.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:ateconomic_2008.vcproj.VB_XPSP2_01.ful072.user">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile.in">
+         </FileRef>
+         <FileRef
+            location = "group:ateconresponse.c">
+         </FileRef>
+         <FileRef
+            location = "group:ateconomic_2005.vcproj">
+         </FileRef>
+      </Group>
+      <FileRef
+         location = "group:configure">
+      </FileRef>
+      <FileRef
+         location = "group:out">
+      </FileRef>
+      <Group
+         location = "group:atbrokerlink"
+         name = "atbrokerlink">
+         <FileRef
+            location = "group:Deserialiser.c">
+         </FileRef>
+         <FileRef
+            location = "group:network.c">
+         </FileRef>
+         <FileRef
+            location = "group:atBrokerLinkInit.c">
+         </FileRef>
+         <FileRef
+            location = "group:NetworkError.c">
+         </FileRef>
+         <FileRef
+            location = "group:LinkageInterface.c">
+         </FileRef>
+         <FileRef
+            location = "group:responses.pb-c.c">
+         </FileRef>
+         <Group
+            location = "group:include"
+            name = "include">
+            <FileRef
+               location = "group:Message.h">
+            </FileRef>
+            <FileRef
+               location = "group:atBrokerLink.h">
+            </FileRef>
+            <FileRef
+               location = "group:network.h">
+            </FileRef>
+            <FileRef
+               location = "group:Deserialiser.h">
+            </FileRef>
+            <FileRef
+               location = "group:NetworkError.h">
+            </FileRef>
+            <FileRef
+               location = "group:responses.pb-c.h">
+            </FileRef>
+            <FileRef
+               location = "group:LinkageInterface.h">
+            </FileRef>
+            <FileRef
+               location = "group:requests.pb-c.h">
+            </FileRef>
+            <FileRef
+               location = "group:ImportExportData.h">
+            </FileRef>
+         </Group>
+         <FileRef
+            location = "group:ImportExportData.c">
+         </FileRef>
+         <FileRef
+            location = "group:#">
+         </FileRef>
+         <FileRef
+            location = "group:requests.pb-c.c">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile.am">
+         </FileRef>
+         <FileRef
+            location = "group:am--include-marker">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile.in">
+         </FileRef>
+      </Group>
+      <Group
+         location = "group:atharvest"
+         name = "atharvest">
+         <FileRef
+            location = "group:atHarvest.c">
+         </FileRef>
+         <FileRef
+            location = "group:atharvest_2013.vcxproj.bec">
+         </FileRef>
+         <FileRef
+            location = "group:atHarvestParamIO.c">
+         </FileRef>
+         <FileRef
+            location = "group:atharvest_2015.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:atHarvestAnnual.c">
+         </FileRef>
+         <FileRef
+            location = "group:atHarvestDiscards.c">
+         </FileRef>
+         <Group
+            location = "group:include"
+            name = "include">
+            <FileRef
+               location = "group:atHarvestIO.h">
+            </FileRef>
+            <FileRef
+               location = "group:atHarvestPrivate.h">
+            </FileRef>
+            <FileRef
+               location = "group:atHarvestLib.h">
+            </FileRef>
+            <FileRef
+               location = "group:atHarvest.h">
+            </FileRef>
+         </Group>
+         <FileRef
+            location = "group:atHarvestImposedCatch.c">
+         </FileRef>
+         <FileRef
+            location = "group:atharvest_2013.vcxproj.user">
+         </FileRef>
+         <FileRef
+            location = "group:atharvest_2005.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:#">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile.am">
+         </FileRef>
+         <FileRef
+            location = "group:atHarvestCatch.c">
+         </FileRef>
+         <FileRef
+            location = "group:atharvest_2013.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:atHarvestTS.c">
+         </FileRef>
+         <FileRef
+            location = "group:am--include-marker">
+         </FileRef>
+         <FileRef
+            location = "group:atharvest_2012.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:atHarvestIO.c">
+         </FileRef>
+         <FileRef
+            location = "group:atharvest_2010.vcxproj.filters">
+         </FileRef>
+         <FileRef
+            location = "group:atharvest_2010.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:atHarvestSetup.c">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile.in">
+         </FileRef>
+         <FileRef
+            location = "group:atharvest_2008.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:atHarvestIndex.c">
+         </FileRef>
+         <FileRef
+            location = "group:atharvest.vcproj">
+         </FileRef>
+      </Group>
+      <Group
+         location = "group:atlantisUtil"
+         name = "atlantisUtil">
+         <FileRef
+            location = "group:atUtilUnix.c">
+         </FileRef>
+         <FileRef
+            location = "group:atlantisUtil_2005.vcproj">
+         </FileRef>
+         <Group
+            location = "group:include"
+            name = "include">
+            <FileRef
+               location = "group:atGroupTypes.h">
+            </FileRef>
+            <FileRef
+               location = "group:atXMLUtil.h">
+            </FileRef>
+            <FileRef
+               location = "group:atFisheryXMLUtil.h">
+            </FileRef>
+            <FileRef
+               location = "group:atFisheryStruct.h">
+            </FileRef>
+            <FileRef
+               location = "group:atFunctGroup.h">
+            </FileRef>
+            <FileRef
+               location = "group:atlantisMem.h">
+            </FileRef>
+            <FileRef
+               location = "group:atlantisutil.h">
+            </FileRef>
+            <FileRef
+               location = "group:atTracer.h">
+            </FileRef>
+            <FileRef
+               location = "group:atUtilLib.h">
+            </FileRef>
+         </Group>
+         <FileRef
+            location = "group:atlantisUtil_2010.vcxproj.filters">
+         </FileRef>
+         <FileRef
+            location = "group:atUtilArray.c">
+         </FileRef>
+         <FileRef
+            location = "group:atlantisUtil_2008.vcproj.VB_XPSP2_01.ful072.user">
+         </FileRef>
+         <FileRef
+            location = "group:atUtilGroupIO.c">
+         </FileRef>
+         <FileRef
+            location = "group:atlantisUtil_2015.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:#">
+         </FileRef>
+         <FileRef
+            location = "group:atUtilXML.c">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile.am">
+         </FileRef>
+         <FileRef
+            location = "group:atlantisUtil_2010.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:am--include-marker">
+         </FileRef>
+         <FileRef
+            location = "group:atUtilFisheryIO.c">
+         </FileRef>
+         <FileRef
+            location = "group:atUtil.c">
+         </FileRef>
+         <FileRef
+            location = "group:atlantisUtil_2008.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:atlantisUtil_2013.vcxproj.bec">
+         </FileRef>
+         <FileRef
+            location = "group:atUtilIO.c">
+         </FileRef>
+         <FileRef
+            location = "group:atUtilFisheryXML.c">
+         </FileRef>
+         <FileRef
+            location = "group:atlantisUtil_2013.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:atlantisUtil_2012.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile.in">
+         </FileRef>
+         <FileRef
+            location = "group:atUtilhelp.c">
+         </FileRef>
+         <FileRef
+            location = "group:atlantisUtil.vcproj">
+         </FileRef>
+      </Group>
+      <FileRef
+         location = "group:atlantis_VS2012.sln">
+      </FileRef>
+      <FileRef
+         location = "group:atlantis_2005.ncb">
+      </FileRef>
+      <FileRef
+         location = "group:atlantis_VS2013.sln">
+      </FileRef>
+      <FileRef
+         location = "group:atlantis_VS2008.ncb">
+      </FileRef>
+      <FileRef
+         location = "group:atlantis_VS2013.sln.bak">
+      </FileRef>
+      <FileRef
+         location = "group:atlantis.suo">
+      </FileRef>
+      <FileRef
+         location = "group:atlantis_VS2015.v12.suo">
+      </FileRef>
+      <FileRef
+         location = "group:VS2005_windowsBuild.bat">
+      </FileRef>
+      <FileRef
+         location = "group:atlantis_VS2010.sln">
+      </FileRef>
+      <FileRef
+         location = "group:atlantis_VS2012.sln.bak">
+      </FileRef>
+      <FileRef
+         location = "group:atlantis_VS2013.v12.suo.bak">
+      </FileRef>
+      <FileRef
+         location = "group:config.h.in">
+      </FileRef>
+      <FileRef
+         location = "group:atlantis.ncb">
+      </FileRef>
+      <FileRef
+         location = "group:atlantis_VS2015.sln">
+      </FileRef>
+      <FileRef
+         location = "group:config.guess">
+      </FileRef>
+      <FileRef
+         location = "group:depcomp">
+      </FileRef>
+      <Group
+         location = "group:atecology"
+         name = "atecology">
+         <FileRef
+            location = "group:Final.xml">
+         </FileRef>
+         <FileRef
+            location = "group:attime.c">
+         </FileRef>
+         <FileRef
+            location = "group:atecology_2015.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:atecologyts.c">
+         </FileRef>
+         <FileRef
+            location = "group:atecology_2013.vcxproj.bec">
+         </FileRef>
+         <FileRef
+            location = "group:atmigration.c">
+         </FileRef>
+         <FileRef
+            location = "group:atImposeRecruit.c">
+         </FileRef>
+         <FileRef
+            location = "group:atmovement.c">
+         </FileRef>
+         <FileRef
+            location = "group:atannualbiology.c">
+         </FileRef>
+         <FileRef
+            location = "group:atBuildTracer.c">
+         </FileRef>
+         <FileRef
+            location = "group:atIceProcesses.c">
+         </FileRef>
+         <FileRef
+            location = "group:atecology.c">
+         </FileRef>
+         <FileRef
+            location = "group:init.c">
+         </FileRef>
+         <FileRef
+            location = "group:atNutrient.c">
+         </FileRef>
+         <FileRef
+            location = "group:atbiolsetup.c">
+         </FileRef>
+         <Group
+            location = "group:include"
+            name = "include">
+            <FileRef
+               location = "group:atAdditionalTracer.h">
+            </FileRef>
+            <FileRef
+               location = "group:atEcologyLib.h">
+            </FileRef>
+            <FileRef
+               location = "group:atbiologyPrivate.h">
+            </FileRef>
+            <FileRef
+               location = "group:atContaminants.h">
+            </FileRef>
+            <FileRef
+               location = "group:atbiology.h">
+            </FileRef>
+            <FileRef
+               location = "group:atecology.h">
+            </FileRef>
+            <FileRef
+               location = "group:atExternalScalar.h">
+            </FileRef>
+            <FileRef
+               location = "group:atnamelist.h">
+            </FileRef>
+         </Group>
+         <FileRef
+            location = "group:atExternalScalar.c">
+         </FileRef>
+         <FileRef
+            location = "group:atq10.c">
+         </FileRef>
+         <FileRef
+            location = "group:atecology_2008.vcproj.VB_XPSP2_01.ful072.user">
+         </FileRef>
+         <FileRef
+            location = "group:atLandProcess.c">
+         </FileRef>
+         <FileRef
+            location = "group:atecology_2005.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:atcalibtools.c">
+         </FileRef>
+         <FileRef
+            location = "group:atcoral.c">
+         </FileRef>
+         <FileRef
+            location = "group:atbiophysics.c">
+         </FileRef>
+         <FileRef
+            location = "group:atdiversity.c">
+         </FileRef>
+         <FileRef
+            location = "group:#">
+         </FileRef>
+         <FileRef
+            location = "group:atprocess.c">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile.am">
+         </FileRef>
+         <FileRef
+            location = "group:atecology.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:atGroupProcesses.c">
+         </FileRef>
+         <FileRef
+            location = "group:atfluxbreakdown.c">
+         </FileRef>
+         <FileRef
+            location = "group:dump.c">
+         </FileRef>
+         <FileRef
+            location = "group:atecology_2012.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:atForcedMovement.c">
+         </FileRef>
+         <FileRef
+            location = "group:am--include-marker">
+         </FileRef>
+         <FileRef
+            location = "group:atecology_2013.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:atbiolUtil.c">
+         </FileRef>
+         <FileRef
+            location = "group:atbiolmessage.c">
+         </FileRef>
+         <FileRef
+            location = "group:additionalTracer.c">
+         </FileRef>
+         <FileRef
+            location = "group:atBiologyXMLParamIO.c">
+         </FileRef>
+         <FileRef
+            location = "group:atdemography.c">
+         </FileRef>
+         <FileRef
+            location = "group:atvertprocesses.c">
+         </FileRef>
+         <FileRef
+            location = "group:atexternalpop.c">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile.in">
+         </FileRef>
+         <FileRef
+            location = "group:atecology_2010.vcxproj.filters">
+         </FileRef>
+         <FileRef
+            location = "group:atecology_2010.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:atPhysChemIO.c">
+         </FileRef>
+         <FileRef
+            location = "group:atecology_2008.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:atbiology.c">
+         </FileRef>
+         <FileRef
+            location = "group:atContaminants.c">
+         </FileRef>
+         <FileRef
+            location = "group:atmacrophytes.c">
+         </FileRef>
+      </Group>
+      <FileRef
+         location = "group:missing">
+      </FileRef>
+      <Group
+         location = "group:atphysics"
+         name = "atphysics">
+         <FileRef
+            location = "group:atdecay.c">
+         </FileRef>
+         <FileRef
+            location = "group:atsettle.c">
+         </FileRef>
+         <FileRef
+            location = "group:atLandIO.c">
+         </FileRef>
+         <FileRef
+            location = "group:atgeomIO.c">
+         </FileRef>
+         <FileRef
+            location = "group:atvmix.c">
+         </FileRef>
+         <FileRef
+            location = "group:atsuspension.c">
+         </FileRef>
+         <FileRef
+            location = "group:atindex.c">
+         </FileRef>
+         <FileRef
+            location = "group:atphysIO.c">
+         </FileRef>
+         <FileRef
+            location = "group:atphysics.c">
+         </FileRef>
+         <FileRef
+            location = "group:atepiIO.c">
+         </FileRef>
+         <FileRef
+            location = "group:atagetracerIO.c">
+         </FileRef>
+         <FileRef
+            location = "group:atboundary.c">
+         </FileRef>
+         <FileRef
+            location = "group:atphysics_2008.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:atdiagIO.c">
+         </FileRef>
+         <FileRef
+            location = "group:atbioirrig.c">
+         </FileRef>
+         <FileRef
+            location = "group:atphysics_2015.vcxproj">
+         </FileRef>
+         <Group
+            location = "group:include"
+            name = "include">
+            <FileRef
+               location = "group:atPhysicsModule.h">
+            </FileRef>
+            <FileRef
+               location = "group:atPhysics.h">
+            </FileRef>
+         </Group>
+         <FileRef
+            location = "group:atsummaryIO.c">
+         </FileRef>
+         <FileRef
+            location = "group:atfishstatIO.c">
+         </FileRef>
+         <FileRef
+            location = "group:atreadbm.c">
+         </FileRef>
+         <FileRef
+            location = "group:atgas.c">
+         </FileRef>
+         <FileRef
+            location = "group:#">
+         </FileRef>
+         <FileRef
+            location = "group:aticeIO.c">
+         </FileRef>
+         <FileRef
+            location = "group:atparamIO.c">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile.am">
+         </FileRef>
+         <FileRef
+            location = "group:atphysics_2013.vcxproj.bec">
+         </FileRef>
+         <FileRef
+            location = "group:atvertgeom.c">
+         </FileRef>
+         <FileRef
+            location = "group:atphysics.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:athdiff.c">
+         </FileRef>
+         <FileRef
+            location = "group:atphysics_2005.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:am--include-marker">
+         </FileRef>
+         <FileRef
+            location = "group:athydromod.c">
+         </FileRef>
+         <FileRef
+            location = "group:atdeposition.c">
+         </FileRef>
+         <FileRef
+            location = "group:atphysics_2010.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:atsourcesink.c">
+         </FileRef>
+         <FileRef
+            location = "group:atsaturation.c">
+         </FileRef>
+         <FileRef
+            location = "group:attransport.c">
+         </FileRef>
+         <FileRef
+            location = "group:attempsalt.c">
+         </FileRef>
+         <FileRef
+            location = "group:atphysics_2012.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:atsedprops.c">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile.in">
+         </FileRef>
+         <FileRef
+            location = "group:atdietIO.c">
+         </FileRef>
+         <FileRef
+            location = "group:atprofile.c">
+         </FileRef>
+         <FileRef
+            location = "group:atphysics_2013.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:atvdiff.c">
+         </FileRef>
+         <FileRef
+            location = "group:atphysics_2010.vcxproj.filters">
+         </FileRef>
+         <FileRef
+            location = "group:atswr.c">
+         </FileRef>
+         <FileRef
+            location = "group:attracerIO.c">
+         </FileRef>
+         <FileRef
+            location = "group:atbioturb.c">
+         </FileRef>
+         <FileRef
+            location = "group:atPhysicsModule.c">
+         </FileRef>
+      </Group>
+      <FileRef
+         location = "group:atlantis_VS2008.suo">
+      </FileRef>
+      <FileRef
+         location = "group:atlantis.sln">
+      </FileRef>
+      <FileRef
+         location = "group:Makefile.am">
+      </FileRef>
+      <FileRef
+         location = "group:ams71_biol_dynND_New.xml">
+      </FileRef>
+      <FileRef
+         location = "group:configure_mac">
+      </FileRef>
+      <FileRef
+         location = "group:atlantis_VS2010.suo">
+      </FileRef>
+      <FileRef
+         location = "group:config.sub">
+      </FileRef>
+      <FileRef
+         location = "group:MSVCR71.DLL">
+      </FileRef>
+      <FileRef
+         location = "group:VS2012_windowsBuild.bat">
+      </FileRef>
+      <FileRef
+         location = "group:compile">
+      </FileRef>
+      <Group
+         location = "group:atCLAMLink"
+         name = "atCLAMLink">
+         <FileRef
+            location = "group:atCLAMManage.c">
+         </FileRef>
+         <Group
+            location = "group:include"
+            name = "include">
+            <FileRef
+               location = "group:atCLAMLinkPrivate.h">
+            </FileRef>
+            <FileRef
+               location = "group:atCLAMLinkLib.h">
+            </FileRef>
+            <FileRef
+               location = "group:atCLAMLink.h">
+            </FileRef>
+         </Group>
+         <FileRef
+            location = "group:atCLAMLink.c">
+         </FileRef>
+         <FileRef
+            location = "group:sampleCLAMLink.xml">
+         </FileRef>
+         <FileRef
+            location = "group:#">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile.am">
+         </FileRef>
+         <FileRef
+            location = "group:atCLAMLinkSetup.c">
+         </FileRef>
+         <FileRef
+            location = "group:atCLAMLink.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:am--include-marker">
+         </FileRef>
+         <FileRef
+            location = "group:ReadMe.txt">
+         </FileRef>
+         <FileRef
+            location = "group:atCLAMLinkIO.c">
+         </FileRef>
+         <FileRef
+            location = "group:atCLAMComm.c">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile.in">
+         </FileRef>
+         <FileRef
+            location = "group:atCLAMImplement.c">
+         </FileRef>
+      </Group>
+      <FileRef
+         location = "group:atlantis_VS2015.VC.db">
+      </FileRef>
+      <FileRef
+         location = "group:cleanCode">
+      </FileRef>
+      <FileRef
+         location = "group:atlantis_VS2008.sln">
+      </FileRef>
+      <Group
+         location = "group:atlantismain"
+         name = "atlantismain">
+         <FileRef
+            location = "group:atlantisR.pc.in">
+         </FileRef>
+         <FileRef
+            location = "group:atlantismain_2012.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:atlantismain_2013.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:buildSVNHeader.bat">
+         </FileRef>
+         <FileRef
+            location = "group:atlantismain_2008.vcproj.VB_XPSP2_01.ful072.user">
+         </FileRef>
+         <FileRef
+            location = "group:atlantisMerged.pc.in">
+         </FileRef>
+         <Group
+            location = "group:include"
+            name = "include">
+            <FileRef
+               location = "group:SVNAtlantisTemplate.h">
+            </FileRef>
+            <FileRef
+               location = "group:SVNAtlantisDefault.h">
+            </FileRef>
+            <FileRef
+               location = "group:atlantisboxmodel.h">
+            </FileRef>
+         </Group>
+         <FileRef
+            location = "group:atlantisR.pc">
+         </FileRef>
+         <FileRef
+            location = "group:atlantismain_2005.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:atlantismain_2010.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:#">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile.am">
+         </FileRef>
+         <FileRef
+            location = "group:atlantismain_2013.sdf.bak">
+         </FileRef>
+         <FileRef
+            location = "group:atlantisR">
+         </FileRef>
+         <FileRef
+            location = "group:atlantismain_2015.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:am--include-marker">
+         </FileRef>
+         <FileRef
+            location = "group:atlantismain_2013.vcxproj.bak">
+         </FileRef>
+         <FileRef
+            location = "group:atlantisMerged.pc">
+         </FileRef>
+         <FileRef
+            location = "group:process.h">
+         </FileRef>
+         <FileRef
+            location = "group:atlantismain_2008.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:atlantismain_2010.vcxproj.filters">
+         </FileRef>
+         <FileRef
+            location = "group:tre.lib">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile.in">
+         </FileRef>
+         <FileRef
+            location = "group:atlantismain.c">
+         </FileRef>
+         <FileRef
+            location = "group:atlantismain.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:atlantismain_2013.v12.suo.bak">
+         </FileRef>
+      </Group>
+      <FileRef
+         location = "group:atlantis_2005.sln">
+      </FileRef>
+      <FileRef
+         location = "group:atlantis_VS2013.sdf">
+      </FileRef>
+      <Group
+         location = "group:atimplementation"
+         name = "atimplementation">
+         <FileRef
+            location = "group:atImplementationParamIO.c">
+         </FileRef>
+         <FileRef
+            location = "group:atimplementation_2010.vcxproj.filters">
+         </FileRef>
+         <FileRef
+            location = "group:atimplementation_2010.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:atimplementation_2008.vcproj">
+         </FileRef>
+         <Group
+            location = "group:include"
+            name = "include">
+            <FileRef
+               location = "group:atImplementation.h">
+            </FileRef>
+            <FileRef
+               location = "group:atImplementationLib.h">
+            </FileRef>
+         </Group>
+         <FileRef
+            location = "group:atimplementation_2012.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:atImplementationAnnual.c">
+         </FileRef>
+         <FileRef
+            location = "group:atimplementation_2013.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:atImplementationSetup.c">
+         </FileRef>
+         <FileRef
+            location = "group:atimplementation.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:#">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile.am">
+         </FileRef>
+         <FileRef
+            location = "group:atimplementation_2005.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:am--include-marker">
+         </FileRef>
+         <FileRef
+            location = "group:atimplementation_2015.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:atimplementation_2013.vcxproj.bec">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile.in">
+         </FileRef>
+      </Group>
+      <FileRef
+         location = "group:atlantis_VS2013.VC.db">
+      </FileRef>
+      <FileRef
+         location = "group:atlantis_VS2012.sdf">
+      </FileRef>
+      <Group
+         location = "group:netcdf"
+         name = "netcdf">
+         <Group
+            location = "group:include"
+            name = "include">
+            <FileRef
+               location = "group:netcdf.inc">
+            </FileRef>
+            <FileRef
+               location = "group:netcdf.h">
+            </FileRef>
+         </Group>
+         <Group
+            location = "group:lib"
+            name = "lib">
+            <FileRef
+               location = "group:netcdf_VS2008.lib">
+            </FileRef>
+            <FileRef
+               location = "group:netcdfs.lib">
+            </FileRef>
+            <FileRef
+               location = "group:netcdf.lib">
+            </FileRef>
+         </Group>
+      </Group>
+      <FileRef
+         location = "group:build_hpc">
+      </FileRef>
+      <FileRef
+         location = "group:atlantis_VS2012.v12.suo">
+      </FileRef>
+      <FileRef
+         location = "group:atlantis_VS2012.bak">
+      </FileRef>
+      <Group
+         location = "group:externalLibs"
+         name = "externalLibs">
+         <Group
+            location = "group:proj4"
+            name = "proj4">
+            <FileRef
+               location = "group:proj_api.h">
+            </FileRef>
+            <FileRef
+               location = "group:projects.h">
+            </FileRef>
+         </Group>
+         <FileRef
+            location = "group:zlib.lib">
+         </FileRef>
+         <Group
+            location = "group:nanohttp"
+            name = "nanohttp">
+            <FileRef
+               location = "group:nanohttp-response.h">
+            </FileRef>
+            <FileRef
+               location = "group:nanohttp-request.h">
+            </FileRef>
+            <FileRef
+               location = "group:nanohttp-stream.h">
+            </FileRef>
+            <FileRef
+               location = "group:nanohttp-client.h">
+            </FileRef>
+            <FileRef
+               location = "group:nanohttp-ssl.h">
+            </FileRef>
+            <FileRef
+               location = "group:nanohttp-base64.h">
+            </FileRef>
+            <FileRef
+               location = "group:nanohttp-socket.h">
+            </FileRef>
+            <FileRef
+               location = "group:nanohttp-server.h">
+            </FileRef>
+            <FileRef
+               location = "group:nanohttp-logging.h">
+            </FileRef>
+            <FileRef
+               location = "group:nanohttp-mime.h">
+            </FileRef>
+            <FileRef
+               location = "group:nanohttp-common.h">
+            </FileRef>
+         </Group>
+         <Group
+            location = "group:libiconv"
+            name = "libiconv">
+            <Group
+               location = "group:bin"
+               name = "bin">
+               <FileRef
+                  location = "group:iconv.exe">
+               </FileRef>
+               <FileRef
+                  location = "group:iconv.dll">
+               </FileRef>
+               <FileRef
+                  location = "group:charset.dll">
+               </FileRef>
+            </Group>
+            <Group
+               location = "group:include"
+               name = "include">
+               <FileRef
+                  location = "group:iconv.h">
+               </FileRef>
+            </Group>
+            <Group
+               location = "group:lib"
+               name = "lib">
+               <FileRef
+                  location = "group:iconv_a.lib">
+               </FileRef>
+               <FileRef
+                  location = "group:iconv.lib">
+               </FileRef>
+               <FileRef
+                  location = "group:charset.lib">
+               </FileRef>
+            </Group>
+         </Group>
+         <FileRef
+            location = "group:libxml2_a.lib">
+         </FileRef>
+         <Group
+            location = "group:win32_vs_dll_4.0.1-beta3.tar"
+            name = "win32_vs_dll_4.0.1-beta3.tar">
+            <FileRef
+               location = "group:win32_vs_dll_4.0.1-beta3.tar">
+            </FileRef>
+            <FileRef
+               location = "group:ncdump.exe">
+            </FileRef>
+            <FileRef
+               location = "group:README_DLL.txt">
+            </FileRef>
+            <FileRef
+               location = "group:netcdf.inc">
+            </FileRef>
+            <FileRef
+               location = "group:netcdf.exp">
+            </FileRef>
+            <FileRef
+               location = "group:ncgen.exe">
+            </FileRef>
+            <FileRef
+               location = "group:netcdf.h">
+            </FileRef>
+            <FileRef
+               location = "group:netcdf.lib">
+            </FileRef>
+            <FileRef
+               location = "group:netcdf.dll">
+            </FileRef>
+         </Group>
+         <Group
+            location = "group:libxml"
+            name = "libxml">
+            <FileRef
+               location = "group:chvalid.h">
+            </FileRef>
+            <FileRef
+               location = "group:parserInternals.h">
+            </FileRef>
+            <FileRef
+               location = "group:xpointer.h">
+            </FileRef>
+            <FileRef
+               location = "group:debugXML.h">
+            </FileRef>
+            <FileRef
+               location = "group:schematron.h">
+            </FileRef>
+            <FileRef
+               location = "group:uri.h">
+            </FileRef>
+            <FileRef
+               location = "group:parser.h">
+            </FileRef>
+            <FileRef
+               location = "group:encoding.h">
+            </FileRef>
+            <FileRef
+               location = "group:tree.h">
+            </FileRef>
+            <FileRef
+               location = "group:threads.h">
+            </FileRef>
+            <FileRef
+               location = "group:xmlversion.h">
+            </FileRef>
+            <FileRef
+               location = "group:globals.h">
+            </FileRef>
+            <FileRef
+               location = "group:catalog.h">
+            </FileRef>
+            <FileRef
+               location = "group:pattern.h">
+            </FileRef>
+            <FileRef
+               location = "group:xmlreader.h">
+            </FileRef>
+            <FileRef
+               location = "group:HTMLtree.h">
+            </FileRef>
+            <FileRef
+               location = "group:SAX2.h">
+            </FileRef>
+            <FileRef
+               location = "group:xmlexports.h">
+            </FileRef>
+            <FileRef
+               location = "group:xlink.h">
+            </FileRef>
+            <FileRef
+               location = "group:SAX.h">
+            </FileRef>
+            <FileRef
+               location = "group:entities.h">
+            </FileRef>
+            <FileRef
+               location = "group:xmlregexp.h">
+            </FileRef>
+            <FileRef
+               location = "group:list.h">
+            </FileRef>
+            <FileRef
+               location = "group:xinclude.h">
+            </FileRef>
+            <FileRef
+               location = "group:xmlerror.h">
+            </FileRef>
+            <FileRef
+               location = "group:schemasInternals.h">
+            </FileRef>
+            <FileRef
+               location = "group:dict.h">
+            </FileRef>
+            <FileRef
+               location = "group:xmlIO.h">
+            </FileRef>
+            <FileRef
+               location = "group:HTMLparser.h">
+            </FileRef>
+            <FileRef
+               location = "group:xmlautomata.h">
+            </FileRef>
+            <FileRef
+               location = "group:xmlsave.h">
+            </FileRef>
+            <FileRef
+               location = "group:xmlstring.h">
+            </FileRef>
+            <FileRef
+               location = "group:xpath.h">
+            </FileRef>
+            <FileRef
+               location = "group:valid.h">
+            </FileRef>
+            <FileRef
+               location = "group:xmlschemastypes.h">
+            </FileRef>
+            <FileRef
+               location = "group:c14n.h">
+            </FileRef>
+            <FileRef
+               location = "group:DOCBparser.h">
+            </FileRef>
+            <FileRef
+               location = "group:xmlmodule.h">
+            </FileRef>
+            <FileRef
+               location = "group:relaxng.h">
+            </FileRef>
+            <FileRef
+               location = "group:nanohttp.h">
+            </FileRef>
+            <FileRef
+               location = "group:xmlwin32version.h">
+            </FileRef>
+            <FileRef
+               location = "group:xmlunicode.h">
+            </FileRef>
+            <FileRef
+               location = "group:xmlwriter.h">
+            </FileRef>
+            <FileRef
+               location = "group:xmlmemory.h">
+            </FileRef>
+            <FileRef
+               location = "group:xpathInternals.h">
+            </FileRef>
+            <FileRef
+               location = "group:nanoftp.h">
+            </FileRef>
+            <FileRef
+               location = "group:hash.h">
+            </FileRef>
+            <FileRef
+               location = "group:xmlschemas.h">
+            </FileRef>
+         </Group>
+         <FileRef
+            location = "group:nanohttp.lib">
+         </FileRef>
+         <FileRef
+            location = "group:proj4Lib.lib">
+         </FileRef>
+         <FileRef
+            location = "group:Proj4Static.lib">
+         </FileRef>
+         <Group
+            location = "group:include"
+            name = "include">
+            <FileRef
+               location = "group:zlib.h">
+            </FileRef>
+            <FileRef
+               location = "group:zconf.h">
+            </FileRef>
+         </Group>
+         <FileRef
+            location = "group:iconv.lib">
+         </FileRef>
+         <FileRef
+            location = "group:ProjStatic.lib">
+         </FileRef>
+         <Group
+            location = "group:tre"
+            name = "tre">
+            <Group
+               location = "group:include"
+               name = "include">
+               <FileRef
+                  location = "group:regex.h">
+               </FileRef>
+               <FileRef
+                  location = "group:tre-config.h">
+               </FileRef>
+            </Group>
+            <FileRef
+               location = "group:tre_VS2005.lib">
+            </FileRef>
+            <FileRef
+               location = "group:tre.lib">
+            </FileRef>
+         </Group>
+         <Group
+            location = "group:libcsoap"
+            name = "libcsoap">
+            <FileRef
+               location = "group:soap-client.h">
+            </FileRef>
+            <FileRef
+               location = "group:soap-admin.h">
+            </FileRef>
+            <FileRef
+               location = "group:soap-env.h">
+            </FileRef>
+            <FileRef
+               location = "group:soap-fault.h">
+            </FileRef>
+            <FileRef
+               location = "group:soap-xml.h">
+            </FileRef>
+            <FileRef
+               location = "group:soap-server.h">
+            </FileRef>
+            <FileRef
+               location = "group:soap-ctx.h">
+            </FileRef>
+            <FileRef
+               location = "group:soap-router.h">
+            </FileRef>
+            <FileRef
+               location = "group:soap-service.h">
+            </FileRef>
+         </Group>
+         <FileRef
+            location = "group:libcsoap.lib">
+         </FileRef>
+      </Group>
+      <FileRef
+         location = "group:Doxyfile">
+      </FileRef>
+      <FileRef
+         location = "group:atlantis_VS2012.v11.suo">
+      </FileRef>
+      <Group
+         location = "group:ConvertAtlantis"
+         name = "ConvertAtlantis">
+         <FileRef
+            location = "group:ConvertAtlantis_2008.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:atHarvesttoXML.c">
+         </FileRef>
+         <FileRef
+            location = "group:atAssesstoXML.c">
+         </FileRef>
+         <FileRef
+            location = "group:ConvertAtlantis_2010.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:atFisheriesXML.c">
+         </FileRef>
+         <Group
+            location = "group:include"
+            name = "include">
+            <FileRef
+               location = "group:convertXML.h">
+            </FileRef>
+         </Group>
+         <FileRef
+            location = "group:ConvertAtlantis_2012.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:ConvertAtlantis_2013.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:#">
+         </FileRef>
+         <FileRef
+            location = "group:atRunXML.c">
+         </FileRef>
+         <FileRef
+            location = "group:ConvertAtlantis.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:atCreateXML.c">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile.am">
+         </FileRef>
+         <FileRef
+            location = "group:atManagetoXML.c">
+         </FileRef>
+         <FileRef
+            location = "group:ConvertAtlantis_2005.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:atImplementationtoXML.c">
+         </FileRef>
+         <FileRef
+            location = "group:atEconomicXML.c">
+         </FileRef>
+         <FileRef
+            location = "group:am--include-marker">
+         </FileRef>
+         <FileRef
+            location = "group:atGroupsXML.c">
+         </FileRef>
+         <FileRef
+            location = "group:atBioltoXML.c">
+         </FileRef>
+         <FileRef
+            location = "group:ConvertAtlantis_2015.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:ConvertAtlantis_2010.vcxproj.filters">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile.in">
+         </FileRef>
+         <FileRef
+            location = "group:ConvertAtlantis_2013.vcxproj.bec">
+         </FileRef>
+      </Group>
+      <FileRef
+         location = "group:PreRules.am">
+      </FileRef>
+      <FileRef
+         location = "group:Makefile.in">
+      </FileRef>
+      <FileRef
+         location = "group:aclocal.m4">
+      </FileRef>
+      <FileRef
+         location = "group:VS2008_windowsBuild.bat">
+      </FileRef>
+      <Group
+         location = "group:atlink"
+         name = "atlink">
+         <FileRef
+            location = "group:atlinkimport.c">
+         </FileRef>
+         <Group
+            location = "group:include"
+            name = "include">
+            <FileRef
+               location = "group:atlink.h">
+            </FileRef>
+            <FileRef
+               location = "group:atLinkModule.h">
+            </FileRef>
+            <FileRef
+               location = "group:atComms.h">
+            </FileRef>
+         </Group>
+         <FileRef
+            location = "group:atComms.c">
+         </FileRef>
+         <FileRef
+            location = "group:#">
+         </FileRef>
+         <FileRef
+            location = "group:atlink_2008.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:atlink.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:atlink_2010.vcxproj.filters">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile.am">
+         </FileRef>
+         <FileRef
+            location = "group:am--include-marker">
+         </FileRef>
+         <FileRef
+            location = "group:atlink_2010.vcxproj">
+         </FileRef>
+         <FileRef
+            location = "group:ReadMe.txt">
+         </FileRef>
+         <FileRef
+            location = "group:atlinkconversion.c">
+         </FileRef>
+         <FileRef
+            location = "group:atlink_2005.vcproj">
+         </FileRef>
+         <FileRef
+            location = "group:Makefile.in">
+         </FileRef>
+         <FileRef
+            location = "group:atlinkexport.c">
+         </FileRef>
+      </Group>
+      <FileRef
+         location = "group:atlantis_VS2013.v12.suo">
+      </FileRef>
+   </Group>
+</Workspace>

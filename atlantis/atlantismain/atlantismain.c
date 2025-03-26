@@ -499,7 +499,7 @@ int runNextTimeStep(MSEBoxModel *bm){
 
 				/* Check fish abundance */
 				if (fishtest && bm->checkbox) {
-					sprintf(keystrname, "After box %d", b);
+					sprintf(keystrname, "After box %d ecology", b);
 					Ecology_Test_Fish_Total(bm, newwctr, newlandtr, use_tr, keystrname, logfp);
 				}
             } else {

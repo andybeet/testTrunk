@@ -403,6 +403,8 @@ static void Box_Bio_Process(MSEBoxModel *bm, Box *pBox, double dt, FILE *llogfp)
 
 	FlagModel = 1;
     
+    //Ecology_Check_VertAbund(bm, newwctr, llogfp, 0);
+    
 	for (ij = numwclayer - 1; ij > stopij; ij--) {
 		if (verbose > 1)
         printf("processing water column layer %d\n", ij);
@@ -440,12 +442,18 @@ static void Box_Bio_Process(MSEBoxModel *bm, Box *pBox, double dt, FILE *llogfp)
 		else
 			Susp_Sed = pBox->stress * pBox->area / bm->cell_vol;
 
+        //Ecology_Check_VertAbund(bm, newwctr, llogfp, 1);
+        
         /* Run Adaptive Difference Method */
 		Adapt_Diff_Method(bm, FlagModel, dt, boxLayerInfo, llogfp);
-
+        
+        //Ecology_Check_VertAbund(bm, newwctr, llogfp, 2);
+        
 		/* Spawning */
 		Vertebrate_Reproduction(bm, ij, maxdeep, totaldeep, numwclayer, boxLayerInfo->localWCTracers, llogfp);
 		Invertebrate_Reproduction(bm, ij, maxdeep, totaldeep, boxLayerInfo->localWCTracers, llogfp);
+        
+        //Ecology_Check_VertAbund(bm, newwctr, llogfp, 3);
 
 		/* Transfer all the temporary values back to their final locations */
 		for (k = 0; k < numwcvar; k++)
@@ -454,6 +462,8 @@ static void Box_Bio_Process(MSEBoxModel *bm, Box *pBox, double dt, FILE *llogfp)
 			pBox->diagnost[k] = boxLayerInfo->localDiagTracers[k]; /* To diagnostics */
 		for (k = 0; k < numfstatvar; k++)
 			pBox->fishstat[k] = boxLayerInfo->localFishTracers[k]; /* To fisheries statistics */
+        
+        //Ecology_Check_VertAbund(bm, newwctr, llogfp, 4);
 	}
     
     /** Now process sediment layers not in contact with water. **/
@@ -489,9 +499,13 @@ static void Box_Bio_Process(MSEBoxModel *bm, Box *pBox, double dt, FILE *llogfp)
 				Bact_stim = 1.0; // Originally introduced while model being balanced
 
 			current_layer_sed = ij;
+            
+            //Ecology_Check_VertAbund(bm, newwctr, llogfp, 5);
 
 			/* Run Adaptive Difference Method */
 			Adapt_Diff_Method(bm, FlagModel, dt, boxLayerInfo, llogfp);
+            
+            //Ecology_Check_VertAbund(bm, newwctr, llogfp, 6);
 
 			/* Transfer all of the values back to the final locations */
 			for (k = 0; k < numwcvar; k++)
@@ -500,6 +514,8 @@ static void Box_Bio_Process(MSEBoxModel *bm, Box *pBox, double dt, FILE *llogfp)
 				pBox->diagnost[k] = boxLayerInfo->localDiagTracers[k]; /* To diagnostics */
 			for (k = 0; k < numfstatvar; k++)
 				pBox->fishstat[k] = boxLayerInfo->localFishTracers[k]; /* To fisheries statistics */
+            
+            //Ecology_Check_VertAbund(bm, newwctr, llogfp, 7);
 		}
         
         /** Now process epibenthic layer and adjacent water and sediment layers. **/
@@ -580,12 +596,18 @@ static void Box_Bio_Process(MSEBoxModel *bm, Box *pBox, double dt, FILE *llogfp)
 			smLayerThick += small_num;
 		}
 
+        //Ecology_Check_VertAbund(bm, newwctr, llogfp, 8);
+        
 		/* Run Adaptive Difference Method */
 		Adapt_Diff_Method(bm, FlagModel, dt, boxLayerInfo, llogfp);
+        
+        //Ecology_Check_VertAbund(bm, newwctr, llogfp, 9);
 
 		/* Spawning */
 		Vertebrate_Reproduction(bm, 0, maxdeep, totaldeep, numwclayer, boxLayerInfo->localWCTracers, llogfp);
 		Invertebrate_Reproduction(bm, 0, maxdeep, totaldeep, boxLayerInfo->localWCTracers, llogfp);
+        
+        //Ecology_Check_VertAbund(bm, newwctr, llogfp, 10);
 
 		/* Transfer all values in localWCTracers and localSed to the appropriate variables and
 		 reset pointers Y1 and Y2 to newwctr and newsed tr pointing to returned value space
@@ -596,6 +618,8 @@ static void Box_Bio_Process(MSEBoxModel *bm, Box *pBox, double dt, FILE *llogfp)
 			newsedtr[bm->current_box][0][ij] = boxLayerInfo->localSEDTracers[ij]; /* To top cell in sediment*/
 		}
 
+        //Ecology_Check_VertAbund(bm, newwctr, llogfp, 11);
+        
 		for (ij = 0; ij < numepivar; ij++) /* To epibenthic variables*/
 			pBox->epi[ij] = boxLayerInfo->localEPITracers[ij];
 		for (k = 0; k < numdiagvar; k++)
@@ -642,6 +666,8 @@ static void Box_Bio_Process(MSEBoxModel *bm, Box *pBox, double dt, FILE *llogfp)
 	/* Calculate new detrital depth */
 	bm->boxes[bm->current_box].sm.detdepth = bm->boxes[bm->current_box].sm.detdepth + Enviro_turb * BioturbEnh / DRdepth * (1.0 - exp(-K_TUR_DEP / (DRdepth
 			+ small_num)));
+    
+    //Ecology_Check_VertAbund(bm, newwctr, llogfp, 12);
     
     /*
     pid = FunctGroupArray[8].contamPropTracers[3][0];

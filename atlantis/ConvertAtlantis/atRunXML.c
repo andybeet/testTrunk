@@ -64,7 +64,7 @@ void Convert_Run_To_XML(MSEBoxModel *bm, char *fileName, char *outputFileName) {
                                "", XML_TYPE_BOOLEAN,"1");
     bm->flag_migration_on = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, binary_check, "flag_migration_on");
 
-	groupingNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, rootnode, "ScenarioOptions", "The diagnostic output settings", "", "");
+	groupingNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, rootnode, "ScenarioOptions", "Run settings", "", "");
 
 	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "title", "ScenarioName", "", XML_TYPE_STRING, "");
 	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "dt", "Model Time Step in hours", "Hours", XML_TYPE_INTEGER, "12");
@@ -103,6 +103,7 @@ void Convert_Run_To_XML(MSEBoxModel *bm, char *fileName, char *outputFileName) {
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_replicated_old_PPmort", "Flag to replicate old model code assumptions around primary production mortality before the trunk code was merged.", "", XML_TYPE_BOOLEAN,"0");
     
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_old_embryo_init", "Flag to use the old means of having embryoes carried over from spawning pre-model start.", "", XML_TYPE_BOOLEAN,"0");
+    
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_replicate_old_calendar", "Flag to replicate old calendar for aging and spawning - when done once per year rather than having 1 queue for the entire model run.", "", XML_TYPE_BOOLEAN,"0");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_sanity_check", "Flag to trigger sanity checks.", "", XML_TYPE_BOOLEAN,"0");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "store_aggregate_yoy", "Flag as to what YOY stored", "", XML_TYPE_BOOLEAN,"0");

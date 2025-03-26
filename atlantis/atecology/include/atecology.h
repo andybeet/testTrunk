@@ -114,7 +114,7 @@ extern double ****readinpopratio, ****newden, ****recVERTpopratio,
 		**CATCHEATINGinfo, **CATCHGRAZEinfo, **SUPPdistrib, **boxden, ****currentden,
         **leftden, *newden_sum, ***preyamt, *totad, *totboxden, *totroc, *yoy, *totsum,
         *totksum, *tot_new_mat, *coming_SPden, *numbers_entering,
-        *numbers_already_present;
+        *numbers_already_present, **totdenCheck;
 
 extern double *initialIceBiomass, *initialLandBiomass, *initialBiomass,
         *initialSedBiomass, *initialEpiBiomass, *initialWaterBiomass;

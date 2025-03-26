@@ -94,7 +94,8 @@ double ***AGE_stock_struct_prop = 0, // Also updated in Prepare_Age_Distrib - us
 	**CATCHGRAZEinfo = 0, **boxden = 0, ****currentden = 0, **leftden = 0,
     *newden_sum = 0, ***preyamt = 0, *totad = 0, *totboxden = 0, *totroc = 0,
     *totsum = 0, *totksum = 0, *tot_new_mat = 0, *coming_SPden = 0,
-    *numbers_entering = 0, *numbers_already_present = 0;
+    *numbers_entering = 0, *numbers_already_present = 0,
+    **totdenCheck = 0;
 
 double *initialIceBiomass = 0, *initialLandBiomass = 0, *initialBiomass = 0,
     *initialSedBiomass = 0, *initialEpiBiomass = 0, *initialWaterBiomass = 0;

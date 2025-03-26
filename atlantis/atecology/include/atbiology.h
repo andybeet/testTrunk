@@ -174,7 +174,7 @@ extern double ***AGE_stock_struct_prop, // Also updated in Prepare_Age_Distrib -
 	**CATCHGRAZEinfo, **boxden, ****currentden, **leftden, *newden_sum,
     ***preyamt, *totad, *totboxden, *totroc, *lostden_zero, *totsum,
     *totksum, *tot_new_mat, *coming_SPden, *numbers_entering,
-    *numbers_already_present;
+    *numbers_already_present, **totdenCheck;
 
 extern double *initialIceBiomass, *initialLandBiomass, *initialBiomass,
     *initialSedBiomass, *initialEpiBiomass, *initialWaterBiomass;

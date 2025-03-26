@@ -654,12 +654,11 @@ static void Init_Spawning(MSEBoxModel *bm, FILE *llogfp, int do_debug, int sp) {
                                 EMBRYO[sp].num_recruits_updating[i][j][ngene][k] = EMBRYO[sp].num_recruits[i][j][ngene][k];
                             }
                             
-                            /**/
+                            /**
                             //if(do_debug && (bm->which_check == sp)) {
-                            if (sp < 6) {
                                     fprintf(llogfp, "%s, num_recruits-%d-%d: %e, flag_old_embryo_init: %d, VERTembryo%s-%d: %e adults_spawning: %e, prod_scalar: %e vertdistrib: %e, bm->recruit_hdistrib%d-%s: %e, ngenes: %e tot_embryo: %e\n", FunctGroupArray[sp].groupCode, i, j, EMBRYO[sp].num_recruits[i][j][ngene][k], bm->flag_old_embryo_init, FunctGroupArray[sp].groupCode, stock_id, EMBRYO[sp].Larvae[stock_id][ngene][k], adults_spawning[stock_id], prod_scalar, vertdistrib, i, FunctGroupArray[sp].groupCode, bm->recruit_hdistrib[ngene][i][sp], ngenes, tot_embryo);
                             }
-                            /**/
+                            **/
                             
                             EMBRYO[sp].next_larvae = k;
                             if (EMBRYO[sp].next_larvae > EMBRYO[sp].num_in_spawn_queue)

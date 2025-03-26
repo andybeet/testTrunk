@@ -2270,6 +2270,7 @@ void Ecology_Free(MSEBoxModel *bm) {
 	printf("freeing VERT arrays\n");
 
 	free2d(VERTabund_check);
+    free2d(totdenCheck);
 
 	free3d(VERTinfo);
 	free3d(AGE_stock_struct_prop);
@@ -2682,9 +2683,6 @@ void Check_Input_Data(MSEBoxModel *bm, FILE *llogfp) {
 				// (currently assumes all genetypes start with the same distrubtion initially)
                 bm->recruit_hdistrib_orig[ngene][b][sp] = bm->recruit_hdistrib[0][b][sp];
                 
-                if (sp < 6) {
-                    fprintf(bm->logFile, "Check_Input_Data %s box %d recruit_hdistrib %e\n", FunctGroupArray[sp].groupCode, b, bm->recruit_hdistrib_orig[ngene][b][sp]);
-                }
 			}
 		}
 	}
@@ -2775,6 +2773,7 @@ void Allocate_Arrays_Post_Load(MSEBoxModel *bm, FILE *llogfp) {
 	/* Setup all arrays for vertebrate processes */
 	VERTabund_check = Util_Alloc_Init_2D_Double(ncohorts * ngenetypes, bm->K_num_tot_sp, 0.0);
 	VERTinfo = Util_Alloc_Init_3D_Double(3, ncohorts * ngenetypes, bm->K_num_tot_sp, 0.0);
+    totdenCheck = Util_Alloc_Init_2D_Double(2, ncohorts * ngenetypes, 0.0);
 
 	/* Set up arrays for migration out of model domain; total system state;
 	 other vertebrate state info, processes, and reproduction parameters.

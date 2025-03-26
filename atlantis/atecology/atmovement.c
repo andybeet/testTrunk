@@ -854,7 +854,7 @@ void Ecology_Total_Verts_And_Migration(MSEBoxModel *bm, double dt, FILE *llogfp)
 	//double migtemp = 86400.0 / dt;
 	int maxij = bm->K_num_stocks_per_sp;
 	int overall_checkday = (int) (floor(bm->dayt));
-
+    int this_flag_recruit, is_maternal_raised = 0;
 	double clear, E1_sp, spSpeed, this_HowFar, vertdistrib, mignum, mignum_actual, spawnmove = 1.0, totmig, midpoint, FSMG_grow, migtime, oldden, totdenom = 0, maxstock, min_spawntemp_sp, max_spawntemp_sp, temp_effect, finalmig, avgsn, avgrn, dynsn, dynrn, min_O2_sp, current_enviro, min_spawnsalt_sp, max_spawnsalt_sp, salt_effect, o2_effect, contract_sp, oldsn, oldrn, this_tot_biom, pH_scale, orig_newden, check_day, stagger_scalar, noise_effect, light_effect, K_salt_const_sp, K_o2_const_sp, numScalar_final, growth_period, den_diff;
     double numScalar, K_temp_const_sp = 0.0;
     // double step1, step2;  OLD WAY OF DOING AGE - DEPRECATE
@@ -1443,7 +1443,12 @@ void Ecology_Total_Verts_And_Migration(MSEBoxModel *bm, double dt, FILE *llogfp)
 			flagchannel = (int) (FunctGroupArray[sp].speciesParams[flagchannel_id]);
 			spupdatemig = 0;
 			spmigrate = MIGRATION[sp].num_in_queue;
-
+            this_flag_recruit = (int) (FunctGroupArray[sp].speciesParams[flagrecruit_id]);
+            is_maternal_raised = 0;
+            if(!bm->flag_replicated_old && ((this_flag_recruit == linear_recruit) || (this_flag_recruit == fixed_linear_recruit))) { // For newer models make sure linear reproduces have constraints (normalisaiton) of recruit_hdistrib
+                is_maternal_raised = 1;
+            }
+            
             /* Make parameter adjustments due to acidification */
 			flagcontract_sp = (int)FunctGroupArray[sp].speciesParams[flagcontract_tol_id];
 			pH_scale = (FunctGroupArray[sp].pHcorr - 1.0);
@@ -2249,18 +2254,11 @@ void Ecology_Total_Verts_And_Migration(MSEBoxModel *bm, double dt, FILE *llogfp)
 										bm->recruit_hdistrib[ngene][ij][sp] += newden[sp][n][0][ij];
 										totad[ngene] += newden[sp][n][0][ij];
 
-                                        if (sp < 6) {
-                                            fprintf(bm->logFile, "movement.c update_larval_distrib = %d, bm->recruit_hdistrib[%d][%d][%d] = %e\n", update_larval_distrib, ngene, ij, sp, bm->recruit_hdistrib[ngene][ij][sp]);
-                                        }
 									}
 								} else {
 									bm->recruit_hdistrib[ngene][ij][sp] =  bm->recruit_hdistrib_orig[ngene][ij][sp];
 									totad[ngene] += bm->recruit_hdistrib_orig[ngene][ij][sp];
                                     
-                                    if (sp < 6) {
-                                        fprintf(bm->logFile, "movement.c update_larval_distrib = %d, bm->recruit_hdistrib[%d][%d][%d] = %e as reset to recruit_hdistrib_orig %e\n", update_larval_distrib, ngene, ij, sp, bm->recruit_hdistrib[ngene][ij][sp], bm->recruit_hdistrib_orig[ngene][ij][sp]);
-                                    }
-
 								}
         					}
                         }
@@ -2316,6 +2314,7 @@ void Ecology_Total_Verts_And_Migration(MSEBoxModel *bm, double dt, FILE *llogfp)
                                         /* Sum over current distribution of adult age groups */
                                         bm->recruit_hdistrib[ngene][ij][sp] += newden[sp][n][k][ij] * temp_effect * salt_effect * o2_effect * ice_effect;
                                         totad[ngene] += newden[sp][n][k][ij] * temp_effect * salt_effect * o2_effect * ice_effect * noise_effect * light_effect;
+                                        
                                     }
                                     
                                     if(!totad[ngene]) {  // If no adults about set back to the prescribed distribution
@@ -2329,13 +2328,12 @@ void Ecology_Total_Verts_And_Migration(MSEBoxModel *bm, double dt, FILE *llogfp)
                                     totad[ngene] += bm->recruit_hdistrib_orig[ngene][ij][sp] * temp_effect * salt_effect * o2_effect * ice_effect * noise_effect * light_effect;
                                 }
                                 
-                                /**/
-                                //if(sp == bm->which_check){
-                                if(sp < 6){
-                                    fprintf(llogfp,"Time: %e, %s box-%d recruit_hdistrib: %e (orig: %e, temp_effect: %e, salt_effect: %e, o2_effect: %e, ice_effect: %e, newden: %e totad: %e update_larval_distrib:%d)\n",
-                                            bm->dayt, FunctGroupArray[sp].groupCode, ij, bm->recruit_hdistrib[ngene][ij][sp], bm->recruit_hdistrib_orig[ngene][ij][sp], temp_effect, salt_effect, o2_effect, ice_effect, newden[sp][n][k][ij], totad[ngene], update_larval_distrib);
+                                /**
+                                if(sp == bm->which_check){
+                                    fprintf(llogfp,"movement.c Time: %e, %s box-%d recruit_hdistrib: %e (is_maternal_raised: %d orig: %e, temp_effect: %e, salt_effect: %e, o2_effect: %e, ice_effect: %e, newden: %e totad: %e update_larval_distrib:%d)\n",
+                                            bm->dayt, FunctGroupArray[sp].groupCode, ij, bm->recruit_hdistrib[ngene][ij][sp], is_maternal_raised, bm->recruit_hdistrib_orig[ngene][ij][sp], temp_effect, salt_effect, o2_effect, ice_effect, newden[sp][n][k][ij], totad[ngene], update_larval_distrib);
                                 }
-                                /**/
+                                **/
                                 
                                 
 							}
@@ -2343,14 +2341,14 @@ void Ecology_Total_Verts_And_Migration(MSEBoxModel *bm, double dt, FILE *llogfp)
 					}
 
                     /* Normalise if appropriate */
-                    if(bm->norm_larval_distrib) {
+                    if(bm->norm_larval_distrib || is_maternal_raised) {
                         for (ij = 0; ij < bm->nbox; ij++) {
                             bm->recruit_hdistrib[ngene][ij][sp] /= (totad[ngene] + small_num);
                             
                             /**/
                             //if(sp == bm->which_check){
-                            if(sp < 6){
-                                fprintf(llogfp,"Time: %e, %s box-%d rechdistrib: %e (orig: %e)\n", bm->dayt, FunctGroupArray[sp].groupCode, ij, bm->recruit_hdistrib[ngene][ij][sp], bm->recruit_hdistrib_orig[ngene][ij][sp]);
+                            if (sp == 23) {
+                                fprintf(llogfp,"movement.c line 2358 Time: %e, %s box-%d rechdistrib: %e (orig: %e)\n", bm->dayt, FunctGroupArray[sp].groupCode, ij, bm->recruit_hdistrib[ngene][ij][sp], bm->recruit_hdistrib_orig[ngene][ij][sp]);
                             }
                             /**/
                             
@@ -2409,9 +2407,6 @@ void Ecology_Total_Verts_And_Migration(MSEBoxModel *bm, double dt, FILE *llogfp)
 
 								bm->recruit_hdistrib[n][ij][sp] = bm->recruit_hdistrib[n][ij][sp] / (totad[n] + small_num);
                                 
-                                if (sp < 6) {
-                                    fprintf(bm->logFile, "Time: %e sp %s box: %d, recruit_hdistrib now %e", bm->dayt, FunctGroupArray[sp].groupCode, ij, bm->recruit_hdistrib[n][ij][sp]);
-                                }
 							}
 						}
 
@@ -2519,9 +2514,6 @@ void Ecology_Total_Verts_And_Migration(MSEBoxModel *bm, double dt, FILE *llogfp)
 							 but just to be safe for now */
 							bm->recruit_hdistrib[n][ij][sp] = bm->recruit_hdistrib[n][ij][sp] / (totad[n] + small_num);
                             
-                            if (sp < 6) {
-                                fprintf(llogfp,"Time: %e %s ngene: %d box%d recruit_hdistrib: %e totad: %e\n", bm->dayt, FunctGroupArray[sp].groupCode, n, ij, bm->recruit_hdistrib[n][ij][sp], totad[n]);
-                            }
 						}
 					}
 

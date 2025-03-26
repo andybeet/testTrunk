@@ -56,6 +56,7 @@ int Invade_Spread(MSEBoxModel *bm, int sp, FILE *llogfp, int b, int nb, int k, d
 /* Warning and testing prototypes */
 void Ecology_Test_Fish_Total(MSEBoxModel *bm, double ***valtr, double **landtr, int calltype, char *spotcall, FILE *llogfp);
 void Ecology_Starve_Notice(MSEBoxModel *bm, FILE *llogfp);
+void Ecology_Check_VertAbund(MSEBoxModel *bm, double ***valtr, FILE *llogfp, int instance);
 
 double Ecology_Spawn(int species, double KSPA_SP, double FSP_SP, double SN, double RN, double X_RS, double FSPB_SP, FILE *llogfp);
 
