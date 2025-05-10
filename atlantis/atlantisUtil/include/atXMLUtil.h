@@ -138,7 +138,7 @@ typedef struct {
 
 #define NUM_ATLANTIS_NODE_TYPES 11
 extern char AtlantisXMLObjectNAMES[NUM_ATLANTIS_NODE_TYPES][3][100];
-extern char AtlantisXMLAttributeTypeStrings[9][100];
+extern char AtlantisXMLAttributeTypeStrings[10][100];
 
 /**
  * XML util functions

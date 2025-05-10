@@ -642,7 +642,7 @@ char AtlantisXMLObjectNAMES[NUM_ATLANTIS_NODE_TYPES][3][100] =
     };
 
 
-char AtlantisXMLAttributeTypeStrings[9][100] =
+char AtlantisXMLAttributeTypeStrings[10][100] =
 	{
 		{ "Float" },
 		{ "Integer" },
@@ -652,7 +652,8 @@ char AtlantisXMLAttributeTypeStrings[9][100] =
 		{ "Lookup" },
 		{ "BooleanArray" },
 		{ "LookupArray" },
-		{"String"}};
+        {"String" },
+        {"StringArray" }};
 
 static int Check_Input_Array(double **p, int sized, int entry_type, char *key) {
 	int returnValue = TRUE;
