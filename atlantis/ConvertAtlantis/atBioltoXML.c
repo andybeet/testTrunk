@@ -3517,7 +3517,9 @@ void createContaminantsXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr 
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_contamMove", "Flag indicating avoidance scalar used - none (0), knife-edge (1), sigmoidal (2), left shoulder flat top (3)", "", XML_TYPE_INTEGER,"0");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_contamMinTemp", "Minimum temperature to consider in contaminants relationships that involve temperature corrections", "", XML_TYPE_FLOAT,"0");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_contam_halflife_spbased", "Whether half life of contaminants is species specific", "", XML_TYPE_FLOAT,"0");
-    bm->flag_contam_halflife_spbased = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, no_checking, "flag_contam_halflife_spbased");
+    bm->flag_contam_halflife_spbased = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, integer_check, "flag_contam_halflife_spbased");
+    
+    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_contamMaternalTransfer", "Whether maternal transfer included", "", XML_TYPE_FLOAT,"0");
 
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "biopools_dodge_contam", "Flag to turn on whetehr biomass pool groups can dodge contaminants..", "", XML_TYPE_BOOLEAN,"0");
     
@@ -3631,7 +3633,16 @@ void createContaminantsXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr 
                 sprintf(varStr, "%s_%s_ContamScalar", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
                 sprintf(longStr, "Generic scalar for group %s once contaminant %s above the threshold", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
                 Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
+                
+                set_keyprm_errfn(quit);
+                sprintf(varStr, "%s_%s_maternal_transfer", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
+                sprintf(longStr, "Maternal transfer for group %s and contaminant %s during recruitment and breeding", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
+                Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
 
+                set_keyprm_errfn(quit);
+                sprintf(varStr, "%s_%s_suckling_transfer", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
+                sprintf(longStr, "Maternal transfer for group %s and contaminant %s during sucking", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
+                Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
 			}
 		}
 

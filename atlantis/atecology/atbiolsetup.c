@@ -2580,8 +2580,16 @@ void Free_Embryo(MSEBoxModel *bm) {
 			free3d(EMBRYO[sp].Larvae);
 			free4d(EMBRYO[sp].num_recruits);
             free4d(EMBRYO[sp].num_recruits_updating);
-            
+
             i_free1d(EMBRYO[sp].readytospawn);
+
+            if(bm->track_contaminants) {
+                free4d(EMBRYO[sp].Contam);
+                free2d(EMBRYO[sp].AverageContam);
+                free2d(EMBRYO[sp].SettlerContam);
+                free5d(EMBRYO[sp].RecruitContam);
+            }
+            
 		}
 	}
 
@@ -3785,8 +3793,13 @@ void Ecology_Setup_Reproduction(MSEBoxModel *bm) {
         
         // Relevant EMBRYO alignment with MIGRATION array counter
         EMBRYO[sp].migIDmatch = Util_Alloc_Init_1D_Int(max_num, 0);
-
         
+        if(bm->track_contaminants) {
+            EMBRYO[sp].Contam = Util_Alloc_Init_4D_Double(bm->num_contaminants, max_num, FunctGroupArray[sp].numGeneTypes, num_stocks, 0);
+            EMBRYO[sp].AverageContam = Util_Alloc_Init_2D_Double(bm->num_contaminants, FunctGroupArray[sp].numGeneTypes, 0);
+            EMBRYO[sp].RecruitContam = Util_Alloc_Init_5D_Double(bm->num_contaminants, max_num, FunctGroupArray[sp].numGeneTypes, bm->wcnz, bm->nbox, 0);
+            EMBRYO[sp].SettlerContam = Util_Alloc_Init_2D_Double(bm->num_contaminants, FunctGroupArray[sp].numGeneTypes, 0);
+        }
 	}
 
 }

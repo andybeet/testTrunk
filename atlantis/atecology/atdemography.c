@@ -111,7 +111,7 @@ void Vertebrate_Reproduction(MSEBoxModel *bm, int wclayer, int maxdeep, int tota
         sp_numGeneTypes, basecohort, semelparous_migrants, semelparous_parents;
     int overall_checkday = (int) (floor(bm->dayt));
     int sp_checkday = 0;
-    int done_something, recruits_arrive;
+    int done_something, recruits_arrive, cIndex;
     //double lostden = 0;
     double dennow, CHLa, KWSR_sp, KWRR_sp, enviro_scalar, this_prop_ageup,
             plankton, vertdistrib, starting_num, new_num, amt, sp_AgeClassSize;
@@ -238,8 +238,15 @@ void Vertebrate_Reproduction(MSEBoxModel *bm, int wclayer, int maxdeep, int tota
                     
                     done_something = 1;
                     /* Initalise TotSpawn for new values from current time step - needs to be reset for every box-layer as is the total spawn for that box-layer and added to EMBRYO.Larvae[] */
-                    for (ngene = 0; ngene < sp_numGeneTypes; ngene++)
+                    for (ngene = 0; ngene < sp_numGeneTypes; ngene++) {
                         EMBRYO[species].TotSpawn[ngene] = 0.0;
+                    }
+                    if(bm->track_contaminants && bm->flag_contamMaternalTransfer){  // Reinitialise for new spawning
+                        for (cIndex = 0; cIndex < bm->num_contaminants; cIndex++) {
+                            FunctGroupArray[species].reprodContam[cIndex] = 0.0;
+                            FunctGroupArray[species].reprodContamCount[cIndex] = 0.0;
+                        }
+                    }
 
                     /* Start evolution */
                     Find_Evolution_Stats(bm, species, llogfp, 0);
@@ -459,6 +466,10 @@ void Vertebrate_Reproduction(MSEBoxModel *bm, int wclayer, int maxdeep, int tota
                         new_num += starting_num;
                         shiftVERT[species][cohort][SN_id] = (KWSR_sp * EMBRYO[species].recruitSPden[ngene] + VERTinfo[species][cohort][SN_id] * starting_num) / (new_num + small_num);
                         shiftVERT[species][cohort][RN_id] = (KWRR_sp * EMBRYO[species].recruitSPden[ngene] + (VERTinfo[species][cohort][RN_id] - EMBRYO[species].IndSpawn[cohort]) * starting_num) / (new_num + small_num);
+                                                
+                        if(bm->track_contaminants && bm->flag_contamMaternalTransfer){
+                            Apply_Settler_Contaminants(bm, species, cohort, starting_num, new_num, EMBRYO[species].next_recruit);
+                        }
 
                         // Also check if any den active for puroposes of updating the local pools
                         if((EMBRYO[species].recruitSPden[ngene] > 0) || (lostden_zero[ngene] != 0.0))
@@ -932,13 +943,19 @@ void Ecology_Do_External_Age_Structured_Spawning(MSEBoxModel *bm, int species, i
                     EMBRYO[species].TotSpawn[recieve_ngene] += MigIndSpawn * MIGRATION[species].DEN[cohort][mid];
                     MIGRATION[species].RN[cohort][mid] -= MigIndSpawn; // Mass lost in spawning
 
+                    
+                    if(bm->track_contaminants && bm->flag_contamMaternalTransfer){
+                        quit("Have not coded contaminant transfer for externally reproducing species - if you get this message contact teh developer group and ask them to sort this for you.... if it involves salmon Beth may swear, don't worry she will be fine after a bowl of ice cream\n");
+                    }
+
                     /* If semelparous reproduction */
                     if (flagmother < 0) {
                         *semelparous_migrants = 1;
                     }
 
-                    if (isnan(MIGRATION[species].RN[cohort][mid]))
+                    if (isnan(MIGRATION[species].RN[cohort][mid])) {
                         quit("Time %e - during external spawning of %s cohort %d mid: %d have got NAN RN: %e SN: %e MigIndSpawn: %e scaled_FSPB: %e step1: %e DEN: %e\n", bm->dayt, FunctGroupArray[species].groupCode, cohort, mid, MIGRATION[species].RN[cohort][mid], MIGRATION[species].SN[cohort][mid], MigIndSpawn, FunctGroupArray[species].scaled_FSPB[cohort], step1, MIGRATION[species].DEN[cohort][mid]);
+                    }
                     
                     /**
                     //if (do_debug) {
@@ -1015,8 +1032,16 @@ void Ecology_Do_Internal_Age_Structured_Spawning(MSEBoxModel *bm, int species, i
         thisSSB = (VERTinfo[species][cohort][RN_id] + VERTinfo[species][cohort][SN_id]) * VERTinfo[species][cohort][DEN_id];
         bm->tot_SSB[species] += FunctGroupArray[species].scaled_FSPB[cohort] * thisSSB;
 
-		if(bm->flag_do_evolution)
-			recieve_ngene = Do_Inheritance(bm, species, ngene, basecohort, cohort, llogfp);
+        if(bm->flag_do_evolution) {
+            recieve_ngene = Do_Inheritance(bm, species, ngene, basecohort, cohort, llogfp);
+        }
+        
+        if(bm->track_contaminants && bm->flag_contamMaternalTransfer){
+            if(EMBRYO[species].IndSpawn[cohort] > 0) {  // Only transfer contaminants if actually producing any spawn
+                Get_Parental_Contaminants(bm, species, cohort, flagmother, VERTinfo[species][cohort][DEN_id]);
+            }
+        }
+            
 		EMBRYO[species].TotSpawn[recieve_ngene] += EMBRYO[species].IndSpawn[cohort] * VERTinfo[species][cohort][DEN_id];
 
         /**
@@ -1293,10 +1318,15 @@ void Ecology_Find_Embryoes(MSEBoxModel *bm, int species, int stock_id, double pl
 				EMBRYO[species].Larvae[stock_id][ngene][qid], EMBRYO[species].TotSpawn[ngene], recruit_sp);
 		}
         **/
+        
+        if(bm->track_contaminants && bm->flag_contamMaternalTransfer){
+            Store_Recruit_Contaminants(bm, species, stock_id, ngene, qid);
+        }
 	}
     
-    if (bm->flag_do_evolution) /* Redistribute larvae across based on evolutiomn curve if necesary */
+    if (bm->flag_do_evolution){ /* Redistribute larvae across based on evolutiomn curve if necesary */
         Evolution_Curve(bm, species, stock_id, qid, do_debug, llogfp);
+    }
     
     return;
 }
@@ -1397,14 +1427,12 @@ void Get_Recruits(MSEBoxModel *bm, int species, int stock_id, double plankton, F
         case BevHolt_rand_recruit: /* Spawn is based on Beverton Holt with lognormal variation and
 		 dependence on plankton levels */
 			step1 = Util_Logx_Result(-lognorm_mu, lognorm_sigma);
-			step2 = (recSTOCK[species][stock_id] * BHalpha_sp * EMBRYO[species].Larvae[stock_id][ngene][qid] / (BHbeta_sp + bm->totfishpop[species]
-					* stock_prop[species][stock_id])) * (plankton / bm->ref_chl);
+			step2 = (recSTOCK[species][stock_id] * BHalpha_sp * EMBRYO[species].Larvae[stock_id][ngene][qid] / (BHbeta_sp + bm->totfishpop[species] * stock_prop[species][stock_id])) * (plankton / bm->ref_chl);
 			temprec = step2 * step1;
 			break;
 		case recover_recruit: /* Spawn is allowed a recovery encouraging boost of recruits
 		 after "recovery_span" years of depressed stock levels */
-			temprec = (recSTOCK[species][stock_id] * BHalpha_sp * EMBRYO[species].Larvae[stock_id][ngene][qid] / (BHbeta_sp + bm->totfishpop[species]
-					* stock_prop[species][stock_id]));
+			temprec = (recSTOCK[species][stock_id] * BHalpha_sp * EMBRYO[species].Larvae[stock_id][ngene][qid] / (BHbeta_sp + bm->totfishpop[species] * stock_prop[species][stock_id]));
 
 			if (recover_help[species][0] && (recover_help_set[species] <= bm->dayt - (recover_span * recover_subseq))) {
 				temprec *= recover_mult_sp;
@@ -1415,8 +1443,7 @@ void Get_Recruits(MSEBoxModel *bm, int species, int stock_id, double plankton, F
 			}
 			break;
 		case force_recover_recruit: /* Spawn has a pre-specified recovery encouraging boost of recruits */
-			temprec = (recSTOCK[species][stock_id] * BHalpha_sp * EMBRYO[species].Larvae[stock_id][ngene][qid] / (BHbeta_sp + bm->totfishpop[species]
-					* stock_prop[species][stock_id]));
+			temprec = (recSTOCK[species][stock_id] * BHalpha_sp * EMBRYO[species].Larvae[stock_id][ngene][qid] / (BHbeta_sp + bm->totfishpop[species] * stock_prop[species][stock_id]));
 
 			if ((bm->dayt >= recover_start_sp) && (bm->dayt <= (recover_start_sp + recover_subseq))) {
 				temprec *= recover_mult_sp;
@@ -1496,6 +1523,10 @@ void Get_Recruits(MSEBoxModel *bm, int species, int stock_id, double plankton, F
 		}
         **/
         
+        if(bm->track_contaminants && bm->flag_contamMaternalTransfer){
+            Get_Recruit_Contaminants(bm, species, ngene, stock_id, qid);
+        }
+        
 	}
     
 	return;
@@ -1543,6 +1574,7 @@ double Get_Enviro_Recruit_Forcing(MSEBoxModel *bm, int species, int do_debug, FI
 	double enviro_scalar = 1.0;
 	double pHscalar = 1.0;
 	double Tscalar = 1.0;
+    double recCcorr = 1.0;
     //int recruit_sp = (int) (FunctGroupArray[species].speciesParams[flagrecruit_id]);
     
     if(!bm->flagtempdepend_reprod) { // Have turned off temperature dependent movement
@@ -1618,7 +1650,8 @@ double Get_Enviro_Recruit_Forcing(MSEBoxModel *bm, int species, int do_debug, FI
 	/* If we have contaminant then take them into account as well. */
 	if(bm->track_contaminants){
 		/* Contaminant effects */
-		enviro_scalar *= FunctGroupArray[species].Ccorr;
+        recCcorr = Calculate_Contaminant_Repro_Scalar(bm, species);
+		enviro_scalar *= recCcorr;
 	}
 
 	/* Environmental forcing */
@@ -1918,14 +1951,20 @@ void Find_Final_Recruit_Distribution(MSEBoxModel *bm, int species, double enviro
 
         EMBRYO[species].num_recruits_updating[bm->current_box][wclayer][ngene][qid] = EMBRYO[species].num_recruits[bm->current_box][wclayer][ngene][qid];
         
-        /**/
+        
+        /* Now find the contaminant content */
+        if(bm->track_contaminants && bm->flag_contamMaternalTransfer){
+            Set_Recruit_Final_Contaminants(bm, wclayer, species, ngene, qid);
+        }
+        
+        /**
         //if (do_debug && (bm->which_check == species)) {
         //if (species == 33) {
         //if (species == 52) {
         if (species < 6) {
             fprintf(llogfp, "Time: %e %s-%d box %d-%d totrecruit: %e, num_recruit: %e, qid: %d recruitType: %d\n", bm->dayt, FunctGroupArray[species].groupCode, ngene, bm->current_box, wclayer, totrecruit[species][stock_id][ngene], EMBRYO[species].num_recruits[bm->current_box][wclayer][ngene][qid], qid, FunctGroupArray[species].recruitType);
 		}
-        /**/
+        **/
 	}
 
 	return;
@@ -2130,7 +2169,7 @@ void Store_Recruitment_Diagnostics(MSEBoxModel *bm, int species, int use_aggrega
 	biomass = 0.0;
 	for(ngene = 0; ngene < sp_numGeneTypes; ngene++){
 
-		if(bm->track_contaminants){
+		if(bm->track_contaminants ){
 			Contaminant_Update_ContactMort_Record(bm, species, ngene);
 		}
 
@@ -2348,6 +2387,11 @@ void Get_Settlers(MSEBoxModel *bm, int species, int wclayer, int stock_id, int *
             **/
 
 		}
+        
+        if(bm->track_contaminants && bm->flag_contamMaternalTransfer){
+            Get_Settler_Contaminants(bm, wclayer, species, ngene, EMBRYO[species].next_recruit, EMBRYO[species].recruitSPden[ngene]);
+        }
+
 	}
 	return;
 }

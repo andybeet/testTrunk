@@ -17,15 +17,23 @@ void Contaminant_Record_Death(MSEBoxModel *bm, int sp, int cohort, double amount
 void Contaminant_Write_Contact_Record(MSEBoxModel *bm);
 void Contaminant_Close_Contact_Record(MSEBoxModel *bm);
 void Change_Contaminant_Levels(MSEBoxModel *bm, BoxLayerValues *boxLayerInfo, HABITAT_TYPES habitat, double dtsz, int offset);
-void Age_Contaminants_Store(MSEBoxModel *bm, int sp, int cohort, int nextcid, double dennow, double this_p_ageup);
-void Age_Contaminants_Update(MSEBoxModel *bm, int sp, int cohort, double denup, double dennow, double nextden, int ij, int k);
-
 void Contaminant_Update_ContactMort_Record(MSEBoxModel *bm, int sp, int cohort);
 void Calculate_Contaminant_Q10_Corrections(MSEBoxModel *bm, BoxLayerValues *boxLayerInfo, HABITAT_TYPES habitat);
+
+void Age_Contaminants_Store(MSEBoxModel *bm, int sp, int cohort, int nextcid, double dennow, double this_p_ageup);
+void Age_Contaminants_Update(MSEBoxModel *bm, int sp, int cohort, double denup, double dennow, double nextden, int ij, int k);
+void Get_Parental_Contaminants(MSEBoxModel *bm, int sp, int cohort, int flagmother, double this_den);
+void Store_Recruit_Contaminants(MSEBoxModel *bm, int sp, int stock_id, int ngene, int qid);
+void Get_Recruit_Contaminants(MSEBoxModel *bm, int sp, int stock_id, int ngene, int qid);
+void Set_Recruit_Final_Contaminants(MSEBoxModel *bm, int wclayer, int sp, int ngene, int qid);
+void Get_Settler_Contaminants(MSEBoxModel *bm, int wclayer, int sp, int ngene, int qid, double recruitSPden);
+void Apply_Settler_Contaminants(MSEBoxModel *bm, int sp, int cohort, double starting_num, double new_num, int qid);
+void Get_Suckling_Contaminants(MSEBoxModel *bm, int sp, int ad_cohort, int juv_cohort);
 
 int Loose_Contaminant(MSEBoxModel *bm, BoxLayerValues *boxLayerInfo, HABITAT_TYPES globalHabitat, HABITAT_TYPES habitat, int species, int cohort, double amountLost, double ***spSPinfo, double initialBiomass);
 int Gain_Contaminants(MSEBoxModel *bm, BoxLayerValues *boxLayerInfo, HABITAT_TYPES globalHabitat, HABITAT_TYPES habitat, int species, int cohort, double amountLost, double ***spSPinfo, double initialBiomass);
 
+double Calculate_Contaminant_Repro_Scalar(MSEBoxModel *bm, int species);
 double Avoid_Contaminants(MSEBoxModel *bm, int groupIndex, int cohort, int box, int layer);
 
 void Get_ContamMoveEffects(MSEBoxModel *bm, int species, int cohort, int box, int layer);

@@ -253,6 +253,9 @@ typedef struct {
     double ****agingContam;       /* For transferring contaminants */
     double *contaminantSpMort;	/* Mortality of each group/cohort due to all contaminants - calculated for each timestep */
     double **calcCLinearMort;	/* Mortality of each group/cohort due to this contaminant - calculated for each timestep */
+    double *reprodContam; /* Maternal transfer occuring during recruitment per species */
+    double *reprodContamCount; /* Count of parents contributing contaminants */
+    double *LocalPopCount; /* Count of local juveniels for suckling transfer of contaminants */
 
     /* Additional tracers - only allocated if bm->track_atomic_ratio is TRUE.*/
     int **addRatioTracers;		/** The index of the additinal ratio tracers. One tracer per cohort per additional element we are tracking */
@@ -420,6 +423,12 @@ typedef struct{
     double ****num_recruits_updating;
     
     int *migIDmatch;
+    
+    /* Contaminant related */
+    double ****Contam;
+    double **AverageContam;
+    double *****RecruitContam;
+    double **SettlerContam;
 
 }DemographicStruct;
 extern DemographicStruct *EMBRYO;

@@ -907,6 +907,12 @@ int Util_Read_Functional_Group_XML(MSEBoxModel *bm, char *fileName, FILE *llogfp
 			FunctGroupArray[i].contaminantSpMort = Util_Alloc_Init_1D_Double(FunctGroupArray[i].numCohorts, 0.0);
 			FunctGroupArray[i].calcCLinearMort = Util_Alloc_Init_2D_Double(3, FunctGroupArray[i].numCohortsXnumGenes, 0.0);
             FunctGroupArray[i].agingContam = Util_Alloc_Init_4D_Double((bm->wcnz+bm->sednz), bm->nbox, bm->num_contaminants, FunctGroupArray[i].numCohorts, 0);
+            
+            if(bm->track_contaminants){
+                FunctGroupArray[i].reprodContam = Util_Alloc_Init_1D_Double(bm->num_contaminants, 0);
+                FunctGroupArray[i].reprodContamCount = Util_Alloc_Init_1D_Double(bm->num_contaminants, 0);
+                FunctGroupArray[i].LocalPopCount = Util_Alloc_Init_1D_Double(FunctGroupArray[i].numCohortsXnumGenes, 0);
+            }
 		}
 
 		if (FunctGroupArray[i].numMoveEntries > 0)
@@ -1212,6 +1218,12 @@ void Free_Functional_Group_Memory(MSEBoxModel *bm) {
             free(FunctGroupArray[i].contaminantSpMort);
             free2d(FunctGroupArray[i].calcCLinearMort);
             free4d(FunctGroupArray[i].agingContam);
+            
+            if(bm->track_contaminants){
+                free(FunctGroupArray[i].reprodContam);
+                free(FunctGroupArray[i].reprodContamCount);
+                free(FunctGroupArray[i].LocalPopCount);
+            }
         }
 
         free2d(FunctGroupArray[i].max_scalar);

@@ -3956,6 +3956,8 @@ typedef struct {
     double *sp_MoveEffect;  /* Effect size on movement */
     double *sp_ReprodEffect;  /* Effect size on reproduction (on number of settlers) */
     double *sp_ContamScalar;  /* Generic scalar to represent contaminant effects */
+    double *sp_maternal_transfer; /* Maternal transfer rate during conception and recruitment */
+    double *sp_suckling_transfer; /* Maternal transfer rate during suckling */
     
     double ****sp_maxDoseToDate;    /* Max dose to date of each contaminant - per cohort per box and layer */
     double *sp_maxLethalConc;    /* Max concentration for lethal dose of each contaminant */
@@ -4776,11 +4778,12 @@ typedef struct {
     int flag_contamMove;
     int flag_contamMinTemp;
     int flag_detritus_contam;
+    int flag_contam_fisheries_mgmt;
+    int flag_contam_halflife_spbased;
+    int flag_contamMaternalTransfer;
     int contam_fishery_closure_day;
     int contam_fishery_closure_period;
     int contam_fishery_closure_option;
-    int flag_contam_fisheries_mgmt;
-    int flag_contam_halflife_spbased;
     
     double contam_sig_uptake_const;
     double contam_tau;
