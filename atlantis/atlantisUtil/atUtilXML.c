@@ -121,6 +121,15 @@ SpeciesParamStruct speciesParamStructArray[tot_prms] =
 		{ "FLAG_LOG_MULT", log_mult_id, "_log_mult$", no_checking, 1.0, SP_AGE_STRUCTURED },
         { "FLAG_NORM_SIGMA", norm_sigma_id, "_norm_sigma$", no_checking, 1.0, SP_AGE_STRUCTURED },
         { "FLAG_STOCASTIC_REC", flag_recruit_stochastic_id, "_flag_recruit_stochastic$", binary_check, 1.0, SP_AGE_STRUCTURED },
+        
+        { "FLAG_PROD_ALPHA", prod_alpha_id, "^prod_alpha_", no_checking, 1.0, SP_AGE_STRUCTURED },
+        { "FLAG_DDEPEND_BETA1", den_depend_beta1_id, "^den_depend_beta1_", no_checking, 1.0, SP_AGE_STRUCTURED },
+        { "FLAG_DDEPEND_BETA2", den_depend_beta2_id, "^den_depend_beta2_", no_checking, 1.0, SP_AGE_STRUCTURED },
+        { "FLAG_TEMP_COEFFT", temp_coefft_id, "^temp_coefft_", no_checking, 1.0, SP_AGE_STRUCTURED },
+        { "FLAG_RATE_COEFFT", temp_coefft_id, "^rate_coefft_", no_checking, 1.0, SP_AGE_STRUCTURED },
+        { "FLAG_WIND_COEFFT", temp_coefft_id, "^wind_coefft_", no_checking, 1.0, SP_AGE_STRUCTURED },
+        { "FLAG_REC_VAR", recruit_var_id, "^rec_var_", no_checking, 1.0, SP_AGE_STRUCTURED },
+        
 		{ "FLAG_MIN_SPAWN_TEMP", min_spawn_temp_id, "_min_spawn_temp$", no_checking, 1.0, SP_AGE_STRUCTURED },
 		{ "FLAG_MAX_SPAWN_TEMP", max_spawn_temp_id, "_max_spawn_temp$", no_checking, 1.0, SP_AGE_STRUCTURED },
 		{ "FLAG_MIN_SPAWN_SALT", min_spawn_salt_id, "_min_spawn_salt$", no_checking, 1.0, SP_AGE_STRUCTURED },

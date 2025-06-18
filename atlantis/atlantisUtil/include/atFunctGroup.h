@@ -481,6 +481,9 @@ typedef struct{
 	double **Box;
     int **ReprodAllowed;
     
+    double ***RecruitContam;
+    double ***contam;
+    
     double **MigYOY;
     double **MigYOY_SN;
     double **MigYOY_RN;

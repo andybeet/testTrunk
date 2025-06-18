@@ -2178,6 +2178,14 @@ void createPhysicalLim_n_FLagsXML(MSEBoxModel *bm, FILE *fp, char *fileName, xml
 		Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "Ksmother_const", "Sediment smothering constant", "", XML_TYPE_FLOAT,"0");
 	}
 
+    if(bm->track_atomic_ratio == TRUE){
+        Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "Pads_r_t0", "P adsorprtion starting r", "", XML_TYPE_FLOAT,"0");
+        Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "Pads_K", "P adsorprtion coefficient", "", XML_TYPE_FLOAT,"0");
+        Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "Pads_KO", "P adsorprtion base K", "", XML_TYPE_FLOAT,"0");
+        Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "r_immob_PIP_t0", "P immobilisation dtarting point", "", XML_TYPE_FLOAT,"0");
+        
+    }
+
 }
 
 void speciesXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr doc, xmlNodePtr rootnode) {
@@ -3199,6 +3207,16 @@ void createReproductionXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr 
     Create_Species_ParamXML(bm, fileName, fp, groupingNode, norm_sigma_id, "Sigma for normal random recruitment", "", XML_TYPE_FLOAT, "");
     Create_Species_ParamXML(bm, fileName, fp, groupingNode, flag_recruit_stochastic_id, "Flag indicating whether to add normal random noise to recruitment", "", XML_TYPE_INTEGER, "");
 
+    if(bm->ice_on) {
+        Create_Species_ParamXML(bm, fileName, fp, groupingNode, prod_alpha_id, "Productivity scalar in lake recruitment function", "", XML_TYPE_FLOAT, "");
+        Create_Species_ParamXML(bm, fileName, fp, groupingNode, den_depend_beta1_id, "Density dependent coefficient in lake recruitment function", "", XML_TYPE_FLOAT, "");
+        Create_Species_ParamXML(bm, fileName, fp, groupingNode, den_depend_beta2_id, "Second density dependent coefficient in lake recruitment function", "", XML_TYPE_FLOAT, "");
+        Create_Species_ParamXML(bm, fileName, fp, groupingNode, temp_coefft_id, "Thermal index coefficient in lake recruitment function", "", XML_TYPE_FLOAT, "");
+        Create_Species_ParamXML(bm, fileName, fp, groupingNode, rate_coefft_id, "Air temperature rate of change coefficient in lake recruitment function", "", XML_TYPE_FLOAT, "");
+        Create_Species_ParamXML(bm, fileName, fp, groupingNode, wind_coefft_id, "Wind coefficient in lake recruitment function", "", XML_TYPE_FLOAT, "");
+        Create_Species_ParamXML(bm, fileName, fp, groupingNode, recruit_var_id, "Recruitment variability for use in lake recruitment function", "", XML_TYPE_FLOAT, "");
+    }
+    
 	Create_Species_ParamXML(bm, fileName, fp, groupingNode, KWSR_id, "Structural weight of group recruits", "mg N m-3", XML_TYPE_FLOAT, "0.01 - 117362680.0");
 	Create_Species_ParamXML(bm, fileName, fp, groupingNode, KWRR_id, "Reserve weight of group recruits", "mg N m-3", XML_TYPE_FLOAT, "0.038 -  311011104.0");
 

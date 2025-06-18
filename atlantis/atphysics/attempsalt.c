@@ -111,6 +111,16 @@ void tempsalt_init(MSEBoxModel *bm) {
             }
 		}
         
+        if (bm->track_wind) {
+            if (strcmp(bm->tinfo[i].name, "Wind") == 0){
+                bm->windid = bm->tinfo[i].n;
+                bm->windinput.tracerID = bm->tinfo[i].n;
+                bm->windinput.wgt_coefft = 1.0;
+                bm->windinput.ResetTol = 0.0;
+                bm->windinput.total_input = 0.0;
+            }
+        }
+        
         //printf("use_pollutantfiles %d\n", bm->use_pollutantfiles);
         
         if(bm->use_pollutantfiles){
@@ -141,6 +151,10 @@ void tempsalt_init(MSEBoxModel *bm) {
     if (bm->use_pHfiles) {
         if (bm->pHid == -1)
             quit("tempsalt_init: no phid set\n");
+    }
+    if (bm->track_wind) {
+        if (bm->windid == -1)
+            quit("tempsalt_init: no windid set\n");
     }
     if(bm->use_pollutantfiles){
         if (bm->noiseid == -1)
@@ -174,6 +188,13 @@ void tempsalt_init(MSEBoxModel *bm) {
 		init_PhyPropertyData(bm, fp, &bm->pHinput, "pH",  "pH", "pH", -10, 10, TRUE);
 	}
     
+    if (bm->track_wind) {
+        if (bm->windid == -1)
+            quit("tempsalt_init: no windid set\n");
+
+        init_PhyPropertyData(bm, fp, &bm->windinput, "Wind",  "Wind", "Wind", -100, 100, TRUE);
+    }
+
     if (bm->use_pollutantfiles) {
         init_PhyPropertyData(bm, fp, &bm->noiseinput, "noise_pollution", "noise_pollution", "Noise_Pollution", 0, 10000, TRUE);
         init_PhyPropertyData(bm, fp, &bm->lightpinput, "light_pollution", "light_pollution", "Light_Pollution", 0, 10000, TRUE);
@@ -206,6 +227,10 @@ void tempsalt_init(MSEBoxModel *bm) {
 		bm->pHinput.curFile = 0;
 		open_phyprop(bm, &(bm->pHinput));
 	}
+    if (bm->track_wind) {
+        bm->windinput.curFile = 0;
+        open_phyprop(bm, &(bm->windinput));
+    }
     if (bm->use_VertMixfiles) {
         bm->VertMixinput.curFile = 0;
         open_phyprop(bm, &(bm->VertMixinput));
@@ -232,6 +257,9 @@ void tempsalt_init(MSEBoxModel *bm) {
 	if (bm->use_pHfiles) {
 		get_property(bm, &(bm->pHinput));
 	}
+    if (bm->track_wind) {
+        get_property(bm, &(bm->windinput));
+    }
     if (bm->use_VertMixfiles) {
         get_property(bm, &(bm->VertMixinput));
     }
@@ -478,6 +506,9 @@ void freeTempSalt(MSEBoxModel *bm) {
 	if (bm->use_tempfiles) {
 		free_PhyPropertyData(bm, &bm->tempinput);
 	}
+    if (bm->track_wind) {
+        free_PhyPropertyData(bm, &bm->windinput);
+    }
     if (bm->use_pollutantfiles) {
         free_PhyPropertyData(bm, &bm->noiseinput);
         free_PhyPropertyData(bm, &bm->lightpinput);

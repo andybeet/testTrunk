@@ -22,10 +22,12 @@ void Calculate_Contaminant_Q10_Corrections(MSEBoxModel *bm, BoxLayerValues *boxL
 
 void Age_Contaminants_Store(MSEBoxModel *bm, int sp, int cohort, int nextcid, double dennow, double this_p_ageup);
 void Age_Contaminants_Update(MSEBoxModel *bm, int sp, int cohort, double denup, double dennow, double nextden, int ij, int k);
+void Age_MigrantContaminants_Update(MSEBoxModel *bm, int sp, int nextcid, int cohort, int mid, double oldden, double num_aging) ;
 void Get_Parental_Contaminants(MSEBoxModel *bm, int sp, int cohort, int flagmother, double this_den);
 void Store_Recruit_Contaminants(MSEBoxModel *bm, int sp, int stock_id, int ngene, int qid);
 void Get_Recruit_Contaminants(MSEBoxModel *bm, int sp, int stock_id, int ngene, int qid);
-void Set_Recruit_Final_Contaminants(MSEBoxModel *bm, int wclayer, int sp, int ngene, int qid);
+void Set_Recruit_Final_Contaminants(MSEBoxModel *bm, int wclayer, int sp, int ngene, int mid, int qid, int recruit_outside);
+void Get_SettlerMigrant_Contaminants(MSEBoxModel *bm, int sp, int ngene, int mid, double oldden, double newden) ;
 void Get_Settler_Contaminants(MSEBoxModel *bm, int wclayer, int sp, int ngene, int qid, double recruitSPden);
 void Apply_Settler_Contaminants(MSEBoxModel *bm, int sp, int cohort, double starting_num, double new_num, int qid);
 void Get_Suckling_Contaminants(MSEBoxModel *bm, int sp, int ad_cohort, int juv_cohort);
@@ -35,6 +37,9 @@ int Gain_Contaminants(MSEBoxModel *bm, BoxLayerValues *boxLayerInfo, HABITAT_TYP
 
 double Calculate_Contaminant_Repro_Scalar(MSEBoxModel *bm, int species);
 double Avoid_Contaminants(MSEBoxModel *bm, int groupIndex, int cohort, int box, int layer);
+double ContaminantMigrationIn(MSEBoxModel *bm, int sp, int n, int mid, double oldden, double num_returning);
+double ContaminantMigrationOut(MSEBoxModel *bm, int sp, int cohort, int mid, double oldden, double num_leaving);
+double ContaminantDirectRectuitMigrants(MSEBoxModel *bm, int sp, int n, int mid, double oldden, double num_returning);
 
 void Get_ContamMoveEffects(MSEBoxModel *bm, int species, int cohort, int box, int layer);
 void Move_Vert_Contaminated(MSEBoxModel *bm, int sp, int cohort, double ****currentden);

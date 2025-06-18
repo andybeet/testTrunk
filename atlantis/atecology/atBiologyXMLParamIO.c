@@ -804,6 +804,13 @@ static void Read_Physical_Limitation(MSEBoxModel *bm, char *fileName, xmlNodePtr
             quit("You can not have CORAL functional groups but no rugosity and aragonite tracking - either reset the functional group to something else, like SED_EP_FF, OR set track_rugosity_arag to 1 in run.prm\n");
         
     }
+    
+    if(bm->track_atomic_ratio == TRUE){
+        bm->Pads_r_t0 = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, "Pads_r_t0");
+        bm->Pads_K = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, "Pads_K");
+        bm->Pads_KO = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, "Pads_KO");
+        bm->r_immob_PIP_t0 = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, "r_immob_PIP_t0");
+    }
 
 	/*** Do checking ***/
 	/* Check that the flag_macro-model value is ok*/
@@ -3497,6 +3504,16 @@ static void Read_Reproduction_Values(MSEBoxModel *bm, char *fileName, xmlNodePtr
     Util_XML_Read_Species_Param(bm, fileName, attributeGroupNode, norm_sigma_id);
     Util_XML_Read_Species_Param(bm, fileName, attributeGroupNode, flag_recruit_stochastic_id);
     
+    if(bm->ice_on) {
+        Util_XML_Read_Species_Param(bm, fileName, attributeGroupNode, prod_alpha_id);
+        Util_XML_Read_Species_Param(bm, fileName, attributeGroupNode, den_depend_beta1_id);
+        Util_XML_Read_Species_Param(bm, fileName, attributeGroupNode, den_depend_beta2_id);
+        Util_XML_Read_Species_Param(bm, fileName, attributeGroupNode, temp_coefft_id);
+        Util_XML_Read_Species_Param(bm, fileName, attributeGroupNode, rate_coefft_id);
+        Util_XML_Read_Species_Param(bm, fileName, attributeGroupNode, wind_coefft_id);
+        Util_XML_Read_Species_Param(bm, fileName, attributeGroupNode, recruit_var_id);
+    }
+        
 	Util_XML_Read_Species_Param(bm, fileName, attributeGroupNode, KWSR_id);
 	Util_XML_Read_Species_Param(bm, fileName, attributeGroupNode, KWRR_id);
 
@@ -4188,7 +4205,7 @@ static void Read_KMIG_INVERT_XML(MSEBoxModel *bm, char *fileName, xmlNodePtr par
                     quit("Error: Unable to find parameter '%s/%s' in input file %s\n", errorString, FunctGroupArray[guild].groupCode, fileName);
                 }
                 
-                printf("Read %s values for %s now to assign\n", parameterName, FunctGroupArray[guild].groupCode, FunctGroupArray[guild].numGeneTypes, FunctGroupArray[guild].numCohortsXnumGenes);
+                printf("Read %s values for %s now to assign\n", parameterName, FunctGroupArray[guild].groupCode);
 
                 
                 for (b = 0; b < FunctGroupArray[guild].numCohortsXnumGenes; b++){
@@ -4355,7 +4372,11 @@ void Create_Migration_Arrays(MSEBoxModel *bm, FILE *llogfp) {
         MIGRATION[sp].PartialMigration_MinPrm = Util_Alloc_Init_2D_Int(num_migs, FunctGroupArray[sp].numStages, 0);
         MIGRATION[sp].PartialMigration_MaxPrm = Util_Alloc_Init_2D_Int(num_migs, FunctGroupArray[sp].numStages, 0);
         MIGRATION[sp].ReprodAllowedPrm = Util_Alloc_Init_2D_Int(num_migs, FunctGroupArray[sp].numStages, 0);
-                
+        
+        if(bm->track_contaminants) {
+            MIGRATION[sp].RecruitContam = Util_Alloc_Init_3D_Double(bm->num_contaminants, maxnum, FunctGroupArray[sp].numGeneTypes,0);
+            MIGRATION[sp].contam = Util_Alloc_Init_3D_Double(bm->num_contaminants, maxnum, cohort, 0);
+        }
     }
 
     return;

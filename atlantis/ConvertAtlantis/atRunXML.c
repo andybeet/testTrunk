@@ -82,7 +82,6 @@ void Convert_Run_To_XML(MSEBoxModel *bm, char *fileName, char *outputFileName) {
 	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flaghemisphere", "Flag for hemisphere model is in (0 = southern; 1 = northern).", "", XML_TYPE_BOOLEAN,"0");
 
 	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "trackAtomicRatio", "Flag to turn on tracking atomic ratios.", "", XML_TYPE_BOOLEAN,"0");
-    
     bm->track_atomic_ratio = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, binary_check, "trackAtomicRatio");
     if(bm->track_atomic_ratio) {
         Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flagratio_warn", "Flag to turn on atomic ratio warning messages.", "", XML_TYPE_BOOLEAN,"0");
@@ -90,6 +89,9 @@ void Convert_Run_To_XML(MSEBoxModel *bm, char *fileName, char *outputFileName) {
         Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "N_to_P", "Base ratio of Nitrogen to Phosphorous.", "", XML_TYPE_FLOAT,"0");
     }
     
+    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "trackWind", "Flag to turn on tracking wind using forcing files.", "", XML_TYPE_BOOLEAN,"0");
+    bm->track_wind = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, binary_check, "trackWind");
+
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "external_populations", "Flag indicating use of external population model", "", XML_TYPE_BOOLEAN,"0");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_multiyr_migs", "Flag to turn on multiyear migrations.", "", XML_TYPE_BOOLEAN,"0");
 

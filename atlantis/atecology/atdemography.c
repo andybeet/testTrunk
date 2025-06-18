@@ -1337,6 +1337,7 @@ void Ecology_Find_Embryoes(MSEBoxModel *bm, int species, int stock_id, double pl
  */
 void Get_Recruits(MSEBoxModel *bm, int species, int stock_id, double plankton, FILE *llogfp) {
 	double step1, step2, jack_SSB, jack_B, jack_a, larval_scalar;
+    double current_ICE, prod_alpha, dd_beta1, dd_beta2, temp_coefft, rate_coefft, wind_coefft, recruit_var;
 	double temprec = 0.0;
 	double BHalpha_sp = FunctGroupArray[species].speciesParams[BHalpha_id];
 	double BHbeta_sp = FunctGroupArray[species].speciesParams[BHbeta_id];
@@ -1350,6 +1351,7 @@ void Get_Recruits(MSEBoxModel *bm, int species, int stock_id, double plankton, F
 	int recruit_sp = (int) (FunctGroupArray[species].speciesParams[flagrecruit_id]);
 	int sp_numGeneTypes = (int) (FunctGroupArray[species].numGeneTypes);
 	int ngene = 0;
+    double this_stock = 0.0;
 	//int do_debug = 0;
     //int qid = EMBRYO[species].next_spawn;
     int qid = EMBRYO[species].next_larvae;
@@ -1491,6 +1493,31 @@ void Get_Recruits(MSEBoxModel *bm, int species, int stock_id, double plankton, F
                             EMBRYO[species].Larvae[stock_id][ngene][expect_id], Rbeta_sp);
                 }
                  */
+            break;
+        case ice_wimd_based: // For lake models - from Lynch et al (2015) Journal of Great Lakes Research 41: 415–422
+            if(bm->ice_on) {
+                // Load time series values for forcing values
+                bm->airtemp_index = tsEvalR(bm->thermal_index, bm->tindex_id, bm->t, bm->tindex_rewindid);
+                bm->airT_rate_index = tsEvalR(bm->rate_index, bm->rindex_id, bm->t, bm->rindex_rewindid);
+                current_ICE = Get_Ice_Rating(bm, species);
+                
+                this_stock = bm->tot_SSB[species] * stock_prop[species][stock_id];
+
+                prod_alpha = FunctGroupArray[species].speciesParams[prod_alpha_id];
+                dd_beta1 = FunctGroupArray[species].speciesParams[den_depend_beta1_id];
+                dd_beta2 = FunctGroupArray[species].speciesParams[den_depend_beta2_id];
+                temp_coefft = FunctGroupArray[species].speciesParams[temp_coefft_id];
+                rate_coefft = FunctGroupArray[species].speciesParams[rate_coefft_id];
+                wind_coefft = FunctGroupArray[species].speciesParams[wind_coefft_id];
+                
+                recruit_var = FunctGroupArray[species].speciesParams[recruit_var_id];
+                
+                step1 = prod_alpha - dd_beta1 * this_stock * dd_beta2 * current_ICE + temp_coefft * bm->airtemp_index + rate_coefft * bm->airT_rate_index +  recruit_var * 0.5;
+                if(bm->track_wind) {
+                    step1 += (wind_coefft * current_WIND);
+                }
+                temprec = this_stock * exp(step1);
+            }
             break;
 		default:
 			quit("No such flagrecruit defined for vertebrates (%d) - value must be between 0 and 10 currently\n", recruit_sp);
@@ -1728,11 +1755,11 @@ void Recruit_Migration(MSEBoxModel *bm, int species, int wclayer, int stock_id, 
 
                         thisday = EMBRYO[species].StartDay[ngene][EMBRYO[species].next_recruit];
                     
-                        /**/
-                        //if(do_debug) {
+                        /**
+                        if(do_debug) {
                             fprintf(bm->logFile, "Time: %e %s mid: %d Return_Now = %d, Leave_Now = %d, thisday: %d\n",  bm->dayt, FunctGroupArray[species].groupCode, mid, MIGRATION[species].Return_Now[mid], MIGRATION[species].Leave_Now[mid], thisday);
-                        //}
-                        /**/
+                        }
+                        **/
 
                         /**/
                         if (thisday < MIGRATION[species].Leave_Now[mid])
@@ -1786,6 +1813,10 @@ void Recruit_Migration(MSEBoxModel *bm, int species, int wclayer, int stock_id, 
                             
                                 //fprintf(bm->logFile, "Time: %e %s-%d mid: %d now MigDEN: %e as MIGrecruit: %e MigYOY: %e embryo_recruits: %e with SN: %e and RN: %e\n", bm->dayt, FunctGroupArray[species].groupCode, ngene, mid, MIGRATION[species].DEN[ngene][mid], MIGRATION[species].recruit[ngene][mid], MIGRATION[species].MigYOY[ngene][mid], embryo_recruits, MIGRATION[species].SN[ngene][mid], MIGRATION[species].RN[ngene][mid]);
 
+                                if(bm->track_contaminants && bm->flag_contamMaternalTransfer){
+                                    Get_SettlerMigrant_Contaminants(bm, species, ngene, mid, oldDEN, MIGRATION[species].recruit[ngene][mid]);
+                                }
+                                
                                 // Reset now passed across
                                 MIGRATION[species].recruit[ngene][mid] = 0;
                             }
@@ -1954,7 +1985,7 @@ void Find_Final_Recruit_Distribution(MSEBoxModel *bm, int species, double enviro
         
         /* Now find the contaminant content */
         if(bm->track_contaminants && bm->flag_contamMaternalTransfer){
-            Set_Recruit_Final_Contaminants(bm, wclayer, species, ngene, qid);
+            Set_Recruit_Final_Contaminants(bm, wclayer, species, ngene, mid, qid, recruit_outside);
         }
         
         /**
@@ -2724,6 +2755,10 @@ void Update_Migration_Array(MSEBoxModel *bm, int species, int cohort, int maxsto
                 
                 MIGRATION[species].SN[nextcid][qid] = (oldden * oldSN + num_aging * newSN * sizeScalar) / (oldden + num_aging + small_num);
                 MIGRATION[species].RN[nextcid][qid] = (oldden * oldRN + num_aging * newRN * sizeScalar) / (oldden + num_aging + small_num);
+                
+                if(bm->track_contaminants){
+                    Age_MigrantContaminants_Update(bm, species, nextcid, cohort, qid, oldden, num_aging);
+                }
                 
                 /* Update numbers */
                 MIGRATION[species].DEN[nextcid][qid] += num_aging;

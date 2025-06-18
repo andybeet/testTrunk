@@ -1215,6 +1215,10 @@ void Ecology_Total_Verts_And_Migration(MSEBoxModel *bm, double dt, FILE *llogfp)
                             VERTinfo[sp][n][RN_id] = (oldrn * oldden + stepRN) / (totden[sp][n] + small_num);
                         }
                         
+                        if(bm->track_contaminants){
+                            ContaminantMigrationIn(bm, sp, n, qid, oldden, mignum_actual);
+                        }
+                        
 						/* Reset Migration matrix if all have returned or this migration period is over */  
 						if (MIGRATION[sp].DEN[n][qid] < 0.0) {
 							if (bm->flagavgmig) {
@@ -1298,6 +1302,11 @@ void Ecology_Total_Verts_And_Migration(MSEBoxModel *bm, double dt, FILE *llogfp)
                                 stepRN = KWRR_sp * yoy_den;
                                 oldrn = VERTinfo[sp][n][RN_id];
                                 VERTinfo[sp][n][RN_id] = (oldrn * totden[sp][n] + stepRN) / (totden[sp][n] + yoy_den + small_num);
+                                
+                                if(bm->track_contaminants){
+                                    ContaminantDirectRectuitMigrants(bm, sp, n, qid, totden[sp][n], yoy_den);
+                                }
+
 
                                 totden[sp][n] += yoy_den;  // Add the recruits to tot numbers
                                 MIGRATION[sp].recruit[n][qid] = 0;  // Reset
@@ -2696,8 +2705,13 @@ void Ecology_Total_Verts_And_Migration(MSEBoxModel *bm, double dt, FILE *llogfp)
                                             // All come back together
                                             MIGRATION[sp].SN[n][qid] = (MIGRATION[sp].SN[n][qid] * MIGRATION[sp].DEN[n][qid] + bm->boxes[ij].tr[k][sn] * (mignum * totden[sp][n])) / (totmig + small_num);
                                             MIGRATION[sp].RN[n][qid] = (MIGRATION[sp].RN[n][qid] * MIGRATION[sp].DEN[n][qid] + bm->boxes[ij].tr[k][rn] * (mignum * totden[sp][n])) / (totmig + small_num);
-                                            MIGRATION[sp].DEN[n][qid] = totmig;
                                             
+                                            if(bm->track_contaminants){
+                                                ContaminantMigrationOut(bm, sp, n, qid, MIGRATION[sp].DEN[n][qid], (mignum * totden[sp][n]));
+                                            }
+
+                                            MIGRATION[sp].DEN[n][qid] = totmig;
+
 											/**
 											//if(do_debug2){
                                             if (sp == 33) {

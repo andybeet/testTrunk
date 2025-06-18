@@ -1330,6 +1330,11 @@ void Invert_Activities(MSEBoxModel *bm, BoxLayerValues *boxLayerInfo, HABITAT_TY
 				FunctGroupArray[guild].prodnDL[cohort], FunctGroupArray[guild].prodnDR[cohort]);
 	}
     */
+    
+    if(bm->track_atomic_ratio == TRUE){
+        /* P release due to respiration and excretion*/
+        Calculate_Element_Release(bm, boxLayerInfo, guild, FunctGroupArray[guild].releaseNH[cohort], WC, WC); // For now assume all releases to the Water column
+    }
 
 	return;
 }
@@ -2335,6 +2340,29 @@ void Construct_Prey_Info(MSEBoxModel *bm, FILE *llogfp, BoxLayerValues *boxLayer
 				}
 				break;
 			}
+            
+            if(bm->ice_on) {
+                if (FunctGroupArray[guild].habitatCoeffs[MIXED] > 0 ) {
+                    if ( habitat_type == WC) {
+                        switch (FunctGroupArray[guild].groupAgeType) {
+                        case AGE_STRUCTURED:
+                            /* Nothing to do here - it will be done as assessed in Calculate_PreyAvail() */
+                            break;
+                        case AGE_STRUCTURED_BIOMASS:
+                            for (cohort = 0; cohort < FunctGroupArray[guild].numCohortsXnumGenes; cohort++) {
+                                PREYinfo[guild][cohort][habitat_type] = boxLayerInfo->localWCTracers[FunctGroupArray[guild].totNTracers[cohort]] * FunctGroupArray[guild].habitatCoeffs[MIXED];
+                            }
+                            break;
+                        case BIOMASS:
+                            if ((FunctGroupArray[guild].groupType != LAB_DET && FunctGroupArray[guild].groupType != REF_DET)) {
+                                PREYinfo[guild][0][habitat_type] = boxLayerInfo->localWCTracers[FunctGroupArray[guild].totNTracers[0]] * FunctGroupArray[guild].habitatCoeffs[MIXED];
+                            }
+                            break;
+                        }
+
+                    }
+                }
+            }
 		}
 	}
 

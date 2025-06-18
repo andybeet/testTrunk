@@ -1014,6 +1014,13 @@ xmlNodePtr Create_Species_ParamXML(MSEBoxModel *bm, char *fileName, FILE *inputF
 				case Ralpha_id:
 				case jack_a_id:
 				case jack_b_id:
+                case prod_alpha_id:
+                case den_depend_beta1_id:
+                case den_depend_beta2_id:
+                case temp_coefft_id:
+                case rate_coefft_id:
+                case wind_coefft_id:
+                case recruit_var_id:
 				case PP_id:
 				case hta_id:
 				case htb_id:

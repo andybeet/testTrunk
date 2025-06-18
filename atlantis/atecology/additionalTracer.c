@@ -333,26 +333,16 @@ static int Calculate_Phosphorus_Transformation(MSEBoxModel *bm, BoxLayerValues *
 /**
  * Transfer of Carbon to and from atmosphere.
  *
- *
- *
- *
  *	Reaeration = A_sur * K_lc (CO2_sat - CO2)
- *
- *
+ * *
  *	Where:
  *
  *	A_sur = surface area m^2
  *	K_lc = carbon exchange rate m/s. Not 100% sure about this.
  *	CO2_sat = CO2 saturation concentration
  *	CO2 = CO2 concentration
- *
- *
- *
  *	where
- *
- *
  *	CO2_sat = 0.286e(-0.0314* T_s) * P_a
- *
  *
  *	where:
  *
@@ -1283,4 +1273,73 @@ void Gain_Fish_Element(MSEBoxModel *bm, BoxLayerValues *boxLayerInfo, HABITAT_TY
 			}*/
 
 	}
+}
+
+
+/********************************************* Alternative Phosphorous Code **************************************************************/
+
+/* From CSIRO EMS model
+ *
+ *  Description: Carries out phosphorus adsorption-desorption in both water column and sediments,
+ *               and considers two size classes of sediments (Fine and Mud)
+ *
+ *  Immobilisation only occurs in the sediments.
+ *
+ */
+
+
+void p_adsorption_setup(MSEBoxModel *bm, BoxLayerValues *boxLayerInfo, HABITAT_TYPES habitatType) {
+    double *tracerArray = getTracerArray(boxLayerInfo, habitatType);
+    double Tfactor;
+
+    /* make sure we grab the tracers for the correct layer type */
+    if(!tracerArray[Tfactor_i]) {
+        tracerArray[Tfactor_i] = 1.0;
+    }
+    Tfactor = tracerArray[Tfactor_i];
+
+    tracerArray[Pads_r_i] = bm->Pads_r_t0 * Tfactor;
+    tracerArray[r_immob_PIP_i] = bm->r_immob_PIP_t0 * Tfactor;
+    tracerArray[TIP_i] += tracerArray[PIP_i] + tracerArray[PIPI_i] + tracerArray[PIP_Dust_i];
+}
+
+void p_adsorption_calc(MSEBoxModel *bm, BoxLayerValues *boxLayerInfo, HABITAT_TYPES habitatType)
+{
+    double *tracerArray = getTracerArray(boxLayerInfo, habitatType);
+    double porosity, net_desorp, PIP_immob, net_desorp_Dust, PIP_immob_Dust;
+    double Pads_r = tracerArray[Pads_r_i];
+    double r_immob_PIP = tracerArray[r_immob_PIP_i];
+    double Oxygen = tracerArray[Oxygen_i];
+    double DIP = tracerArray[DIP_i];
+    double EFI = tracerArray[EFI_i];
+    double PIP = tracerArray[PIP_i];
+    double PIP_Dust = tracerArray[PIP_Dust_i];
+    double Dust = tracerArray[Dust_i];
+
+    if(habitatType != SED) {
+        porosity = 1.0;
+    } else {
+        porosity = bm->boxes[bm->current_box].sm.porosity[bm->current_layer];
+    }
+        
+    EFI = max(bm->min_pool, (EFI - Dust));
+    Dust = max(bm->min_pool, Dust);
+
+    net_desorp = Pads_r * (PIP / (EFI * bm->Pads_K) -  DIP * (Oxygen / (bm->Pads_KO + Oxygen)));
+    PIP_immob = r_immob_PIP * PIP;
+    
+    tracerArray[DIP_i] += (net_desorp) / porosity;
+    tracerArray[PIP_i] -= (net_desorp + PIP_immob);
+    tracerArray[PIPI_i] += PIP_immob;
+
+    net_desorp_Dust = Pads_r * ( PIP_Dust / (Dust * bm->Pads_K) - DIP * (Oxygen / (bm->Pads_KO + Oxygen)));
+    PIP_immob_Dust = r_immob_PIP * PIP_Dust;
+    
+    tracerArray[DIP_i] += (net_desorp_Dust) / porosity;
+    tracerArray[PIP_Dust_i] -= (net_desorp_Dust + PIP_immob_Dust);
+    tracerArray[PIPI_i] += PIP_immob_Dust;
+    tracerArray[TIP_i] += tracerArray[PIP_i] + tracerArray[PIPI_i] + tracerArray[PIP_Dust_i];
+    
+    return;
+
 }

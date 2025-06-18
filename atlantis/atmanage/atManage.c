@@ -83,8 +83,8 @@ double k_proprecfish;
  * are carried out in Annual_Fisheries_Mgmt()
  */
 void Manage_Calculate_Total_Effort(MSEBoxModel *bm, FILE *llogfp) {
-	double EFF_scale1 = 0.0, EFF_scale2 = 0.0, EFF_scale3 = 0.0, EFF_scale4, FCpressure, orig_FCpressure, fish_infringe, FCdisplaced, prop_pop_fish = 0.0, localcell_vol, FC_likeREEF, FC_likeFLAT, FC_likeSOFT, FC_dempel, reef_area, flat_area, soft_area, otherFC_likeREEF, otherFC_likeFLAT, totconflict, otherFC_likeSOFT, otherFC_dempel, dempel_match, K_GearConflict, conflict_contrib, active_scale, step1_cpue, totcatch, dummy;
-	int ij, k, sp, nf, flagspeffortmodel, fishery_id, flagmanage, end_trigger_tripped, new_fish_loc = 0, nstock,
+	double EFF_scale1 = 0.0, EFF_scale2 = 0.0, EFF_scale3 = 0.0, EFF_scale4, FCpressure, orig_FCpressure, fish_infringe, FCdisplaced, prop_pop_fish = 0.0, localcell_vol, FC_likeREEF, FC_likeFLAT, FC_likeSOFT, FC_dempel, reef_area, flat_area, soft_area, otherFC_likeREEF, otherFC_likeFLAT, totconflict, otherFC_likeSOFT, otherFC_dempel, dempel_match, K_GearConflict, conflict_contrib, active_scale, step1_cpue, totcatch, dummy, mpa_scale, mpa_infringe;
+	int ij, k, sp, nf, flagspeffortmodel, fishery_id, flagmanage, end_trigger_tripped, new_fish_loc = 0, nstock, flagfcmpa,
     crunch_id;
     //int do_debug_nf;
     //int do_debug;
@@ -328,7 +328,10 @@ void Manage_Calculate_Total_Effort(MSEBoxModel *bm, FILE *llogfp) {
 
 		/* Determine effort model type */
 		flagspeffortmodel = (int) (bm->FISHERYprms[fishery_id][flageffortmodel_id]);
+        
+        //fprintf(llogfp, "Time: %e %s flagspeffortmodel: %d\n", bm->dayt, FisheryArray[fishery_id].fisheryCode, flagspeffortmodel);
 
+        
         /* Check if fishery activated and if no set to zero and only continue if fishery active this time step */
 		if (((!flagspeffortmodel) && ((!mEff[fishery_id][bm->NextQofY]) && (!mEff[fishery_id][bm->QofY]))) || (!bm->FISHERYprms[fishery_id][fisheriesactive_id])) {
 			for (ij = 0; ij < bm->nbox; ij++) {
@@ -403,26 +406,24 @@ void Manage_Calculate_Total_Effort(MSEBoxModel *bm, FILE *llogfp) {
 
 					scale_effort[fishery_id] = EFF_scale0 * EFF_scale1 * EFF_scale2 * EFF_scale3 * EFF_scale4;
 
-                    /*
-					if (do_debug_nf) {
+                    /**
+					//if (do_debug_nf) {
 						fprintf(llogfp, "Time: %e box %d %s in %d FCpressure: %e, EFF_scale0: %e, EFF_scale1: %e, EFF_scale2: %e, EFF_scale3: %e, EFF_scale4: %e\n", bm->dayt,
 								ij, FisheryArray[fishery_id].fisheryCode, ij, FCpressure, EFF_scale0, EFF_scale1, EFF_scale2, EFF_scale3, EFF_scale4);
-					}
-                    */
+					//}
+                     **/
 
 					/* Spatial management */
 					orig_FCpressure = FCpressure;
 					FCpressure = FCpressure * bm->MPA[ij][fishery_id];
                     
-                    /* Effort displacement */
-
-                    /*
-					if (do_debug_nf) {
+                    /**
+					//if (do_debug_nf) {
 						//if(fishery_id == trapBMS_id)
 						fprintf(llogfp, "Time: %e, box %d %s FCpressure: %e (with MPA_scale: %e)\n", bm->dayt, ij, FisheryArray[fishery_id].fisheryCode,
 								FCpressure, bm->MPA[ij][fishery_id]);
-					}
-                    */
+					//}
+                    **/
 
 					/* Potential infringement (if using spatial management) is calculated
 					 as a percentage of the fishing that would occur if the area wasn't spatially managed */
@@ -454,6 +455,23 @@ void Manage_Calculate_Total_Effort(MSEBoxModel *bm, FILE *llogfp) {
 						FCpressure = tsEval(&this_tsEffort->ts, bm->tseffortid[fishery_id], bm->t);
 					else
 						FCpressure = tsEvalEx(&this_tsEffort->ts, bm->tseffortid[fishery_id], bm->t);
+                    
+                    /* Spatial management */
+                    flagfcmpa = (int) (bm->FISHERYprms[fishery_id][flagmpa_id]);
+                    if (flagfcmpa) {
+                        mpa_scale = bm->MPA[bm->current_box][fishery_id];
+                        
+                        /* Allow for infringement */
+                        if (bm->flaginfringe) {
+                            mpa_infringe = bm->FISHERYprms[fishery_id][infringe_id];
+                            if (mpa_infringe > mpa_scale)
+                                mpa_scale = mpa_infringe;
+                        }
+                    } else {
+                        mpa_scale = 1.0;
+                    }
+                    
+                    FCpressure = FCpressure * mpa_scale;
                     
                     if (bm->flagdisplace) {
                         orig_FCpressure = FCpressure;

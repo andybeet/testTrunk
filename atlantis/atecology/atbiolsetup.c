@@ -2545,6 +2545,12 @@ void Free_Migration(MSEBoxModel *bm) {
             i_free2d(MIGRATION[sp].PartialMigration_MinPrm);
             i_free2d(MIGRATION[sp].PartialMigration_MaxPrm);
             i_free2d(MIGRATION[sp].ReprodAllowedPrm);
+            
+            if(bm->track_contaminants) {
+                free3d(MIGRATION[sp].RecruitContam);
+                free3d(MIGRATION[sp].contam);
+            }
+
 
         }
 	}

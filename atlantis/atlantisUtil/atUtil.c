@@ -322,6 +322,15 @@ void Util_Setup_Species_Param_Strings(MSEBoxModel *bm) {
 	sprintf(paramStrings[prop_spawn_lost_id], "%s", "prop_spawn_lost_");
 	sprintf(paramStrings[jack_a_id], "%s", "jack_a_");
 	sprintf(paramStrings[jack_b_id], "%s", "jack_b_");
+    
+    sprintf(paramStrings[prod_alpha_id], "%s", "prod_alpha_");
+    sprintf(paramStrings[den_depend_beta1_id], "%s", "den_depend_beta1_");
+    sprintf(paramStrings[den_depend_beta2_id], "%s", "den_depend_beta2_");
+    sprintf(paramStrings[temp_coefft_id], "%s", "temp_coefft_");
+    sprintf(paramStrings[rate_coefft_id], "%s", "rate_coefft_");
+    sprintf(paramStrings[wind_coefft_id], "%s", "wind_coefft_");
+    sprintf(paramStrings[recruit_var_id], "%s", "recruit_var_");
+    
 	sprintf(paramStrings[intersp_depend_recruit_id], "%s", "intersp_depend_recruit_");
 	sprintf(paramStrings[intersp_depend_sp_id], "%s", "intersp_depend_sp_");
 	sprintf(paramStrings[intersp_depend_scale_id], "%s", "intersp_depend_scale_");

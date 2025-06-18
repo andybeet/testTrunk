@@ -549,6 +549,9 @@ int Calculate_Contaminants_Flux(MSEBoxModel *bm, BoxLayerValues *boxLayerInfo, H
 	case LAND_BASED:
 		quit("Calculate_Contaminants_Flux not yet handling Land\n");
 		break;
+    case MIXED:
+        quit("How did we get here as should come through a primary habitat\n");
+        break;
     default:
         quit("Got to default case with no entry in Contaminats_Flux");
         break;
@@ -1552,6 +1555,13 @@ int Calculate_Species_Contaminant_Effects(MSEBoxModel *bm, int box, int clayer, 
 		//tracerArray = (double*) bm->boxes[box].tr[0];
 		elementTracerArray = (double*) bm->boxes[box].tr[0];
 		break;
+    case LAND_BASED:
+    case ICE_BASED:
+        quit("Get developers to add ice/land case for contaminants\n");
+        break;
+    case MIXED:
+        quit("How did we get here as should come through a primary habitat\n");
+        break;
 	default:
 		abort();
 		break;
@@ -1729,6 +1739,56 @@ void Age_Contaminants_Update(MSEBoxModel *bm, int sp, int cohort, double denup, 
     }
 }
 
+/* Contaminant transfer for migrants during aging */
+void Age_MigrantContaminants_Update(MSEBoxModel *bm, int sp, int nextcid, int cohort, int mid, double oldden, double num_aging) {
+    int cIndex;
+    double origContam, newContam;
+    
+    // For species without live birth and maternal care
+    for (cIndex = 0; cIndex < bm->num_contaminants; cIndex++) {
+        origContam = MIGRATION[sp].contam[nextcid][mid][cIndex];
+        newContam = MIGRATION[sp].contam[cohort][mid][cIndex];
+        if(oldden > 0) {
+            MIGRATION[sp].contam[nextcid][mid][cIndex] = (origContam * oldden + newContam * num_aging) / (num_aging + oldden + small_num);
+        } else {
+            MIGRATION[sp].contam[nextcid][mid][cIndex] = newContam;
+        }
+    }
+}
+
+/* Migration return of contaminants */
+double ContaminantDirectRectuitMigrants(MSEBoxModel *bm, int sp, int n, int mid, double oldden, double num_returning) {
+    double ans = 0.0;
+    
+    return ans;
+}
+
+/* Migration return of contaminants */
+double ContaminantMigrationIn(MSEBoxModel *bm, int sp, int n, int mid, double oldden, double num_returning) {
+    double ans = 0.0;
+    
+    return ans;
+}
+
+/* Migration of contaminants as animals leave */
+double ContaminantMigrationOut(MSEBoxModel *bm, int sp, int cohort, int mid, double oldden, double num_leaving) {
+    int cIndex;
+    double newContam = 0.0, origContam;
+    double ans = 0.0;
+    
+    // For species without live birth and maternal care
+    for (cIndex = 0; cIndex < bm->num_contaminants; cIndex++) {
+        origContam = MIGRATION[sp].contam[cohort][mid][cIndex];
+        //newContam = ;
+        if(oldden > 0) {
+            MIGRATION[sp].contam[cohort][mid][cIndex] = (origContam * oldden + newContam * num_leaving) / (num_leaving + oldden + small_num);
+        } else {
+            MIGRATION[sp].contam[cohort][mid][cIndex] = newContam;
+        }
+    }
+    return ans;
+}
+
 
 /* Larval contaminant transfer - for non mammals
  
@@ -1789,17 +1849,42 @@ void Get_Recruit_Contaminants(MSEBoxModel *bm, int sp, int stock_id, int ngene, 
 /* Now spatially allocate contamination along with recruits - doing this one step at a time so stays
  * in sync with spawning and recruitment queues
  */
-void Set_Recruit_Final_Contaminants(MSEBoxModel *bm, int wclayer, int sp, int ngene, int qid) {
+void Set_Recruit_Final_Contaminants(MSEBoxModel *bm, int wclayer, int sp, int ngene, int mid, int qid, int recruit_outside) {
     int cIndex;
     int flagmother = (int) (FunctGroupArray[sp].speciesParams[flagmother_id]);
     
     if (bm->flag_contamMaternalTransfer && (flagmother < 1)) {  // Only those not using maternal care transfer here
         for (cIndex = 0; cIndex < bm->num_contaminants; cIndex++) {
-            EMBRYO[sp].RecruitContam[bm->current_box][wclayer][ngene][qid][cIndex] = EMBRYO[sp].AverageContam[ngene][cIndex];
+            if(!recruit_outside) {
+                // Recruit inside model domain
+                EMBRYO[sp].RecruitContam[bm->current_box][wclayer][ngene][qid][cIndex] = EMBRYO[sp].AverageContam[ngene][cIndex];
+            } else {
+                // Recruit into migration array
+                MIGRATION[sp].RecruitContam[ngene][mid][cIndex] = EMBRYO[sp].AverageContam[ngene][cIndex];
+            }
         }
     }
     return;
 }
+
+/* Neonate contaminant transfer for migrants */
+void Get_SettlerMigrant_Contaminants(MSEBoxModel *bm, int sp, int ngene, int mid, double oldden, double newden) {
+    int cIndex;
+    double origContam, newContam;
+    
+    // For species without live birth and maternal care
+    for (cIndex = 0; cIndex < bm->num_contaminants; cIndex++) {
+        origContam = MIGRATION[sp].contam[ngene][mid][cIndex];
+        newContam = MIGRATION[sp].RecruitContam[ngene][mid][cIndex];
+        if(oldden > 0) {
+            MIGRATION[sp].contam[ngene][mid][cIndex] = (origContam * oldden + newContam * newden) / (newden + oldden + small_num);
+        } else {
+            MIGRATION[sp].contam[ngene][mid][cIndex] = newContam;
+        }
+    }
+}
+
+
 
 /* Neonate contaminant transfer - likely not much use for fish so use contaminant scalar on recruits for them
  Contaminant_load_offpring = Contaminant load in mother * MTR

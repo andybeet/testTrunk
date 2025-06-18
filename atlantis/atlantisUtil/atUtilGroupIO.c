@@ -1504,6 +1504,7 @@ static void Set_Group_Habitats(MSEBoxModel *bm) {
 		case ICE_MIXOTROPHS: //(dinoflagellates)
 		case ICE_ZOOBIOTA: 	//(small zooplankton)
 			FunctGroupArray[guild].habitatType = ICE_BASED;
+            FunctGroupArray[guild].habitatCoeffs[MIXED] = 1;
 			FunctGroupArray[guild].habitatCoeffs[ICE_BASED] = 1;
 			break;
 

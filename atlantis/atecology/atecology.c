@@ -2271,6 +2271,9 @@ void Epibenthic_Box(MSEBoxModel *bm, double dtsz, BoxLayerValues *boxLayerInfo, 
 					case LAND_BASED:
 						// TODO: May need to change this for ice and land
 						break;
+                    case MIXED:
+                        quit("How did we get here as should come through a primary habitat\n");
+                        break;
 					}
 				}
 			}
@@ -2324,6 +2327,9 @@ void Epibenthic_Box(MSEBoxModel *bm, double dtsz, BoxLayerValues *boxLayerInfo, 
                                     break;
                                 case ICE_BASED:
                                     this_bio = initialIceBiomass[FunctGroupArray[guild].totNTracers[cohort]];
+                                    break;
+                                case MIXED:
+                                    quit("How did we get here as should come through a primary habitat\n");
                                     break;
                             }
                         }
@@ -2925,6 +2931,9 @@ void Epibenthic_Box(MSEBoxModel *bm, double dtsz, BoxLayerValues *boxLayerInfo, 
 					biomass = initialIceBiomass[FunctGroupArray[guild].totNTracers[cohort]];
 				}
 				break;
+            case MIXED:
+                quit("How did we get here as should come through a primary habitat\n");
+                break;
 			}
 
 			if (FunctGroupArray[guild].speciesParams[flag_lim_id] == simple_ben_lim) {

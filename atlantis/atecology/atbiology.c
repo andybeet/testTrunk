@@ -239,6 +239,7 @@ static void Adapt_Diff_Method(MSEBoxModel *bm, int flagModel, double tsz, BoxLay
  */
 void Ecology_Box_Biology(MSEBoxModel *bm, Box *pBox, double dt, FILE *llogfp) {
 	double midpoint = pBox->inside.y;
+    int this_top_layer = bm->top_layer;
     
     if (verbose > 0){
         printf("processing box %d\n", pBox->n);
@@ -272,6 +273,12 @@ void Ecology_Box_Biology(MSEBoxModel *bm, Box *pBox, double dt, FILE *llogfp) {
 	/* Get local rugosity */
     Box_Rugosity(bm, pBox, 0, llogfp);
     
+    /* Get Local Wind */
+    if( bm->track_wind) {
+        this_top_layer = pBox->nz - 1;
+        current_WIND =  pBox->tr[this_top_layer][Wind_i];
+    }
+ 
 	/* Ice related biologically relevant physical ice properties */
 	if(bm->ice_on) {
 		Box_Ice_Flux(bm, pBox, llogfp);  					// Flux of dissolved properties into ice

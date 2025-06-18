@@ -508,6 +508,12 @@ void sourcesink_init(MSEBoxModel *bm) {
     /* Read recruitment environmental forcing timeseries */
     Ecology_Read_Enviro_Forcing(bm, "KWSR_forcing", &bm->KWSR_force, bm->t_units, warn);
     
+    /* Lake fish recruitment forcng timeseries */
+    if(bm->ice_on) {
+        read_bm_ts_rewind(bm, "thermal_index", &bm->thermal_index, bm->t_units, "tindex", "deg C", &bm->tindex_id, &bm->tindex_rewindid, warn);
+        read_bm_ts_rewind(bm, "rate_index", &bm->rate_index, bm->t_units, "rindex", "deg C", &bm->rindex_id, &bm->rindex_rewindid, warn);
+    }
+    
     /* Read linear mortality forcing timeseries - basing it on model time units rather than hydrodynamic time units for ease of use */
 	Ecology_Read_LinearMortality_TS(bm, "LinearMort", &bm->tslinearMort, bm->t_units, warn);
 

@@ -1065,6 +1065,8 @@ static double Get_Init_Embryos(MSEBoxModel *bm, int species, int ngene, int stoc
     double plankton = bm->ref_chl;
     double amt = 0.0;
     double this_t, this_larvae;
+    double this_stock = 0.0;
+    double prod_alpha, dd_beta1, dd_beta2, temp_coefft, rate_coefft, wind_coefft, recruit_var, current_ICE;
     
     int maxstock_id = FunctGroupArray[species].numStocks;
     int recruit_sp = (int) (FunctGroupArray[species].speciesParams[flagrecruit_id]);
@@ -1231,6 +1233,31 @@ static double Get_Init_Embryos(MSEBoxModel *bm, int species, int ngene, int stoc
             break;
         case SSB_ricker: /* SSB based version of the ricker given short lived and senescent - e.g. for cephalopods */
             temprec = bm->tot_SSB[species] * stock_prop[species][stock_id] * exp(recSTOCK[species][stock_id] * Ralpha_sp * (1.0 - bm->tot_SSB[species] * stock_prop[species][stock_id] / Rbeta_sp));
+            break;
+        case ice_wimd_based: // For lake models - from Lynch et al (2015) Journal of Great Lakes Research 41: 415–422
+            if(bm->ice_on) {
+                // Load time series values for forcing values
+                bm->airtemp_index = tsEvalR(bm->thermal_index, bm->tindex_id, bm->t, bm->tindex_rewindid);
+                bm->airT_rate_index = tsEvalR(bm->rate_index, bm->rindex_id, bm->t, bm->rindex_rewindid);
+                current_ICE = Get_Ice_Rating(bm, species);
+                
+                this_stock = bm->tot_SSB[species] * stock_prop[species][stock_id];
+
+                prod_alpha = FunctGroupArray[species].speciesParams[prod_alpha_id];
+                dd_beta1 = FunctGroupArray[species].speciesParams[den_depend_beta1_id];
+                dd_beta2 = FunctGroupArray[species].speciesParams[den_depend_beta2_id];
+                temp_coefft = FunctGroupArray[species].speciesParams[temp_coefft_id];
+                rate_coefft = FunctGroupArray[species].speciesParams[rate_coefft_id];
+                wind_coefft = FunctGroupArray[species].speciesParams[wind_coefft_id];
+                
+                recruit_var = FunctGroupArray[species].speciesParams[recruit_var_id];
+                
+                step1 = prod_alpha - dd_beta1 * this_stock * dd_beta2 * current_ICE + temp_coefft * bm->airtemp_index + rate_coefft * bm->airT_rate_index +  recruit_var * 0.5;
+                if(bm->track_wind) {
+                    step1 += (wind_coefft * current_WIND);
+                }
+                temprec = this_stock * exp(step1);
+            }
             break;
         default:
             quit("No such flagrecruit defined for vertebrates (%d) - value must be between 0 and 10 currently\n", recruit_sp);

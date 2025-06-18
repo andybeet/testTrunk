@@ -23,7 +23,7 @@ double Susp_Sed, tot_dyn_sea_area,
 	DRdepth, O2depth, newO2depth, Enviro_turb, current_layer_sed, eddy_strength,
 	BioirrigEnh, BioturbEnh, Turbatn_contribs, Irrig_contribs, cell_depth,
 	H2Otemp, current_SALT, current_PH, init_PH, Bact_stim, current_depth, area_reef, area_flat, LocalRugosity,
-	area_canyon, area_box, area_soft, current_SALT, current_ARAG;
+	area_canyon, area_box, area_soft, current_SALT, current_ARAG, current_WIND;
 
 int numwcvar, numepivar, numlandvar, numdiagvar, numfstatvar, numicevar, first_year, idum;
 

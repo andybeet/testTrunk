@@ -1085,7 +1085,7 @@ double Do_Vertebrate_Living(MSEBoxModel *bm, FILE *llogfp, int guildcase, HABITA
 					Gain_Element(bm, boxLayerInfo, WC, LabDetIndex, 0, guildcase, cohort, VprodDLchrt, level_id, isGlobal);
 
 					/* P release due to respiration and excretion*/
-					//Calculate_Element_Release(bm, boxLayerInfo, guildcase, VreleaseNHchrt, WC, level_id);
+					Calculate_Element_Release(bm, boxLayerInfo, guildcase, VreleaseNHchrt, WC, level_id);
 				}
 
 				/* Contaminants transfer */

@@ -151,7 +151,10 @@ extern double *regIDi;
 
 extern char *pFCPIN, *pFCWHT, *pFCWHS, *Box_degraded, *regids;
 
-extern double Susp_Sed, cell_depth, DRdepth, O2depth, newO2depth, current_layer_sed, Turbatn_contribs, Irrig_contribs, H2Otemp, current_SALT, current_PH, init_PH, Bact_stim, current_depth, area_reef, area_flat, area_canyon, area_box, area_soft, eddy_strength, current_SALT, LocalRugosity, current_ARAG;
+extern double Susp_Sed, cell_depth, DRdepth, O2depth, newO2depth, current_layer_sed,
+    Turbatn_contribs, Irrig_contribs, H2Otemp, current_SALT, current_PH, init_PH,
+    Bact_stim, current_depth, area_reef, area_flat, area_canyon, area_box, area_soft,
+    eddy_strength, current_SALT, LocalRugosity, current_ARAG, current_WIND;
 
 extern double tot_dyn_sea_area, Enviro_turb, BioirrigEnh, BioturbEnh;
 
@@ -469,6 +472,7 @@ void Ice_PrimaryProduction(MSEBoxModel *bm, FILE *llogfp, int sp_id, int micro_c
 		double *spUptakeFe, double *sphN);
 
 double 	Get_Ice_Presence(MSEBoxModel *bm, int sp, int stage, int ij, int k, int ***HABlike);
+double  Get_Ice_Rating(MSEBoxModel *bm, int sp);
 double 	Get_Ice_Vertebrate_Habitat_Rating(MSEBoxModel *bm, int guildcase, int stage, int boxin);
 void 	Calculate_IceBact_Scale(MSEBoxModel *bm, HABITAT_TYPES habitatType, BoxLayerValues *boxLayerInfo);
 void 	Calculate_Ice_Prey_Avail(MSEBoxModel *bm, BoxLayerValues *boxLayerInfo, int guild, double ***spPREYinfo, double *avail_Ice_Bact);

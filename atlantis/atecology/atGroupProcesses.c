@@ -413,6 +413,9 @@ static void Update_Detritus(MSEBoxModel *bm, BoxLayerValues *boxLayerInfo, HABIT
 	case LAND_BASED:
 		/* Do nothing yet */
 		break;
+    case MIXED:
+        quit("How did we get here as should come through a primary habitat\n");
+        break;
 	}
 }
 
@@ -494,6 +497,13 @@ void Update_Debug_Info(MSEBoxModel *bm, BoxLayerValues *boxLayerInfo, int habita
 			boxLayerInfo->DebugInfo[guild][EPIFAUNA][DiagnostDRsed_id] += FunctGroupArray[guild].transDR[cohort] / wcLayerThick;
 		}
 		break;
+    case LAND_BASED:
+    case ICE_BASED:
+        break;
+    case MIXED:
+        quit("How did we get here as should come through a primary habitat\n");
+        break;
+
 	}
 }
 
@@ -865,7 +875,10 @@ int Phytoplankton_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatTy
 		case LAND_BASED: // Primary producers completely constrained to land
 			Land_PrimaryProduction(bm);
 			break;
-		default:
+        case MIXED:
+            quit("How did we get here as should come through a primary habitat\n");
+            break;
+        default:
 			quit("Process type %d not recognised.\n", habitatType);
 			break;
 		}
@@ -959,6 +972,9 @@ int Invert_Consumers_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habita
 		// Nothing to do as yet
 		quit("Invert_Consumers_Process - no support for land based invert consumers yet \n");
 		break;
+    case MIXED:
+        quit("How did we get here as should come through a primary habitat\n");
+        break;
 	}
 
 	/* Calculate the linear mortality due to oxygen */
@@ -1055,6 +1071,9 @@ int Invert_Consumers_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habita
 			break;
 		case LAND_BASED:	/* Not supported */
 			break;
+        case MIXED:
+            quit("How did we get here as should come through a primary habitat\n");
+            break;
 		}
 
 		stage = FunctGroupArray[guild].cohort_stage[cohort];
@@ -1206,6 +1225,9 @@ int Coral_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatType, int 
 		DL = boxLayerInfo->localWCTracers[FunctGroupArray[LabDetIndex].totNTracers[0]];
 		DR = boxLayerInfo->localWCTracers[FunctGroupArray[RefDetIndex].totNTracers[0]];
 		break;
+    case MIXED:
+        quit("How did we get here as should come through a primary habitat\n");
+        break;
 	}
 
 	/* Calculate the linear mortality due to oxygen */
@@ -1564,6 +1586,9 @@ int Dinoflag_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatType, i
 			quit("Dinoflag_Process no support for epi or land based dinoflags\n");
 			/* Do nothing */
 			break;
+        case MIXED:
+            quit("How did we get here as should come through a primary habitat\n");
+            break;
 		}
 
 	}
@@ -2214,7 +2239,6 @@ int Refractory_Detritus_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES hab
 
 		/* If we are tracking ratios keep track of amount breaking down */
 		if(bm->track_atomic_ratio){
-
 			Calculate_Element_Release(bm, boxLayerInfo, guild, r_DR * DR, habitatType, WC);
 		}
 

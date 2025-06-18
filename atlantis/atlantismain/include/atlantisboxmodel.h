@@ -391,7 +391,8 @@ typedef enum {
 	SED,
 	EPIFAUNA,
 	LAND_BASED,
-	ICE_BASED
+	ICE_BASED,
+    MIXED
 } HABITAT_TYPES;
 
 #define nlevel_id (ICE_BASED + 1)
@@ -673,6 +674,7 @@ typedef enum {
 #define BevHolt_num_recruit 19
 #define SSB_ricker 20
 #define BevHolt_direct_num_recruit 21
+#define ice_wimd_based 22
 
 #define independent_recruit_distrib 0
 #define at_parent_location 1
@@ -1938,6 +1940,14 @@ typedef enum {
     RNcost_id,
     RSstarve_id,
     //flagusingRedusR_HCR_id,  // Using R harvest control rules for this species - just assume using Redus for all or none for now
+    /* Lake fish recruitment parameters */
+    prod_alpha_id,
+    den_depend_beta1_id,
+    den_depend_beta2_id,
+    temp_coefft_id,
+    rate_coefft_id,
+    wind_coefft_id,
+    recruit_var_id,
 	tot_prms
 
 } SPECIES_PARAMS;
@@ -4458,6 +4468,21 @@ typedef struct {
     double swr_cos_offset;
 	/*@}*/
 
+    /**@name
+     * thermal and rate index
+     */
+    /*@{*/
+    TimeSeries *thermal_index;
+    int tindex_id;
+    int tindex_rewindid;
+    double airtemp_index;
+    
+    TimeSeries *rate_index;
+    int rindex_id;
+    int rindex_rewindid;
+    double airT_rate_index;
+    /*@}*/
+
 	/**@name
 	 * Temperature and salinity model data input structure
 	 */
@@ -4480,6 +4505,7 @@ typedef struct {
 	PhyPropertyData tempinput;
 	PhyPropertyData saltinput;
 	PhyPropertyData pHinput;
+    PhyPropertyData windinput;
     PhyPropertyData swrinput;
     PhyPropertyData VertMixinput;
     PhyPropertyData noiseinput;
@@ -4493,6 +4519,7 @@ typedef struct {
 	int tempid; /**< Tracer id for temperature */
 	int saltid; /**< Tracer id for salinity */
 	int pHid; /**< Tracer id for salinity */
+    int windid; /**< Tracer id for wind */
     int noiseid; /**< Tracer id for noise pollution */
     int lightpid; /**< Tracer id for light pollution */
 	int **checkedalready; /**< Array of flags to indicate whether local temperature
@@ -4553,6 +4580,12 @@ typedef struct {
 	double Ksmother_const;
     
     int sp_boring_sponges;
+    
+    /* Phosphorous and Carbon related */
+    double Pads_r_t0;
+    double r_immob_PIP_t0;
+    double Pads_K;
+    double Pads_KO;
     
 	/*@}*/
 
@@ -4766,6 +4799,8 @@ typedef struct {
     double N_to_P;
 	AtomicRatioStructure *atomicRatioInfo;
 
+    int track_wind; /* Tracking wind for forcing recruitment */
+    
 	int track_contaminants;	/* Are we tracking contaminants in the model */
     int biopools_dodge_contam; /* So can stop biomass pools inappriopriately dodging contaminants - important in some models */
 	int num_contaminants;
