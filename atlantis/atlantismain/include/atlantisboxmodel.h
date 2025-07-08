@@ -3955,13 +3955,20 @@ typedef struct {
     double *sp_LDslope;
     double *sp_EC50;
     double *sp_ECslope;
+    double *sp_EC50_r;
+    double *sp_ECslope_r;
     double *sp_maxConcentration;
     
     double *sp_L;  // Parameters for logistic growth effects model
     double *sp_A;
     double *sp_B;
     
+    double *sp_L_r;  // Parameters for logistic reprod effects model
+    double *sp_A_r;
+    double *sp_B_r;
+    
     double *sp_GrowthThresh;  /* Threshold tissue level where get growth effects */
+    double *sp_ReprodThresh;  /* Threshold tissue level where get reprod effects */
     double *sp_GrowthEffect;  /* Effect size */
     double *sp_MoveEffect;  /* Effect size on movement */
     double *sp_ReprodEffect;  /* Effect size on reproduction (on number of settlers) */
@@ -4003,6 +4010,12 @@ typedef struct {
 #define NoGrowthEffects 0
 #define InVitro_model 1
 #define Salmon_logistic_model 2
+
+/* List of contaminant reprod options */
+#define NoReprodEffects 0
+#define Lovindeeretal 1
+#define InVitro_model_r 2
+#define Salmon_logistic_model_r 3
 
 /* List of industry model options */
 #define no_industry_model 0
@@ -4810,6 +4823,7 @@ typedef struct {
     int flag_contamInteractModel;
     int flag_contamOnlyAmplify;
     int flag_contamGrowthModel;
+    int flag_contamReprodModel;
     int flag_contamMove;
     int flag_contamMinTemp;
     int flag_detritus_contam;

@@ -804,8 +804,9 @@ int Util_Read_Functional_Group_XML(MSEBoxModel *bm, char *fileName, FILE *llogfp
         FunctGroupArray[i].needed_for_age_away = Util_Alloc_Init_1D_Int(FunctGroupArray[i].numCohortsXnumGenes, 0.0);
 
         if(bm->track_contaminants) {
-            FunctGroupArray[i].C_growth_corr = Util_Alloc_Init_1D_Double(FunctGroupArray[i].numCohortsXnumGenes, 0.0);
-            FunctGroupArray[i].C_move_corr = Util_Alloc_Init_1D_Double(FunctGroupArray[i].numCohortsXnumGenes, 0.0);
+          FunctGroupArray[i].C_growth_corr = Util_Alloc_Init_1D_Double(FunctGroupArray[i].numCohortsXnumGenes, 0.0);
+          FunctGroupArray[i].C_reprod_corr = Util_Alloc_Init_1D_Double(FunctGroupArray[i].numCohortsXnumGenes, 0.0);
+          FunctGroupArray[i].C_move_corr = Util_Alloc_Init_1D_Double(FunctGroupArray[i].numCohortsXnumGenes, 0.0);
         }
 
         //FunctGroupArray[i].GrazeLive = Util_Alloc_Init_1D_Double(FunctGroupArray[i].numCohortsXnumGenes, 0.0);
@@ -1211,6 +1212,7 @@ void Free_Functional_Group_Memory(MSEBoxModel *bm) {
 
         if(bm->track_contaminants) {
             free1d(FunctGroupArray[i].C_growth_corr);
+            free1d(FunctGroupArray[i].C_reprod_corr);
             free1d(FunctGroupArray[i].C_move_corr);
 
             i_free2d(FunctGroupArray[i].contaminantTracers);
