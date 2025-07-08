@@ -158,7 +158,7 @@ typedef struct {
     double PolluteCorr;     /** Noise and light contamination correction value for this functional group */
     double *C_growth_corr; 	/** Growth contaminantion correction value for this functional group */
     double *C_move_corr;     /** Growth contaminantion correction value for this functional group */
-    double C_reprod_corr;     /** Reproduction contaminantion correction value for this functional group */
+    double *C_reprod_corr;     /** Reproduction contaminantion correction value for this functional group */
 
 	int *habitatCoeffs; /* If the group resides in the habitat then this value will be 1.0, else it will be 0.0 */
 

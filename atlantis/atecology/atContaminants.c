@@ -61,6 +61,16 @@ void Free_Contaminants(MSEBoxModel *bm) {
         free(bm->contaminantStructure[cIndex]->sp_LDslope);
         free(bm->contaminantStructure[cIndex]->sp_EC50);
         free(bm->contaminantStructure[cIndex]->sp_ECslope);
+        free(bm->contaminantStructure[cIndex]->sp_EC50_r);
+        free(bm->contaminantStructure[cIndex]->sp_ECslope_r);
+        free2d(bm->contaminantStructure[cIndex]->gainedGlobal);
+        free(bm->contaminantStructure[cIndex]->sp_maxConcentration);
+        
+        free(bm->contaminantStructure[cIndex]->gained);
+        free4d(bm->contaminantStructure[cIndex]->sp_point);
+        
+        free(bm->contaminantStructure[cIndex]->sp_GrowthThresh);
+        free(bm->contaminantStructure[cIndex]->sp_ReprodThresh);
         free2d(bm->contaminantStructure[cIndex]->gainedGlobal);
         free(bm->contaminantStructure[cIndex]->sp_maxConcentration);
 
@@ -122,6 +132,9 @@ void Allocate_Contaiminants(MSEBoxModel *bm) {
 
         bm->contaminantStructure[cIndex]->sp_EC50 = Util_Alloc_Init_1D_Double(bm->K_num_tot_sp, 0.0);
         bm->contaminantStructure[cIndex]->sp_ECslope = Util_Alloc_Init_1D_Double(bm->K_num_tot_sp, 0.0);
+        
+        bm->contaminantStructure[cIndex]->sp_EC50_r = Util_Alloc_Init_1D_Double(bm->K_num_tot_sp, 0.0);
+        bm->contaminantStructure[cIndex]->sp_ECslope_r = Util_Alloc_Init_1D_Double(bm->K_num_tot_sp, 0.0);
 
         bm->contaminantStructure[cIndex]->interact_coefft = Util_Alloc_Init_1D_Double(bm->num_contaminants, 0.0);
 
@@ -150,9 +163,12 @@ void Allocate_Contaiminants(MSEBoxModel *bm) {
 		bm->contaminantStructure[cIndex]->sp_TimeToLD50 = Util_Alloc_Init_1D_Double(bm->K_num_tot_sp, 0.0);
 		bm->contaminantStructure[cIndex]->sp_Cx = Util_Alloc_Init_1D_Double(bm->K_num_tot_sp, 0.0);
 		bm->contaminantStructure[cIndex]->sp_Cy = Util_Alloc_Init_1D_Double(bm->K_num_tot_sp, 0.0);
-        bm->contaminantStructure[cIndex]->sp_L = Util_Alloc_Init_1D_Double(bm->K_num_tot_sp, 0.0);
-        bm->contaminantStructure[cIndex]->sp_A = Util_Alloc_Init_1D_Double(bm->K_num_tot_sp, 0.0);
-        bm->contaminantStructure[cIndex]->sp_B = Util_Alloc_Init_1D_Double(bm->K_num_tot_sp, 0.0);
+		bm->contaminantStructure[cIndex]->sp_L = Util_Alloc_Init_1D_Double(bm->K_num_tot_sp, 0.0);
+		bm->contaminantStructure[cIndex]->sp_A = Util_Alloc_Init_1D_Double(bm->K_num_tot_sp, 0.0);
+		bm->contaminantStructure[cIndex]->sp_B = Util_Alloc_Init_1D_Double(bm->K_num_tot_sp, 0.0);
+		bm->contaminantStructure[cIndex]->sp_L_r = Util_Alloc_Init_1D_Double(bm->K_num_tot_sp, 0.0);
+		bm->contaminantStructure[cIndex]->sp_A_r = Util_Alloc_Init_1D_Double(bm->K_num_tot_sp, 0.0);
+		bm->contaminantStructure[cIndex]->sp_B_r = Util_Alloc_Init_1D_Double(bm->K_num_tot_sp, 0.0);
 
         bm->contaminantStructure[cIndex]->sp_avoid = Util_Alloc_Init_1D_Double(bm->K_num_tot_sp, 0.0);
         bm->contaminantStructure[cIndex]->sp_K_avoid = Util_Alloc_Init_1D_Double(bm->K_num_tot_sp, 0.0);
@@ -1395,29 +1411,54 @@ void Get_ContamGrowthEffects(MSEBoxModel *bm, double cGroupLevel, int species, i
  * in the surrounding water columns.
  *
  */
+
 void Get_ContamReproductionEffects(MSEBoxModel *bm, double cGroupLevel, int species, int cohort, int cIndex) {
-    double chronicLevel = bm->contaminantStructure[cIndex]->sp_maxChronicConc[species];  // chronic level
-    int age_mat = (int) (FunctGroupArray[species].speciesParams[age_mat_id]);
-    double step1, step2;
-
-    if ( cohort < age_mat ) // To young for it to matter.
-        return;
-
-    if (cGroupLevel > chronicLevel) {
-        step1 = bm->contaminantStructure[cIndex]->sp_ReprodEffect[species] * cGroupLevel;
-        if (step1 > 1.0)
-            step1 = 1.0;
-        step2 = 1.0 - step1;
-
-        if (step2 < FunctGroupArray[species].C_reprod_corr) // As taking the minimum value only
-            FunctGroupArray[species].C_reprod_corr *= step2;
-
-    }
-
-    //fprintf(bm->logFile,"Time: %e %s C_growth_corr: %e\n", bm->dayt, FunctGroupArray[species].groupCode, FunctGroupArray[species].C_reprod_corr);
-
-
+  double chronicLevel = bm->contaminantStructure[cIndex]->sp_maxChronicConc[species];  // chronic level
+  int age_mat = (int) (FunctGroupArray[species].speciesParams[age_mat_id]);
+  double step1, step2, L_sp_r, b_sp_r, a_sp_r;
+  
+  if ( cohort < age_mat ) // To young for it to matter.
     return;
+  
+  switch (bm->flag_contamReprodModel){
+  case NoReprodEffects: // No repro effects
+    FunctGroupArray[species].C_reprod_corr[cohort] = 1.0;
+    break;
+  case Lovindeeretal: //Equation 13 Lovideer et al. paper  
+    if (cGroupLevel > chronicLevel) {
+      step1 = bm->contaminantStructure[cIndex]->sp_ReprodEffect[species] * cGroupLevel;
+      if (step1 > 1.0)
+        step1 = 1.0;
+      step2 = 1.0 - step1;
+      if (step2 < FunctGroupArray[species].C_reprod_corr[cohort]) // As taking the minimum value only
+        FunctGroupArray[species].C_reprod_corr[cohort] *= step2;
+    }
+    break;
+  case InVitro_model_r:  // Reprod effects as of InVitro
+    if (cGroupLevel > bm->contaminantStructure[cIndex]->sp_ReprodThresh[species]) {
+      step1 = 1.0 + pow((cGroupLevel / bm->contaminantStructure[cIndex]->sp_EC50_r[species]), bm->contaminantStructure[cIndex]->sp_ECslope_r[species]);
+      FunctGroupArray[species].C_reprod_corr[cohort] *= 1.0 / step1; // As of Laender et al 2008
+    }
+    break;
+  case Salmon_logistic_model_r: // Repro effects defined using a logistic (as defined for salmon work)
+    L_sp_r = bm->contaminantStructure[cIndex]->sp_L_r[species];
+    b_sp_r = bm->contaminantStructure[cIndex]->sp_B_r[species];
+    a_sp_r = bm->contaminantStructure[cIndex]->sp_A_r[species];
+    FunctGroupArray[species].C_reprod_corr[cohort] = 1.0 - L_sp_r / (1.0 + exp(-1.0 * a_sp_r * (cGroupLevel - b_sp_r)));
+    
+    break;
+    
+    
+  }
+  
+  // fprintf(bm->logFile,"Time: %e %s C_reprod_corr: %e\n", bm->dayt, FunctGroupArray[species].groupCode, cGroupLevel);
+  // fprintf(bm->logFile,"Time: %e %s C_reprod_corr: %e\n", bm->dayt, FunctGroupArray[species].groupCode, FunctGroupArray[species].C_reprod_corr[cohort]);
+  // 
+  
+  
+  
+  
+  return;
 }
 
 /**
@@ -1532,11 +1573,11 @@ int Calculate_Species_Contaminant_Effects(MSEBoxModel *bm, int box, int clayer, 
 
     // Reinit the scalars
     for (species = 0; species < bm->K_num_tot_sp; species++) {
-        FunctGroupArray[species].C_reprod_corr = 1.0; // Assumed multiplicative effects
         for(cohort = 0; cohort < FunctGroupArray[species].numCohortsXnumGenes; cohort++){
             FunctGroupArray[species].C_growth_corr[cohort] = 1.0; // Assumed multiplicative effects
             FunctGroupArray[species].C_move_corr[cohort] = 1.0; // Assumed multiplicative effects
             FunctGroupArray[species].contaminantSpMort[cohort] = 0.0;  // So zeroed with each new layer and box and calculated fresh in each case - assumed additive effects.
+            FunctGroupArray[species].C_reprod_corr[cohort]  = 1.0; // Assumed multiplicative effects
         }
     }
 

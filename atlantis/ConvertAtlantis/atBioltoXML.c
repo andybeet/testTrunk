@@ -3531,6 +3531,7 @@ void createContaminantsXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr 
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_contamMortModel", "Flag indicating which contaminant mortality is being used - (1) simple, (0) InVitro", "", XML_TYPE_INTEGER,"0");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_contamInteractModel", "Flag indicating which contaminant interaction model is being used - (0) none, (1) additive, (2) multiplicative, (3) most limiting", "", XML_TYPE_INTEGER,"0");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_contamGrowthModel", "Flag indicating which contaminant growth effects model is being used - (0) InVitro, (1) logistic", "", XML_TYPE_INTEGER, "1");
+    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_contamReprodModel", "Flag indicating which contaminant reprod effects model is being used - (0) off (1) Lovindeer paper equation (2) InVitro, (3) logistic", "", XML_TYPE_INTEGER, "1");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_contamOnlyAmplify", "Flag indicating whether interacting contaminants can only amplify (1) or also buffer (0) each other", "", XML_TYPE_INTEGER,"0");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_contamMove", "Flag indicating avoidance scalar used - none (0), knife-edge (1), sigmoidal (2), left shoulder flat top (3)", "", XML_TYPE_INTEGER,"0");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_contamMinTemp", "Minimum temperature to consider in contaminants relationships that involve temperature corrections", "", XML_TYPE_FLOAT,"0");
@@ -3592,6 +3593,13 @@ void createContaminantsXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr 
                 sprintf(longStr, "slope of EC50 function of value of group %s of contaminant %s.", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
                 Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
                 
+                sprintf(varStr, "%s_%s_EC50_r", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
+                sprintf(longStr, "EC50 (50 percent reprod reduction) value of group %s of contaminant %s.", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
+                Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
+                
+                sprintf(varStr, "%s_%s_ECslope_r", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
+                sprintf(longStr, "slope of EC50_r function of value of group %s of contaminant %s.", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
+                Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
                 
                 sprintf(varStr, "%s_%s_spL", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
                 sprintf(longStr, "growth effects model minimum (L) value for group %s of contaminant %s.", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
@@ -3605,6 +3613,18 @@ void createContaminantsXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr 
                 sprintf(longStr, "growth effects model midpoint (B) value for group %s of contaminant %s.", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
                 Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
 
+                sprintf(varStr, "%s_%s_spL_r", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
+                sprintf(longStr, "Reprod effects model minimum (L) value for group %s of contaminant %s.", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
+                Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
+                
+                sprintf(varStr, "%s_%s_spA_r", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
+                sprintf(longStr, "Reprod effects model slope (A) value for group %s of contaminant %s.", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
+                Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
+                
+                sprintf(varStr, "%s_%s_spB_r", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
+                sprintf(longStr, "Reprod effects model midpoint (B) value for group %s of contaminant %s.", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
+                Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
+                
                 sprintf(varStr, "%s_%s_avoid", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
                 sprintf(longStr, "level triggering avoidance behaviour in group %s of contaminant %s", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
                 Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
@@ -3630,6 +3650,11 @@ void createContaminantsXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr 
 				set_keyprm_errfn(quit);
 				sprintf(varStr, "%s_%s_GrowthThresh", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
 				sprintf(longStr, "Threshold value of contaminant %s when %s sees growth effects ", bm->contaminantStructure[cIndex]->contaminant_name, FunctGroupArray[sp].groupCode);
+				Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
+
+				set_keyprm_errfn(quit);
+				sprintf(varStr, "%s_%s_ReprodThresh", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
+				sprintf(longStr, "Threshold value of contaminant %s when %s sees reprod effects ", bm->contaminantStructure[cIndex]->contaminant_name, FunctGroupArray[sp].groupCode);
 				Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
 
                 set_keyprm_errfn(quit);
