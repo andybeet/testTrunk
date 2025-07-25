@@ -968,6 +968,8 @@ xmlNodePtr Create_Species_ParamXML(MSEBoxModel *bm, char *fileName, FILE *inputF
 			//printf("varStr  = %s\n", varStr);
 			if (regexec(&(regBuffer), varStr, elementsof ( pmatch ), pmatch, 0) == 0) {
 
+                printf("%s paramID %d", varStr, paramID);
+                
 				/* Get the speciesName. */
 				switch (paramID) {
 				case flag_id:

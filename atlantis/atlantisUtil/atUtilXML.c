@@ -126,8 +126,8 @@ SpeciesParamStruct speciesParamStructArray[tot_prms] =
         { "FLAG_DDEPEND_BETA1", den_depend_beta1_id, "^den_depend_beta1_", no_checking, 1.0, SP_AGE_STRUCTURED },
         { "FLAG_DDEPEND_BETA2", den_depend_beta2_id, "^den_depend_beta2_", no_checking, 1.0, SP_AGE_STRUCTURED },
         { "FLAG_TEMP_COEFFT", temp_coefft_id, "^temp_coefft_", no_checking, 1.0, SP_AGE_STRUCTURED },
-        { "FLAG_RATE_COEFFT", temp_coefft_id, "^rate_coefft_", no_checking, 1.0, SP_AGE_STRUCTURED },
-        { "FLAG_WIND_COEFFT", temp_coefft_id, "^wind_coefft_", no_checking, 1.0, SP_AGE_STRUCTURED },
+        { "FLAG_RATE_COEFFT", rate_coefft_id, "^rate_coefft_", no_checking, 1.0, SP_AGE_STRUCTURED },
+        { "FLAG_WIND_COEFFT", wind_coefft_id, "^wind_coefft_", no_checking, 1.0, SP_AGE_STRUCTURED },
         { "FLAG_REC_VAR", recruit_var_id, "^rec_var_", no_checking, 1.0, SP_AGE_STRUCTURED },
         
 		{ "FLAG_MIN_SPAWN_TEMP", min_spawn_temp_id, "_min_spawn_temp$", no_checking, 1.0, SP_AGE_STRUCTURED },

@@ -212,8 +212,8 @@ int Util_Read_Functional_Group_XML(MSEBoxModel *bm, char *fileName, FILE *llogfp
 
 	bm->containsCoral = 0;
     bm->containsSponge = 0;
-
-	if (strstr(fileName, ".csv") != NULL) {
+    
+    if (strstr(fileName, ".csv") != NULL) {
 
 		/* Convert the file to XML. */
 		/* Build the converted filename */
@@ -223,6 +223,7 @@ int Util_Read_Functional_Group_XML(MSEBoxModel *bm, char *fileName, FILE *llogfp
 
 		/* Convert the input file to XML - the XML file will be stored in the destination folder if present.*/
 		Convert_Groups_To_XML(bm, fileName, convertedXMLFileName);
+        
 		inputDoc = xmlReadFileDestFolder(bm->destFolder, convertedXMLFileName, NULL, 0);
 
 	}else{
@@ -297,7 +298,7 @@ int Util_Read_Functional_Group_XML(MSEBoxModel *bm, char *fileName, FILE *llogfp
 			printf("Loaded %s with numCohorts: %d, numGeneTypes: %d, numStages: %d, numSpawns: %d\n", FunctGroupArray[groupIndex].groupCode, FunctGroupArray[groupIndex].numCohorts, FunctGroupArray[groupIndex].numGeneTypes, FunctGroupArray[groupIndex].numStages, FunctGroupArray[groupIndex].numSpawns);
 
             fprintf(bm->logFile, "Loaded %s with numCohorts: %d, numGeneTypes: %d, numStages: %d, numSpawns: %d\n", FunctGroupArray[groupIndex].groupCode, FunctGroupArray[groupIndex].numCohorts, FunctGroupArray[groupIndex].numGeneTypes, FunctGroupArray[groupIndex].numStages, FunctGroupArray[groupIndex].numSpawns);
-
+            
 			/* See if this is the max number of cohorts so far */
 			bm->K_num_max_cohort = max(bm->K_num_max_cohort, FunctGroupArray[groupIndex].numCohorts );
 			bm->K_num_max_genetypes = max(bm->K_num_max_genetypes, FunctGroupArray[groupIndex].numGeneTypes );
@@ -430,7 +431,7 @@ int Util_Read_Functional_Group_XML(MSEBoxModel *bm, char *fileName, FILE *llogfp
                 Util_XML_Get_Value_Integer(convertedXMLFileName, ATLANTIS_ATTRIBUTE, 0, TRUE, groupNode, binary_check, "isLightEffected", &FunctGroupArray[groupIndex].isLightEffected);
                 Util_XML_Get_Value_Integer(convertedXMLFileName, ATLANTIS_ATTRIBUTE, 0, TRUE, groupNode, binary_check, "isNoiseEffected", &FunctGroupArray[groupIndex].isNoiseEffected);
             }
-
+            
             if (FunctGroupArray[groupIndex].numMoveEntries <= 0 && FunctGroupArray[groupIndex].sp_geo_move == TRUE){
             	quit("ERROR: Based on your functional group definition file you have turned on horizontal movement for group %s, but you have set the number of entries different movement periods to 0. \n", FunctGroupArray[groupIndex].groupCode);
             }

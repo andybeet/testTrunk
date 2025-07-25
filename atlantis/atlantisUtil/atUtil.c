@@ -329,7 +329,7 @@ void Util_Setup_Species_Param_Strings(MSEBoxModel *bm) {
     sprintf(paramStrings[temp_coefft_id], "%s", "temp_coefft_");
     sprintf(paramStrings[rate_coefft_id], "%s", "rate_coefft_");
     sprintf(paramStrings[wind_coefft_id], "%s", "wind_coefft_");
-    sprintf(paramStrings[recruit_var_id], "%s", "recruit_var_");
+    sprintf(paramStrings[recruit_var_id], "%s", "rec_var_");
     
 	sprintf(paramStrings[intersp_depend_recruit_id], "%s", "intersp_depend_recruit_");
 	sprintf(paramStrings[intersp_depend_sp_id], "%s", "intersp_depend_sp_");
