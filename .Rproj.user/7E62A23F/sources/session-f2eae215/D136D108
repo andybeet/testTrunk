@@ -1,0 +1,26 @@
+{
+    "id": "D136D108",
+    "path": "~/AtlantisTrunk/atlantis/atlantisUtil/atUtilGroupIO.c",
+    "project_path": "atlantis/atlantisUtil/atUtilGroupIO.c",
+    "type": "c",
+    "hash": "4213806520",
+    "contents": "",
+    "dirty": false,
+    "created": 1757102288782.0,
+    "source_on_save": false,
+    "relative_order": 21,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "1215,17",
+        "scrollLine": "1208"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1757102693,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1757102693521,
+    "read_only": false,
+    "read_only_alternatives": []
+}

@@ -1,0 +1,26 @@
+{
+    "id": "9C5677F1",
+    "path": "~/psatlantismodel/Atlantis_PCB118/AMPSbioparam_mv1_2024_V12.prm",
+    "project_path": null,
+    "type": "text",
+    "hash": "366288530",
+    "contents": "",
+    "dirty": false,
+    "created": 1757099502367.0,
+    "source_on_save": false,
+    "relative_order": 16,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "31184,14",
+        "scrollLine": "31168"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1757100482,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1757100483103,
+    "read_only": false,
+    "read_only_alternatives": []
+}

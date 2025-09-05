@@ -1,0 +1,26 @@
+{
+    "id": "591F3884",
+    "path": "~/AtlantisTrunk/atlantis/atecology/atecology.c",
+    "project_path": "atlantis/atecology/atecology.c",
+    "type": "c",
+    "hash": "1083809135",
+    "contents": "",
+    "dirty": false,
+    "created": 1757097777980.0,
+    "source_on_save": false,
+    "relative_order": 6,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "2428,3",
+        "scrollLine": "2421"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1757102047,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1757102047152,
+    "read_only": false,
+    "read_only_alternatives": []
+}
