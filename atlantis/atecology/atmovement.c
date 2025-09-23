@@ -1749,7 +1749,7 @@ void Ecology_Total_Verts_And_Migration(MSEBoxModel *bm, double dt, FILE *llogfp)
 
                             switch (sp_ddepend_move) {
                             
-                            spawnmove = 1.0
+                            spawnmove = 1.0;
                               
 								case weight_ddepend:
 								case switch_ddepend:
