@@ -1797,25 +1797,60 @@ void Age_MigrantContaminants_Update(MSEBoxModel *bm, int sp, int nextcid, int co
     }
 }
 
-/* Migration return of contaminants */
-double ContaminantDirectRectuitMigrants(MSEBoxModel *bm, int sp, int n, int mid, double oldden, double num_returning) {
-    double ans = 0.0;
+/* Contaminants for those directly recruiting into the migration array */
+void ContaminantDirectRectuitMigrants(MSEBoxModel *bm, int sp, int cohort, int mid) {
+    int cIndex;
     
-    return ans;
+    for (cIndex = 0; cIndex < bm->num_contaminants; cIndex++) {
+        MIGRATION[sp].contam_return[cohort][cIndex] = MIGRATION[sp].RecruitContam[cohort][mid][cIndex];
+    }
+    return;
 }
 
 /* Migration return of contaminants */
-double ContaminantMigrationIn(MSEBoxModel *bm, int sp, int n, int mid, double oldden, double num_returning) {
-    double ans = 0.0;
+void ContaminantMigrationIn(MSEBoxModel *bm, int sp, int cohort, int mid, double tot_num_mig, double num_returning) {
+    int cIndex;
+    double base_contam, this_half_life, final_contam;
+    double day_start = (double)(MIGRATION[sp].Leave_Now[mid]);
+    double day_end = bm->dayt;
+    double time_step = day_start - day_end;
+
+    for (cIndex = 0; cIndex < bm->num_contaminants; cIndex++) {
+        base_contam = MIGRATION[sp].contam[cohort][mid][cIndex];
+        
+        if(bm->flag_contam_halflife_spbased) {
+            this_half_life = bm->contaminantStructure[cIndex]->sp_decay_half_life[sp];
+        } else {
+            this_half_life = bm->contaminantStructure[cIndex]->half_life;
+        }
+
+        final_contam = base_contam * pow(0.5, time_step / this_half_life);
+                
+        /* Alternative code -- Using the decay constant instead of the half life
+        decay_constant = (log(2))/bm->contaminantStructure[cIndex]->half_life;
+        final_contam = base_contam * decay_constant * time_step;
+        */
+        
+        MIGRATION[sp].contam_return[cohort][cIndex] = final_contam * num_returning / (tot_num_mig + small_num);
+    }
+    return;
+}
+
+/* Apply contaminants back in the model domain */
+void Apply_Contam_Return(MSEBoxModel *bm, int sp, int cohort, int k, int ij, double new_num, double tot_den) {
+    int cIndex, cid;
     
-    return ans;
+    for (cIndex = 0; cIndex < bm->num_contaminants; cIndex++) {
+        cid = FunctGroupArray[sp].contaminantTracers[cohort][cIndex];
+        bm->boxes[ij].tr[k][cid] += MIGRATION[sp].contam_return[cohort][cIndex] * new_num / (tot_den + small_num);
+    }
+    return;
 }
 
 /* Migration of contaminants as animals leave */
-double ContaminantMigrationOut(MSEBoxModel *bm, int sp, int cohort, int mid, double oldden, double num_leaving) {
+void ContaminantMigrationOut(MSEBoxModel *bm, int sp, int cohort, int mid, double oldden, double num_leaving) {
     int cIndex;
     double newContam = 0.0, origContam;
-    double ans = 0.0;
     
     // For species without live birth and maternal care
     for (cIndex = 0; cIndex < bm->num_contaminants; cIndex++) {
@@ -1827,7 +1862,7 @@ double ContaminantMigrationOut(MSEBoxModel *bm, int sp, int cohort, int mid, dou
             MIGRATION[sp].contam[cohort][mid][cIndex] = newContam;
         }
     }
-    return ans;
+    return;
 }
 
 

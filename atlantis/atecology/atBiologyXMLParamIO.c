@@ -4396,6 +4396,7 @@ void Create_Migration_Arrays(MSEBoxModel *bm, FILE *llogfp) {
         if(bm->track_contaminants) {
             MIGRATION[sp].RecruitContam = Util_Alloc_Init_3D_Double(bm->num_contaminants, maxnum, FunctGroupArray[sp].numGeneTypes,0);
             MIGRATION[sp].contam = Util_Alloc_Init_3D_Double(bm->num_contaminants, maxnum, cohort, 0);
+            MIGRATION[sp].contam_return = Util_Alloc_Init_2D_Double(bm->num_contaminants, cohort, 0);
         }
     }
 
