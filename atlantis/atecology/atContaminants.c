@@ -995,97 +995,97 @@ int Group_Transfer_Contaminant(MSEBoxModel *bm, BoxLayerValues *boxLayerInfo, HA
 		/* The current concentration in the group */
 		cGroupLevel = tracerArray[FunctGroupArray[fromGuild].contaminantTracers[fromCohort][cIndex]];
 
-		if (cGroupLevel > bm->min_pool){
+		/* This used to have an if-else statement using the test (cGroupLevel > bm->min_pool) but removed so got sediment transferal and accumualtion even if low amounts
+           Use of Contamflag means it won't get reset in Integrate_Tracer_Variables() */
 
-            /**
-            if ((isnan(propTransfer)) || (propTransfer > 1.0)) {
-                fprintf(stderr, "Time: %e box %d-%d case %d Group_Transfer_Contaminant group propTransfer level is NAN or prop > 1 - From %s-%d to %s-%d propTransfer: %e amountTransfer = %e totalBiomass = %e %s cGroupLevel: %e\n", bm->dayt, bm->current_box, bm->current_layer, caseGTC, FunctGroupArray[fromGuild].groupCode, fromCohort, FunctGroupArray[toGuild].groupCode, toCohort, propTransfer, amountTransfer, totalBiomass, bm->contaminantStructure[cIndex]->contaminant_name, cGroupLevel);
-                quit("Group_Transfer_Contaminant nan or prop > 1\n");
+        /**
+        if ((isnan(propTransfer)) || (propTransfer > 1.0)) {
+            fprintf(stderr, "Time: %e box %d-%d case %d Group_Transfer_Contaminant group propTransfer level is NAN or prop > 1 - From %s-%d to %s-%d propTransfer: %e amountTransfer = %e totalBiomass = %e %s cGroupLevel: %e\n", bm->dayt, bm->current_box, bm->current_layer, caseGTC, FunctGroupArray[fromGuild].groupCode, fromCohort, FunctGroupArray[toGuild].groupCode, toCohort, propTransfer, amountTransfer, totalBiomass, bm->contaminantStructure[cIndex]->contaminant_name, cGroupLevel);
+            quit("Group_Transfer_Contaminant nan or prop > 1\n");
+        }
+        **/
+
+        //transfer = cGroupLevel * amountTransfer / dtsz;  // Need time step correction so flux makes sense
+        transfer = cGroupLevel * amountTransfer;  // Actually already a rate so ok?
+
+        /**/
+        //if(isnan(transfer)){
+        if(!(_finite(transfer))) {
+            fflush(bm->logFile);
+            quit("Group_Transfer_Contaminant - from group %s-%d, to group %s-%d, transfer is nan or inf, cGroupLevel= %e, amountTransfer = %e dtsz: %e\n",
+                    FunctGroupArray[fromGuild].groupCode, fromCohort, FunctGroupArray[toGuild].groupCode, toCohort, cGroupLevel, amountTransfer, dtsz);
+        }
+        /**/
+
+        bm->contaminantStructure[cIndex]->sp_transfer[toGuild][toCohort][habitat] += transfer;
+        bm->contaminantStructure[cIndex]->sp_transfer[fromGuild][fromCohort][habitat] -= transfer;
+
+        /**
+        //if((((toGuild == 54) || (fromGuild == 54)) && (bm->contaminantStructure[cIndex]->sp_transfer[toGuild][toCohort][habitat] > 0.0)) && (cIndex == 3)) {
+                fprintf(bm->logFile, "prey = %s, to %s-%d gaining %e, cGroupLevel= %e, propTransfer= %e, totalTransfer = %e amountTransfer = %e, totalBiomass= %e\n", FunctGroupArray[fromGuild].groupCode, FunctGroupArray[toGuild].groupCode, toCohort, transfer, cGroupLevel, propTransfer, bm->contaminantStructure[cIndex]->sp_transfer[toGuild][toCohort][habitat], amountTransfer, totalBiomass);
+        //}
+        **/
+
+        if (isGlobal == TRUE) {
+            bm->contaminantStructure[cIndex]->sp_transfer_global[toGuild][toCohort][globalHabitat][habitat] += transfer;
+            bm->contaminantStructure[cIndex]->sp_transfer_global[fromGuild][fromCohort][globalHabitat][habitat] -= transfer;
+
+        }
+
+        if (need_prop && transfer) {
+            /* Set or update the proportion contaminated */
+            amt_exchanged = amountTransfer * dtsz;
+            prop_exchanged = amt_exchanged / (toGuild_totalBiomass + small_num);
+
+            if( prop_exchanged > 1.0)
+                prop_exchanged = 1.0;
+            
+
+            min_num = 0.0;
+            if(FunctGroupArray[toGuild].groupAgeType == AGE_STRUCTURED ){
+                this_num = tracerArray[FunctGroupArray[toGuild].NumsTracers[toCohort]];
+                min_num = 1.0 / (this_num + small_num);
+            } else {
+                min_num = bm->min_pool;  // Just using this as a proxy for a small number here
             }
-            **/
 
-			//transfer = cGroupLevel * amountTransfer / dtsz;  // Need time step correction so flux makes sense
-            transfer = cGroupLevel * amountTransfer;  // Actually already a rate so ok?
+            
+            propContam = drandom(min_num, prop_exchanged);
+            pid = FunctGroupArray[toGuild].contamPropTracers[toCohort][cIndex];
 
-            /**/
-			//if(isnan(transfer)){
-            if(!(_finite(transfer))) {
-                fflush(bm->logFile);
-				quit("Group_Transfer_Contaminant - from group %s-%d, to group %s-%d, transfer is nan or inf, cGroupLevel= %e, amountTransfer = %e dtsz: %e\n",
-						FunctGroupArray[fromGuild].groupCode, fromCohort, FunctGroupArray[toGuild].groupCode, toCohort, cGroupLevel, amountTransfer, dtsz);
-			}
-            /**/
+            switch(habitat) {
+                case WC:
+                    bm->boxes[bm->current_box].tr[bm->current_layer][pid] += propContam;
+                    if (bm->boxes[bm->current_box].tr[bm->current_layer][pid] > 1.0) {
+                        bm->boxes[bm->current_box].tr[bm->current_layer][pid] = 1.0;
+                    }
 
-			bm->contaminantStructure[cIndex]->sp_transfer[toGuild][toCohort][habitat] += transfer;
-			bm->contaminantStructure[cIndex]->sp_transfer[fromGuild][fromCohort][habitat] -= transfer;
+                    //fprintf(bm->logFile, "Time %e box%d-%d %s %d %s has after transfer prop: %e with propContam %e amt_exchanged: %e toGuild_totalBiomass: %e\n", bm->dayt, bm->current_box, bm->current_layer, FunctGroupArray[toGuild].groupCode, toCohort, bm->contaminantStructure[cIndex]->contaminant_name, bm->boxes[bm->current_box].tr[bm->current_layer][pid], propContam, amt_exchanged, toGuild_totalBiomass);
 
-            /**
-            //if((((toGuild == 54) || (fromGuild == 54)) && (bm->contaminantStructure[cIndex]->sp_transfer[toGuild][toCohort][habitat] > 0.0)) && (cIndex == 3)) {
-                    fprintf(bm->logFile, "prey = %s, to %s-%d gaining %e, cGroupLevel= %e, propTransfer= %e, totalTransfer = %e amountTransfer = %e, totalBiomass= %e\n", FunctGroupArray[fromGuild].groupCode, FunctGroupArray[toGuild].groupCode, toCohort, transfer, cGroupLevel, propTransfer, bm->contaminantStructure[cIndex]->sp_transfer[toGuild][toCohort][habitat], amountTransfer, totalBiomass);
-            //}
-            **/
+                    break;
+                case SED:
+                    bm->boxes[bm->current_box].sm.tr[bm->current_layer][pid] += propContam;
+                    if(bm->boxes[bm->current_box].sm.tr[bm->current_layer][pid] > 1.0){
+                        bm->boxes[bm->current_box].sm.tr[bm->current_layer][pid] = 1.0;
+                    }
 
-			if (isGlobal == TRUE) {
-				bm->contaminantStructure[cIndex]->sp_transfer_global[toGuild][toCohort][globalHabitat][habitat] += transfer;
-				bm->contaminantStructure[cIndex]->sp_transfer_global[fromGuild][fromCohort][globalHabitat][habitat] -= transfer;
+                    //fprintf(bm->logFile, "Time %e box%d-%d %s %d %s has after transfer prop: %e with propContam %e amt_exchanged: %e toGuild_totalBiomass: %e\n", bm->dayt, bm->current_box, bm->current_layer, FunctGroupArray[toGuild].groupCode, toCohort, bm->contaminantStructure[cIndex]->contaminant_name, bm->boxes[bm->current_box].sm.tr[bm->current_layer][pid], propContam, amt_exchanged, toGuild_totalBiomass);
 
-			}
+                    break;
+                case EPIFAUNA:
+                    bm->boxes[bm->current_box].epi[pid] += propContam;
+                    if (bm->boxes[bm->current_box].epi[pid] > 1.0) {
+                        bm->boxes[bm->current_box].epi[pid] = 1.0;
+                    }
 
-            if (need_prop && transfer) {
-                /* Set or update the proportion contaminated */
-                amt_exchanged = amountTransfer * dtsz;
-                prop_exchanged = amt_exchanged / (toGuild_totalBiomass + small_num);
+                    //fprintf(bm->logFile, "Time %e box%d-%d %s %d %s has after transfer prop: %e with propContam %e amt_exchanged: %e toGuild_totalBiomass: %e\n", bm->dayt, bm->current_box, bm->current_layer, FunctGroupArray[toGuild].groupCode, toCohort, bm->contaminantStructure[cIndex]->contaminant_name, bm->boxes[bm->current_box].epi[pid], propContam, amt_exchanged, toGuild_totalBiomass);
 
-                if( prop_exchanged > 1.0)
-                    prop_exchanged = 1.0;
-                
-
-                min_num = 0.0;
-                if(FunctGroupArray[toGuild].groupAgeType == AGE_STRUCTURED ){
-                    this_num = tracerArray[FunctGroupArray[toGuild].NumsTracers[toCohort]];
-                    min_num = 1.0 / (this_num + small_num);
-                } else {
-                    min_num = bm->min_pool;  // Just using this as a proxy for a small number here
-                }
-
-                
-                propContam = drandom(min_num, prop_exchanged);
-                pid = FunctGroupArray[toGuild].contamPropTracers[toCohort][cIndex];
-
-                switch(habitat) {
-                    case WC:
-                        bm->boxes[bm->current_box].tr[bm->current_layer][pid] += propContam;
-                        if (bm->boxes[bm->current_box].tr[bm->current_layer][pid] > 1.0) {
-                            bm->boxes[bm->current_box].tr[bm->current_layer][pid] = 1.0;
-                        }
-
-                        //fprintf(bm->logFile, "Time %e box%d-%d %s %d %s has after transfer prop: %e with propContam %e amt_exchanged: %e toGuild_totalBiomass: %e\n", bm->dayt, bm->current_box, bm->current_layer, FunctGroupArray[toGuild].groupCode, toCohort, bm->contaminantStructure[cIndex]->contaminant_name, bm->boxes[bm->current_box].tr[bm->current_layer][pid], propContam, amt_exchanged, toGuild_totalBiomass);
-
-                        break;
-                    case SED:
-                        bm->boxes[bm->current_box].sm.tr[bm->current_layer][pid] += propContam;
-                        if(bm->boxes[bm->current_box].sm.tr[bm->current_layer][pid] > 1.0){
-                            bm->boxes[bm->current_box].sm.tr[bm->current_layer][pid] = 1.0;
-                        }
-
-                        //fprintf(bm->logFile, "Time %e box%d-%d %s %d %s has after transfer prop: %e with propContam %e amt_exchanged: %e toGuild_totalBiomass: %e\n", bm->dayt, bm->current_box, bm->current_layer, FunctGroupArray[toGuild].groupCode, toCohort, bm->contaminantStructure[cIndex]->contaminant_name, bm->boxes[bm->current_box].sm.tr[bm->current_layer][pid], propContam, amt_exchanged, toGuild_totalBiomass);
-
-                        break;
-                    case EPIFAUNA:
-                        bm->boxes[bm->current_box].epi[pid] += propContam;
-                        if (bm->boxes[bm->current_box].epi[pid] > 1.0) {
-                            bm->boxes[bm->current_box].epi[pid] = 1.0;
-                        }
-
-                        //fprintf(bm->logFile, "Time %e box%d-%d %s %d %s has after transfer prop: %e with propContam %e amt_exchanged: %e toGuild_totalBiomass: %e\n", bm->dayt, bm->current_box, bm->current_layer, FunctGroupArray[toGuild].groupCode, toCohort, bm->contaminantStructure[cIndex]->contaminant_name, bm->boxes[bm->current_box].epi[pid], propContam, amt_exchanged, toGuild_totalBiomass);
-
-                        break;
-                    default:
-                        break;
-                }
-
+                    break;
+                default:
+                    break;
             }
-		}
+
+        }
 	}
 
 	return 0;

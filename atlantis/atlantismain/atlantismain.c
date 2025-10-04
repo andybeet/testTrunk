@@ -418,6 +418,12 @@ int runNextTimeStep(MSEBoxModel *bm){
 			Economics(bm, logfp);
 		}
         
+        if (bm->flagdisplace) { // Record displaced effort if using that effort allocation option
+            if(bm->newmonth && bm->flagday) {
+                Harvest_Report_Monthly_Stats(bm, logfp);
+            }
+        }
+        
 		Manage_Calculate_Total_Effort(bm, logfp);
 
 		/* To increase speed in debugging use this to provide fisheries with catches
@@ -1957,6 +1963,8 @@ void AllocateArrayMemory(MSEBoxModel *bm, FILE *llogfp) {
 	bm->CumCatch = Util_Alloc_Init_4D_Double(bm->wcnz, bm->nbox, bm->K_num_fisheries, bm->K_num_tot_sp, 0.0);
 	bm->CumDiscards = Util_Alloc_Init_3D_Double(bm->nbox, bm->K_num_fisheries, bm->K_num_tot_sp, 0.0);
 	bm->CumEffort = Util_Alloc_Init_2D_Double(bm->nbox, bm->K_num_fisheries, 0.0);
+    bm->CumDisplaceEffort = Util_Alloc_Init_2D_Double(bm->K_num_fisheries, bm->nbox, 0.0);
+    
 	bm->CatchTS_agedistrib = Util_Alloc_Init_3D_Double(bm->K_num_max_cohort, bm->K_num_tot_sp, bm->K_num_fisheries, 0.0);  // intentionally left as only per age cohort
 	bm->CatchTS_agedistribOrig = Util_Alloc_Init_3D_Double(bm->K_num_max_cohort, bm->K_num_tot_sp, bm->K_num_fisheries, 0.0);  // intentionally left as only per age cohort
 	bm->DAScalc = Util_Alloc_Init_1D_Double(bm->K_num_tot_sp, 0.0);
@@ -2428,6 +2436,8 @@ void modelshutdown(MSEBoxModel *bm) {
 	free4d(bm->CumCatch);
 	free3d(bm->CumDiscards);
 	free2d(bm->CumEffort);
+    free2d(bm->CumDisplaceEffort);
+    
 	free3d(bm->CatchTS_agedistrib);
 	free3d(bm->CatchTS_agedistribOrig);
 	free3d(bm->DiscardTS_agedistrib);
