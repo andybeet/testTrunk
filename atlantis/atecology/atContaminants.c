@@ -53,7 +53,7 @@ void Free_Contaminants(MSEBoxModel *bm) {
         free3d(bm->contaminantStructure[cIndex]->sp_uptake);
         free3d(bm->contaminantStructure[cIndex]->sp_transfer);
         free4d(bm->contaminantStructure[cIndex]->sp_transfer_global);
-
+        
         free(bm->contaminantStructure[cIndex]->interact_coefft);
         free(bm->contaminantStructure[cIndex]->sp_LD50);
         free(bm->contaminantStructure[cIndex]->sp_LD100);
@@ -69,17 +69,13 @@ void Free_Contaminants(MSEBoxModel *bm) {
         free(bm->contaminantStructure[cIndex]->gained);
         free4d(bm->contaminantStructure[cIndex]->sp_point);
         
-        free(bm->contaminantStructure[cIndex]->sp_GrowthThresh);
-        free(bm->contaminantStructure[cIndex]->sp_ReprodThresh);
-        free2d(bm->contaminantStructure[cIndex]->gainedGlobal);
         free(bm->contaminantStructure[cIndex]->sp_maxConcentration);
-
-        free(bm->contaminantStructure[cIndex]->gained);
-        free4d(bm->contaminantStructure[cIndex]->sp_point);
-
+        
         free(bm->contaminantStructure[cIndex]->sp_GrowthThresh);
         free(bm->contaminantStructure[cIndex]->sp_GrowthEffect);
         free1d(bm->contaminantStructure[cIndex]->sp_MoveEffect);
+        
+        free(bm->contaminantStructure[cIndex]->sp_ReprodThresh);
         free(bm->contaminantStructure[cIndex]->sp_ReprodEffect);
         free(bm->contaminantStructure[cIndex]->sp_ContamScalar);
         free(bm->contaminantStructure[cIndex]->sp_maternal_transfer);
@@ -89,7 +85,7 @@ void Free_Contaminants(MSEBoxModel *bm) {
         free4d(bm->contaminantStructure[cIndex]->sp_maxDoseToDate);
         free(bm->contaminantStructure[cIndex]->sp_maxLethalConc);
         free(bm->contaminantStructure[cIndex]->sp_maxChronicConc);
-
+        
         free(bm->contaminantStructure[cIndex]->sp_TimeToLD50);
         free(bm->contaminantStructure[cIndex]->sp_Cx);
         free(bm->contaminantStructure[cIndex]->sp_Cy);
@@ -154,6 +150,8 @@ void Allocate_Contaiminants(MSEBoxModel *bm) {
 
 		bm->contaminantStructure[cIndex]->sp_GrowthThresh = Util_Alloc_Init_1D_Double(bm->K_num_tot_sp, 0.0);
         bm->contaminantStructure[cIndex]->sp_GrowthEffect = Util_Alloc_Init_1D_Double(bm->K_num_tot_sp, 0.0);
+        
+        bm->contaminantStructure[cIndex]->sp_ReprodThresh = Util_Alloc_Init_1D_Double(bm->K_num_tot_sp, 0.0);
 
         bm->contaminantStructure[cIndex]->sp_instantDoseMortality = Util_Alloc_Init_1D_Double(bm->K_num_tot_sp, 0);
 		bm->contaminantStructure[cIndex]->sp_maxDoseToDate = Util_Alloc_Init_4D_Double((bm->wcnz+bm->sednz), bm->nbox, max_chrt, bm->K_num_tot_sp, 0.0);
@@ -1052,6 +1050,9 @@ int Group_Transfer_Contaminant(MSEBoxModel *bm, BoxLayerValues *boxLayerInfo, HA
             
             propContam = drandom(min_num, prop_exchanged);
             pid = FunctGroupArray[toGuild].contamPropTracers[toCohort][cIndex];
+            
+            fprintf(bm->logFile, "Calling %s_Prop_%s with index %d\n", FunctGroupArray[toGuild].name, bm->contaminantStructure[cIndex]->contaminant_name, pid);
+            //printf("Calling %s_Prop_%s with index %d\n", FunctGroupArray[toGuild].name, bm->contaminantStructure[cIndex]->contaminant_name, pid);
 
             switch(habitat) {
                 case WC:

@@ -2289,9 +2289,7 @@ void modelshutdown(MSEBoxModel *bm) {
 	if(RBCParamStrings)
 		c_free2d(RBCParamStrings);
     
-    printf("Freeing model variables A\n");
-
-	c_free2d(bm->SP_FISHERYprmsName);
+    c_free2d(bm->SP_FISHERYprmsName);
 
 	freeBMTracerInfo(bm);
 	freeBMphysInfo(bm);
@@ -2299,23 +2297,17 @@ void modelshutdown(MSEBoxModel *bm) {
 	freeBMEpiInfo(bm);
 	freeBMDiagInfo(bm);
     
-    printf("Freeing model variables B\n");
-
-	if(bm->ice_on){
+    if(bm->ice_on){
 		freeBMIceInfo(bm);
 	}
 	if(bm->terrestrial_on)
 		freeBMLandInfo(bm);
     
-    printf("Freeing model variables C\n");
-
-	/* Free library specific arrays */
+    /* Free library specific arrays */
 	if (do_assess){
 		SS3Link_Free(bm);
 		Assess_Free(bm);
 	}
-    
-    printf("Freeing model variables D\n");
 
 #ifdef BROKER_LINK_ENABLED
 	if(do_BrokerLinkage){
@@ -2323,16 +2315,12 @@ void modelshutdown(MSEBoxModel *bm) {
 	}
 #endif
     
-    printf("Freeing model variables E\n");
-    
 	Ecology_Free(bm);
 	Manage_Free(bm);
 	Harvest_Free(bm);
 	freePhysics(bm);
 	Economic_Free(bm);
 	Implementation_Free(bm);
-    
-    printf("Freeing model variables F\n");
     
 	/* If defined free up the CLAM module */
 #ifdef CLAM_LINK_ENABLED

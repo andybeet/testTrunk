@@ -3969,9 +3969,9 @@ typedef struct {
     double *sp_B_r;
     
     double *sp_GrowthThresh;  /* Threshold tissue level where get growth effects */
-    double *sp_ReprodThresh;  /* Threshold tissue level where get reprod effects */
     double *sp_GrowthEffect;  /* Effect size */
     double *sp_MoveEffect;  /* Effect size on movement */
+    double *sp_ReprodThresh;  /* Threshold tissue level where get reprod effects */
     double *sp_ReprodEffect;  /* Effect size on reproduction (on number of settlers) */
     double *sp_ContamScalar;  /* Generic scalar to represent contaminant effects */
     double *sp_maternal_transfer; /* Maternal transfer rate during conception and recruitment */
