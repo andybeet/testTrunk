@@ -925,9 +925,9 @@ int Init_Contaminant_Transfer_Values(MSEBoxModel *bm) {
  */
 int Group_Transfer_Contaminant(MSEBoxModel *bm, BoxLayerValues *boxLayerInfo, HABITAT_TYPES globalHabitat, HABITAT_TYPES habitat, int toGuild, int toCohort, int fromGuild, int fromCohort, double amountTransfer, double ***spSPinfo, double initialBiomass, double dtsz, int need_prop, int caseGTC) {
 
-	int cIndex, pid;
+	int cIndex, pid, this_habitat;
 	double *tracerArray;
-    double cGroupLevel = 0, transfer, totalBiomass, amt_exchanged, toGuild_totalBiomass = 0.0, prop_exchanged, propContam, min_num, this_num;
+  double cGroupLevel = 0, transfer, totalBiomass, amt_exchanged, toGuild_totalBiomass = 0.0, prop_exchanged, propContam, min_num, this_num;
 	int isGlobal = (FunctGroupArray[toGuild].diagTol == 2 && it_count == 1);
 
 	/* If the amount transfered is zero don't do anything
@@ -1054,7 +1054,8 @@ int Group_Transfer_Contaminant(MSEBoxModel *bm, BoxLayerValues *boxLayerInfo, HA
             fprintf(bm->logFile, "Calling %s_Prop_%s with index %d\n", FunctGroupArray[toGuild].name, bm->contaminantStructure[cIndex]->contaminant_name, pid);
             //printf("Calling %s_Prop_%s with index %d\n", FunctGroupArray[toGuild].name, bm->contaminantStructure[cIndex]->contaminant_name, pid);
 
-            switch(habitat) {
+            this_habitat = FunctGroupArray[toGuild].habitatType;
+            switch(this_habitat) {
                 case WC:
                     bm->boxes[bm->current_box].tr[bm->current_layer][pid] += propContam;
                     if (bm->boxes[bm->current_box].tr[bm->current_layer][pid] > 1.0) {
