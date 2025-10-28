@@ -69,8 +69,6 @@ void Free_Contaminants(MSEBoxModel *bm) {
         free(bm->contaminantStructure[cIndex]->gained);
         free4d(bm->contaminantStructure[cIndex]->sp_point);
         
-        free(bm->contaminantStructure[cIndex]->sp_maxConcentration);
-        
         free(bm->contaminantStructure[cIndex]->sp_GrowthThresh);
         free(bm->contaminantStructure[cIndex]->sp_GrowthEffect);
         free1d(bm->contaminantStructure[cIndex]->sp_MoveEffect);
