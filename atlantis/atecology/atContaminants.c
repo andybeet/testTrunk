@@ -695,10 +695,10 @@ int Gain_Contaminants(MSEBoxModel *bm, BoxLayerValues *boxLayerInfo, HABITAT_TYP
 		bm->contaminantStructure[cIndex]->gained[habitat] += transfer;
         bm->contaminantStructure[cIndex]->sp_transfer[species][cohort][habitat] -= transfer;
 
-		/**/
-        if(transfer > 0.0){
-            fprintf(bm->logFile, "Gain_Contam transfer > 0 -- Time: %e %s-%d in box %d-%d, habitat %d, transfer = %e propLost: %e dissolv_coefft: %e cGroupLevel: %e dtsz_stored: %e\n", bm->dayt, FunctGroupArray[species].groupCode, cohort, bm->current_box, bm->current_layer, habitat, transfer, propLost, bm->contaminantStructure[cIndex]->dissolv_coefft, cGroupLevel, bm->dtsz_stored);
-        }
+		//
+    //    if(transfer > 0.0){
+    //        fprintf(bm->logFile, "Gain_Contam transfer > 0 -- Time: %e %s-%d in box %d-%d, habitat %d, transfer = %e propLost: %e dissolv_coefft: %e cGroupLevel: %e dtsz_stored: %e\n", bm->dayt, FunctGroupArray[species].groupCode, cohort, bm->current_box, bm->current_layer, habitat, transfer, propLost, bm->contaminantStructure[cIndex]->dissolv_coefft, cGroupLevel, bm->dtsz_stored);
+   //     }
         /**/
         if(!(_finite(transfer))) {
 			quit("Time: %e %s-%d in box %d-%d, habitat %d, transfer = %e propLost: %e dissolv_coefft: %e cGroupLevel: %e dtsz_stored: %e\n", bm->dayt, FunctGroupArray[species].groupCode, cohort, bm->current_box, bm->current_layer, habitat, transfer, propLost, bm->contaminantStructure[cIndex]->dissolv_coefft, cGroupLevel, bm->dtsz_stored);
@@ -1049,7 +1049,7 @@ int Group_Transfer_Contaminant(MSEBoxModel *bm, BoxLayerValues *boxLayerInfo, HA
             propContam = drandom(min_num, prop_exchanged);
             pid = FunctGroupArray[toGuild].contamPropTracers[toCohort][cIndex];
             
-            fprintf(bm->logFile, "Calling %s_Prop_%s with index %d\n", FunctGroupArray[toGuild].name, bm->contaminantStructure[cIndex]->contaminant_name, pid);
+      //fprintf(bm->logFile, "Calling %s_Prop_%s with index %d\n", FunctGroupArray[toGuild].name, bm->contaminantStructure[cIndex]->contaminant_name, pid);
             //printf("Calling %s_Prop_%s with index %d\n", FunctGroupArray[toGuild].name, bm->contaminantStructure[cIndex]->contaminant_name, pid);
 
             this_habitat = FunctGroupArray[toGuild].habitatType;
