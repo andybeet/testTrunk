@@ -637,25 +637,17 @@ int readModelAssessmentParameters(MSEBoxModel *bm, char *filename) {
     if (bm->useMultispAssess) {
         bm->RBCestimation.earliestYr = MAXINT;
         for(sp=0; sp<bm->K_num_tot_sp; sp++){
-            if (speciesParamStructArray[sp].paramType == SP_IMPACTED) {
-                if ((FunctGroupArray[sp].speciesParams[MultispAssessType_id] > 0) && ((int)(FunctGroupArray[sp].speciesParams[MultispAssessType_id]) < (IndicatorSpPGMSY + 1))) {
-                    bm->PGMSY_on = TRUE;
-                    // Make sure the R file is in place
+            if (FunctGroupArray[sp].speciesParams[MultispAssessType_id] < (IndicatorSpPGMSY + 1)) {
+                bm->PGMSY_on = TRUE;
+                // Make sure the R file is in place
                 
-                    fprintf(bm->logFile,"Set PGMSY_on as %s has MultispAssessType %e vs threshold %d\n", FunctGroupArray[sp].groupCode,FunctGroupArray[sp].speciesParams[MultispAssessType_id], (IndicatorSpPGMSY + 1));
-                
-                }
             }
-            if ((FunctGroupArray[sp].isFished == TRUE)  && ((int)(bm->RBCestimation.RBCspeciesParam[sp][AssessStart_id]) < bm->RBCestimation.earliestYr)) {
+            if ((FunctGroupArray[sp].isFished == TRUE)  && (bm->RBCestimation.RBCspeciesParam[sp][AssessStart_id] < bm->RBCestimation.earliestYr)) {
                 bm->RBCestimation.earliestYr = bm->RBCestimation.RBCspeciesParam[sp][AssessStart_id];
             }
-            
-            fprintf(bm->logFile,"Setting earliestYr as %s has isFished: %d AssessStart %d vs earliestYr %d\n", FunctGroupArray[sp].groupCode, FunctGroupArray[sp].isFished, ((int)(bm->RBCestimation.RBCspeciesParam[sp][AssessStart_id])), bm->RBCestimation.earliestYr);
         }
         bm->RBCestimation.ReviewYr = bm->RBCestimation.earliestYr;
     }
-    
-    fflush(bm->logFile);
     
 	/* Shutdown libxml */
 	xmlFreeDoc(inputDoc);
@@ -906,7 +898,7 @@ void get_TAC_mult(MSEBoxModel *bm, char *key, TimeSeries **ts, char *t_units, vo
 
 	printf("Reading in TAC_mult time series forcing file\n");
 	if (verbose > 1)
-        printf("Reading in TAC_mult time series forcing file\n");
+		fprintf(bm->logFile, "Reading in TAC_mult time series forcing file\n");
 
 	/* Open the file */
 	if ((fp = fopen(bm->assessprmIfname, "r")) == NULL)
@@ -961,7 +953,6 @@ void readKeyTierParamXML(MSEBoxModel *bm, char *fileName, xmlNodePtr rootnode) {
     bm->RBCestimation.delTAE = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, no_checking, "delTAE");
     
 	/* Now allocate the rest of the memory */
-    bm->RBCestimation.UseAtlantisPGMSY = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, binary_check, "UseAtlantisPGMSY"));
 	bm->RBCestimation.UseSS = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, binary_check, "UseSS"));
     bm->RBCestimation.AssessDelay = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, integer_check, "AssessDelay"));
     bm->RBCestimation.UseTierBuffers = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, binary_check, "UseTierBuffers"));
@@ -977,12 +968,6 @@ void readKeyTierParamXML(MSEBoxModel *bm, char *fileName, xmlNodePtr rootnode) {
     bm->RBCestimation.GradientPeriod = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, no_checking, "GradientBuffer");
     bm->RBCestimation.UseCategory = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, binary_check, "UseCategory");
     bm->RBCestimation.UseClosest = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, binary_check, "UseClosest");
-    bm->RBCestimation.UseTriggerMgmt = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, binary_check, "UseTriggerMgmt");
-    bm->RBCestimation.ProjYr = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, integer_check, "ProjYr");
-    
-    bm->RBCestimation.ThresholdDepletion = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, no_checking, "ThresholdDepletion");
-    bm->RBCestimation.ThresholdBound = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, no_checking, "ThresholdBound");
-    bm->RBCestimation.MaxIteration = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, integer_check, "MaxIteration");
     
 	childGroupingNode = Util_XML_Get_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, groupingNode, "Seeds");
 	if (childGroupingNode == NULL)
@@ -1042,11 +1027,6 @@ void readKeyTierParamXML(MSEBoxModel *bm, char *fileName, xmlNodePtr rootnode) {
     Util_XML_Read_Species_RBCParam(bm, fileName, childGroupingNode, mgt_indicator_id);
     Util_XML_Read_Species_RBCParam(bm, fileName, childGroupingNode, init_mgt_category_id);
     Util_XML_Read_Species_RBCParam(bm, fileName, childGroupingNode, init_mgt_sp_id);
-    
-    // PGMSY
-    Util_XML_Read_Species_RBCParam(bm, fileName, childGroupingNode, PGMSYBHalpha_id);
-    Util_XML_Read_Species_RBCParam(bm, fileName, childGroupingNode, PGMSYBHbeta_id);
- 
     
 	/** tier specific rules */
 	// tier 3
@@ -1224,34 +1204,6 @@ void readTierAssessmentManagementXML(MSEBoxModel *bm, char *fileName, xmlNodePtr
         readGroupAssessTierXMLData(bm, fileName, attributeGroup, guild, bm->RBCestimation.RBCspeciesArray[guild].CPUEpow, no_checking, errorString, bm->K_num_fisheries);
      }
      */
-    
-    attributeGroup = getParentNode(bm, fileName, childGroupingNode, "PGMSY_q", errorString);
-    for (guild = 0; guild < bm->K_num_tot_sp; guild++) {
-        if (FunctGroupArray[guild].speciesParams[assess_flag_id] > 0)
-            readGroupAssessTierXMLData(bm, fileName, attributeGroup, guild, bm->RBCestimation.RBCspeciesArray[guild].PGMSY_q, no_checking, errorString,
-                    (int)bm->RBCestimation.RBCspeciesParam[guild][NumFisheries_id]);
-    }
-    
-    attributeGroup = getParentNode(bm, fileName, childGroupingNode, "PGMSY_sel_lsm", errorString);
-    for (guild = 0; guild < bm->K_num_tot_sp; guild++) {
-        if (FunctGroupArray[guild].speciesParams[assess_flag_id] > 0)
-            readGroupAssessTierXMLData(bm, fileName, attributeGroup, guild, bm->RBCestimation.RBCspeciesArray[guild].PGMSY_sel_lsm, no_checking, errorString,
-                    (int)bm->RBCestimation.RBCspeciesParam[guild][NumFisheries_id]);
-    }
-
-    attributeGroup = getParentNode(bm, fileName, childGroupingNode, "PGMSY_sel_sigma", errorString);
-    for (guild = 0; guild < bm->K_num_tot_sp; guild++) {
-        if (FunctGroupArray[guild].speciesParams[assess_flag_id] > 0)
-            readGroupAssessTierXMLData(bm, fileName, attributeGroup, guild, bm->RBCestimation.RBCspeciesArray[guild].PGMSY_sel_sigma, no_checking, errorString,
-                    (int)bm->RBCestimation.RBCspeciesParam[guild][NumFisheries_id]);
-    }
-    
-    attributeGroup = getParentNode(bm, fileName, childGroupingNode, "PGMSY_sel_curve", errorString);
-    for (guild = 0; guild < bm->K_num_tot_sp; guild++) {
-        if (FunctGroupArray[guild].speciesParams[assess_flag_id] > 0)
-            readGroupAssessTierXMLData(bm, fileName, attributeGroup, guild, bm->RBCestimation.RBCspeciesArray[guild].PGMSY_selcurve, no_checking, errorString,
-                    (int)bm->RBCestimation.RBCspeciesParam[guild][NumFisheries_id]);
-    }
     
     childGroupingNode = Util_XML_Get_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, groupingNode, "StartSS");
 	if (childGroupingNode == NULL)
@@ -1568,7 +1520,5 @@ void readTierAssessmentManagementXML(MSEBoxModel *bm, char *fileName, xmlNodePtr
     
     Util_XML_Read_Species_RBCParam(bm, fileName, childGroupingNode, isTriggerSpecies_id);
     Util_XML_Read_Species_RBCParam(bm, fileName, childGroupingNode, UseRBCAveraging_id);
-    Util_XML_Read_Species_RBCParam(bm, fileName, childGroupingNode, trigger_threshold_id);
-
 
 }

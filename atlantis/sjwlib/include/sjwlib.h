@@ -142,7 +142,7 @@ double  decay_backward(double c,double k,double dt);
 double  decay_exact(double c,double k,double dt);
 void    diffusion1d(int n, double *c, double *xc, double *k, double *xk, double dt, double a);
 
-void    free_diffusion1d(int dummy);
+void    free_diffusion1d(void);
 
 double  w_tophat(double x, double scale);
 double  w_linear(double x, double scale);

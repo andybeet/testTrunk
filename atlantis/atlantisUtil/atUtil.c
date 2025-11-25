@@ -258,8 +258,9 @@ void Util_Setup_Species_Param_Strings(MSEBoxModel *bm) {
 	sprintf(paramStrings[flagq10eff_id], "%s", "flagq10eff");
 	sprintf(paramStrings[q10_id], "%s", "q10_");
 	sprintf(paramStrings[q10_method_id], "%s", "q10_method_");
-    sprintf(paramStrings[q10_optimal_temp_id], "%s", "q10_optimal_temp_");
+	sprintf(paramStrings[q10_optimal_temp_id], "%s", "q10_optimal_temp_");
 	sprintf(paramStrings[q10_correction_id], "%s", "q10_correction_");
+	sprintf(paramStrings[q10_method_id], "%s", "q10_method_");
 	sprintf(paramStrings[optimal_pH_id], "%s", "optimal_pH_");
 	sprintf(paramStrings[salt_correction_id], "%s", "salt_correction_");
 	sprintf(paramStrings[pH_correction_id], "%s", "pH_correction_");
@@ -322,15 +323,6 @@ void Util_Setup_Species_Param_Strings(MSEBoxModel *bm) {
 	sprintf(paramStrings[prop_spawn_lost_id], "%s", "prop_spawn_lost_");
 	sprintf(paramStrings[jack_a_id], "%s", "jack_a_");
 	sprintf(paramStrings[jack_b_id], "%s", "jack_b_");
-    
-    sprintf(paramStrings[prod_alpha_id], "%s", "prod_alpha_");
-    sprintf(paramStrings[den_depend_beta1_id], "%s", "den_depend_beta1_");
-    sprintf(paramStrings[den_depend_beta2_id], "%s", "den_depend_beta2_");
-    sprintf(paramStrings[temp_coefft_id], "%s", "temp_coefft_");
-    sprintf(paramStrings[rate_coefft_id], "%s", "rate_coefft_");
-    sprintf(paramStrings[wind_coefft_id], "%s", "wind_coefft_");
-    sprintf(paramStrings[recruit_var_id], "%s", "rec_var_");
-    
 	sprintf(paramStrings[intersp_depend_recruit_id], "%s", "intersp_depend_recruit_");
 	sprintf(paramStrings[intersp_depend_sp_id], "%s", "intersp_depend_sp_");
 	sprintf(paramStrings[intersp_depend_scale_id], "%s", "intersp_depend_scale_");
@@ -551,7 +543,6 @@ void Util_Setup_Species_Param_Strings(MSEBoxModel *bm) {
 	sprintf(paramStrings[regionalSP_id], "%s", "regionalSP");
 	sprintf(paramStrings[basketSP_id], "%s", "basketSP");
 	sprintf(paramStrings[basket_size_id], "%s", "basket_size");
-    sprintf(paramStrings[max_co_sp_id], "%s", "max_co_sp_");
 	sprintf(paramStrings[coType_id], "%s", "coType_");
 	sprintf(paramStrings[tac_resetperiod_id], "%s", "tac_resetperiod");
 	sprintf(paramStrings[aquacult_age_harvest_id], "%s", "_age_harvest");
@@ -561,7 +552,7 @@ void Util_Setup_Species_Param_Strings(MSEBoxModel *bm) {
     sprintf(paramStrings[cpue_cdf_top_p_id], "%s", "cpue_cdf_top_p_");
     
     sprintf(paramStrings[whichRAssess_id], "%s", "whichRAssess_");
-    
+
 	bm->SP_FISHERYprmsName = (char **) c_alloc2d(50, tot_sp_specif_fishing_prms);
 	sprintf(bm->SP_FISHERYprmsName[sel_id], "%s", "sel_");
 	sprintf(bm->SP_FISHERYprmsName[flagQchange_id], "%s", "flagQchange_");
@@ -595,6 +586,8 @@ void Util_Setup_Species_Param_Strings(MSEBoxModel *bm) {
 	sprintf(bm->SP_FISHERYprmsName[imposecatchend_id], "%s", "imposecatchend_");
 	sprintf(bm->SP_FISHERYprmsName[FC_reportscale_id], "%s", "reportscale_");
 	sprintf(bm->SP_FISHERYprmsName[trip_lim_id], "%s", "TripLimit_");
+	sprintf(bm->SP_FISHERYprmsName[co_sp_catch_id], "%s", "co_sp_catch_");
+	sprintf(bm->SP_FISHERYprmsName[co_sp_catch2_id], "%s", "co_sp_catch2_");
 	sprintf(bm->SP_FISHERYprmsName[prop_spawn_close_id], "%s", "prop_spawn_close_");
 	sprintf(bm->SP_FISHERYprmsName[TAC_id], "%s", "TAC_");
 	sprintf(bm->SP_FISHERYprmsName[FC_case_id], "%s", "FC_case");
@@ -665,7 +658,6 @@ void Util_Setup_Species_Param_Strings(MSEBoxModel *bm) {
 
     sprintf(RBCParamStrings[isTriggerSpecies_id], "%s", "isTriggerSpecies_");
 	sprintf(RBCParamStrings[TriggerResponseScen_id], "%s", "TriggerResponseScen_");
-    sprintf(RBCParamStrings[trigger_threshold_id], "%s", "trigger_threshold_");
 
 	sprintf(RBCParamStrings[CPUEmult_id], "%s", "CPUEmult_");
 	sprintf(RBCParamStrings[MaxChange_id], "%s", "MaxChange_");
@@ -720,9 +712,6 @@ void Util_Setup_Species_Param_Strings(MSEBoxModel *bm) {
     sprintf(RBCParamStrings[init_mgt_category_id], "%s", "init_mgt_category_");
     sprintf(RBCParamStrings[init_mgt_sp_id], "%s", "init_mgt_sp_");
     
-    sprintf(RBCParamStrings[PGMSYBHalpha_id], "%s", "PGMSYBHalpha_");
-    sprintf(RBCParamStrings[PGMSYBHbeta_id], "%s", "PGMSYBHbeta_");
-
     return;
 }
 
@@ -1065,7 +1054,7 @@ int Util_ncopen(const char *destFolder, const char* name ,int mode){
 	}
 	trim(fileName);
     
-    //printf("Opening %s\n", fileName);
+    printf("Opening %s\n", fileName);
 
 	/**
 	 *	Open the file to check that it exists if the mode is NC_NOWRITE.

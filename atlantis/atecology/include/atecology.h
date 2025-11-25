@@ -97,8 +97,7 @@ extern int verbose; /** \var If true then detailed debugging information is writ
 
 /* Migration and reproduction arrays */
 
-extern int **recover_help, **starve_vert, **nSTOCK, **shiftVERTON, **prey_counted, *mig_returners, *active_den, *not_finished, *ngene_done, *stock_done;
-//extern int *mig_status;
+extern int **recover_help, **starve_vert, **nSTOCK, **shiftVERTON;
 
 /* Population arrays */
 
@@ -107,25 +106,18 @@ extern double ****readinpopratio, ****newden, ****recVERTpopratio,
 		***BEDchange, ***Vchange, ***pSTOCK, ***initVERTinfo, ***cysts,
 		***VERTinfo, **sumSTOCK, **Tchange, **roc, **spSTOCKprop,
 		*sizeMinMax, **stock_prop, **recSTOCK, **totden, **recruit_vdistrib,
-		**tempdistrib, **VERTabund_check, ***totrecruit, **totden_check, 
-        **Schange, **tot_yoy, **KDENR, *lostden_zero, *adults_spawning,
-		*recover_help_set, *BED_scale, **step1distrib,
+		**tempdistrib, **VERTabund_check, ***totrecruit,
+        **Schange, **tot_yoy, **KDENR,
+		*recover_help_set, *BED_scale, *adults_spawning, **step1distrib,
 		***PREYinfo, ***GRAZEinfo, ***EATINGinfo, ***FEEDinfo, **PHchange,
-		**CATCHEATINGinfo, **CATCHGRAZEinfo, **SUPPdistrib, **boxden, ****currentden,
-        **leftden, *newden_sum, ***preyamt, *totad, *totboxden, *totroc, *yoy, *totsum,
-        *totksum, *tot_new_mat, *coming_SPden, *numbers_entering,
-        *numbers_already_present, **totdenCheck;
-
-extern double *initialIceBiomass, *initialLandBiomass, *initialBiomass,
-        *initialSedBiomass, *initialEpiBiomass, *initialWaterBiomass;
+		**CATCHEATINGinfo, **CATCHGRAZEinfo, **SUPPdistrib;
 
 extern int maxMortChange;
 extern int ***numMortChanges;
+extern int **counted;
 extern int *tsRecruitsid;
 
 extern double *****LinearMortChange;
-
-extern BoxLayerValues *boxLayerInfo;
 
 extern int *Fluxflag; /* Flag vector for diagonostic tracers, 1=yes, 0=no */
 extern int *Tolflag; /* Flag vector for tolerance checking variables, 1=yes, 0=no*/
@@ -151,10 +143,7 @@ extern double *regIDi;
 
 extern char *pFCPIN, *pFCWHT, *pFCWHS, *Box_degraded, *regids;
 
-extern double Susp_Sed, cell_depth, DRdepth, O2depth, newO2depth, current_layer_sed,
-    Turbatn_contribs, Irrig_contribs, H2Otemp, current_SALT, current_PH, init_PH,
-    Bact_stim, current_depth, area_reef, area_flat, area_canyon, area_box, area_soft,
-    eddy_strength, current_SALT, LocalRugosity, current_ARAG, current_WIND;
+extern double Susp_Sed, cell_depth, DRdepth, O2depth, newO2depth, current_layer_sed, Turbatn_contribs, Irrig_contribs, H2Otemp, current_SALT, current_PH, init_PH, Bact_stim, current_depth, area_reef, area_flat, area_canyon, area_box, area_soft, eddy_strength, current_SALT, LocalRugosity, current_ARAG;
 
 extern double tot_dyn_sea_area, Enviro_turb, BioirrigEnh, BioturbEnh;
 
@@ -472,7 +461,6 @@ void Ice_PrimaryProduction(MSEBoxModel *bm, FILE *llogfp, int sp_id, int micro_c
 		double *spUptakeFe, double *sphN);
 
 double 	Get_Ice_Presence(MSEBoxModel *bm, int sp, int stage, int ij, int k, int ***HABlike);
-double  Get_Ice_Rating(MSEBoxModel *bm, int sp);
 double 	Get_Ice_Vertebrate_Habitat_Rating(MSEBoxModel *bm, int guildcase, int stage, int boxin);
 void 	Calculate_IceBact_Scale(MSEBoxModel *bm, HABITAT_TYPES habitatType, BoxLayerValues *boxLayerInfo);
 void 	Calculate_Ice_Prey_Avail(MSEBoxModel *bm, BoxLayerValues *boxLayerInfo, int guild, double ***spPREYinfo, double *avail_Ice_Bact);

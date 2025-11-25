@@ -240,8 +240,7 @@ void readCompanionSpeciesXML(MSEBoxModel *bm, char *fileName, xmlNodePtr parent)
 	char errorString[STRLEN];
 	char *nodeName =  Util_Get_Node_Name(parent);
 
-    printf("Doing readCompanionSpeciesXML\n");
-    
+
 	sprintf(errorString, "%s/CompanionSpecies", nodeName);
 
 	attributeGroup = Util_XML_Get_Node(ATLANTIS_ATTRIBUTE, parent, "CompanionSpecies");
@@ -262,56 +261,6 @@ void readCompanionSpeciesXML(MSEBoxModel *bm, char *fileName, xmlNodePtr parent)
 		}
 	}
 	free(nodeName);
-}
-
-/**
- *    \brief Read the companion catch ratios
- */
-static void Read_Fishery_Companion_Catch_XML(MSEBoxModel *bm, char *fileName, xmlNodePtr parent) {
-    
-    double *values = 0;
-    int guild, nf, co_sp;
-    xmlNodePtr attributeNode, speciesNode;
-    char str[100];
-    char errorString[STRLEN];
-
-    if (verbose)
-        printf("Reading co_sp_catch values\n");
-
-    attributeNode = Util_XML_Get_Node(ATLANTIS_ATTRIBUTE, parent, "co_sp_catch");
-    if (attributeNode == NULL)
-        quit("CompanionSpeciesCatch attribute group not found in input file %s.\n", fileName);
-
-    /* Create a node for each functional group*/
-    for (guild = 0; guild < bm->K_num_tot_sp; guild++) {
-        if (FunctGroupArray[guild].isFished == TRUE) {
-
-            sprintf(errorString, "Companion_Parameters/co_sp_catch/%s", FunctGroupArray[guild].groupCode);
-            speciesNode = Util_XML_Get_Node(ATLANTIS_GROUP_ATTRIBUTE, attributeNode, FunctGroupArray[guild].groupCode);
-            if (speciesNode == NULL)
-                quit("Companion_Parameters/co_sp_catch/%s species attribute group not found.\n", FunctGroupArray[guild].groupCode);
-
-            for (co_sp = 0; co_sp < FunctGroupArray[guild].speciesParams[max_co_sp_id]; co_sp++) {
-
-                sprintf(str, "companion%d", co_sp + 1);
-                sprintf(errorString, "co_sp_catch/%s/%s", FunctGroupArray[guild].groupCode, str);
-
-                if (Util_XML_Read_Array_Double(ATLANTIS_COMPANION_ATTRIBUTE, fileName, errorString, speciesNode, no_checking, str, &values, bm->K_num_fisheries) == FALSE) {
-                    quit("Error: Unable to find parameter '%s/%s' in input file %s\n", errorString, str, fileName);
-                }
-
-                //printf("For %s co_sp %d ", FunctGroupArray[guild].groupCode, co_sp);
-
-                for (nf = 0; nf < bm->K_num_fisheries; nf++) {
-                    FunctGroupArray[guild].co_sp_catch[nf][co_sp] = values[nf];
-                    
-                    //printf(" %e ", values[nf]);
-                }
-                //printf("\n");
-                free(values);
-            }
-        }
-    }
 }
 
 /**
@@ -563,27 +512,16 @@ void readManamentFlagTimeXML(MSEBoxModel *bm, char *fileName, xmlNodePtr rootnod
 
 	bm->flagreinitpop = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, binary_check, "flagreinitpop"));
 	bm->pseudo_assess = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, binary_check, "pseudo_assess"));
-    bm->do_sumB_HCR = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, integer_check, "do_sumB_HCR"));
-    bm->flagSSBforHCR = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, binary_check, "flagSSBforHCR"));
-
+    bm->do_sumB_HCR = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, binary_check, "do_sumB_HCR"));
+    
 	/* Scenario painting switches */
 	bm->flagbuffereffort = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, binary_check, "flagbuffereffort"));
 	bm->flagchangeeffort = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, binary_check, "flagchangeeffort"));
 	bm->flagchangecap = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, binary_check, "flagchangecap"));
 	bm->flagnewport = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, binary_check, "flagnewport"));
 	bm->flagchangepop = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, binary_check, "flagchangepop"));
-	bm->flag_sel_with_mFC = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, binary_check, "flag_sel_with_mFC"));
-    bm->flag_stop_F_tac = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, binary_check, "flag_stop_F_tac"));
-
-    /** Ecosystem cacth cap parameters */
-    bm->maxF_aggregate = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, binary_check, "maxF_aggregate"));
-    bm->use_time_avg_biom = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, binary_check, "use_time_avg_biom"));
-    bm->use_time_avg_wgt = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, binary_check, "use_time_avg_wgt"));
-    bm->syst_cap_calc_method = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, integer_check, "syst_cap_calc_method"));
-    bm->M_est_method = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, integer_check, "M_est_method"));
-    bm->Ecosystm_Cap_tonnes = (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, no_checking, "Ecosystm_Cap_tonnes"));
-    bm->K_cap_rolling_period = (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, no_checking, "K_cap_rolling_period"));
-    bm->sp_pref_inv_norm_done = 0;
+	bm->flag_sel_with_mFC =  (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, binary_check, "flag_sel_with_mFC"));
+    bm->flag_stop_F_tac =  (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, binary_check, "flag_stop_F_tac"));
 
 	/** Fisheries flags **/
 	bm->DynDAS = (int) (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, attributeGroupNode, binary_check, "dynDAS"));
@@ -797,13 +735,11 @@ void readTACXML(MSEBoxModel *bm, char *fileName, xmlNodePtr rootnode) {
 	bm->targ_refB = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, childGroupingNode, proportion_check, "targ_refB");
 	bm->targ_refC = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, childGroupingNode, proportion_check, "targ_refC");
 	bm->targ_refD = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, childGroupingNode, proportion_check, "targ_refD");
-	bm->targ_refE = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, childGroupingNode, proportion_check, "targ_refE");
 	bm->lim_ref = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, childGroupingNode, proportion_check, "lim_ref");
 	bm->forage_refA = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, childGroupingNode, proportion_check, "forage_refA");
 	bm->forage_refB = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, childGroupingNode, proportion_check, "forage_refB");
 	bm->forage_refC = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, childGroupingNode, proportion_check, "forage_refC");
 	bm->forage_refD = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, childGroupingNode, proportion_check, "forage_refD");
-	bm->forage_refE = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, childGroupingNode, proportion_check, "forage_refE");
 	bm->forage_lim_ref = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, childGroupingNode, proportion_check, "forage_lim_ref");
     bm->byproduct_refA = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, childGroupingNode, proportion_check, "byproduct_refA");
     bm->byproduct_refB = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, childGroupingNode, proportion_check, "byproduct_refB");
@@ -851,30 +787,9 @@ void readTACXML(MSEBoxModel *bm, char *fileName, xmlNodePtr rootnode) {
     if(	Util_XML_Read_Array_Double(ATLANTIS_ATTRIBUTE, fileName, "TAC_Parameters/Reference_Points",childGroupingNode, no_checking, "Fref_High", &FrefHi, bm->K_num_tot_sp) == FALSE){
         quit("Error: Unable to find parameter 'TAC_Parameters/Reference_Points/Fref_High' in input file %s\n",  fileName);
     }
-    if(    Util_XML_Read_Array_Double(ATLANTIS_ATTRIBUTE, fileName, "TAC_Parameters/Reference_Points",childGroupingNode, no_checking, "FrefLim", &FrefLimi, bm->K_num_tot_sp) == FALSE){
-        quit("Error: Unable to find parameter 'TAC_Parameters/Reference_Points/FrefLim' in input file %s\n",  fileName);
-    }
-    if(	Util_XML_Read_Array_Double(ATLANTIS_ATTRIBUTE, fileName, "TAC_Parameters/Reference_Points",childGroupingNode, no_checking, "Frestart_scalar", &FreStarti, bm->K_num_tot_sp) == FALSE){
+    if(	Util_XML_Read_Array_Double(ATLANTIS_ATTRIBUTE, fileName, "TAC_Parameters/Frestart_scalar",childGroupingNode, no_checking, "Frestart_scalar", &FreStarti, bm->K_num_tot_sp) == FALSE){
         quit("Error: Unable to find parameter 'TAC_Parameters/Reference_Points/Frestart_scalar' in input file %s\n",  fileName);
     }
-    
-	childGroupingNode = Util_XML_Get_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, rootnode, "SystemCap_Parameters");
-	if (childGroupingNode == NULL)
-		quit("readTACXML: SystemCap_Parameters attribute group not found in input file %s.\n", fileName);
-
-	if( Util_XML_Read_Array_Double(ATLANTIS_ATTRIBUTE, fileName, "SystemCap_Parameters/",childGroupingNode, no_checking, "FlagSystCapSP", &FlagSystCapSPi, bm->K_num_tot_sp) == FALSE){
-        quit("Error: Unable to find parameter 'SystemCap_Parameters/FlagSystCapSP' in input file %s\n",  fileName);
-    }
-    if( Util_XML_Read_Array_Double(ATLANTIS_ATTRIBUTE, fileName, "SystemCap_Parameters/",childGroupingNode, no_checking, "SystCapSPpref", &SystCapSPprefi, bm->K_num_tot_sp) == FALSE){
-        quit("Error: Unable to find parameter 'SystemCap_Parameters/SystCapSPpref' in input file %s\n",  fileName);
-    }
-    
-    if(!do_assess) {
-        if( Util_XML_Read_Array_Double(ATLANTIS_ATTRIBUTE, fileName, "SystemCap_Parameters/",childGroupingNode, no_checking, "FixedAssessMort", &AssessMorti, bm->K_num_tot_sp) == FALSE){
-            quit("Error: Unable to find parameter 'SystemCap_Parameters/FixedAssessMort' in input file %s\n",  fileName);
-        }
-    }
-    
 
     Util_XML_Read_Species_Param(bm, fileName, groupingNode, tier_id);
     
@@ -896,9 +811,20 @@ void readTACXML(MSEBoxModel *bm, char *fileName, xmlNodePtr rootnode) {
 	bm->sp_basket = Util_Alloc_Init_2D_Int(bm->K_num_basket, bm->K_num_tot_sp, bm->K_num_tot_sp);
 
 	readBasketTACXML(bm, fileName, groupingNode);
-        
+
+	bm->K_max_co_sp = (int)Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, groupingNode, integer_check, "max_co_sp");
+	//Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "max_co_sp", "Maximum number of companions in a companion TAC", "", XML_TYPE_INTEGER, "2");
+
+	for (i = 0; i < bm->K_num_tot_sp; i++) {
+		FunctGroupArray[i].co_sp = Util_Alloc_Init_1D_Int(bm->K_max_co_sp, 0);
+	}
+
+	readCompanionSpeciesXML(bm, fileName, groupingNode);
+
+	Util_XML_Read_Species_Param(bm, fileName, groupingNode, coType_id);
 	Util_XML_Read_Species_Param(bm, fileName, groupingNode, tac_resetperiod_id);
 	bm->bulkTAC = (int)Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, groupingNode, binary_check, "bulkTAC");
+
 
     for(sp = 0; sp<bm->K_num_tot_sp; sp++){
     	if(FunctGroupArray[sp].isImpacted == TRUE){
@@ -916,34 +842,15 @@ void readTACXML(MSEBoxModel *bm, char *fileName, xmlNodePtr rootnode) {
     	bm->bulkTAC = 0;
 
 
+    Util_XML_Read_Impacted_Group_Param(bm, fileName, groupingNode, co_sp_catch_id);
+	Util_XML_Read_Impacted_Group_Param(bm, fileName, groupingNode, co_sp_catch2_id);
 	Util_XML_Read_Fishery_Group_Param(bm, fileName, groupingNode, prop_spawn_close_id);
 
 	Util_XML_Read_Species_Param(bm, fileName, groupingNode, sp_concern_id);
-    
-    groupingNode = Util_XML_Get_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, rootnode, "Companion_Parameters");
-    if (groupingNode == NULL)
-        quit("readTACXML: Companion_Parameters attribute group not found in input file %s.\n", fileName);
-
-    bm->K_max_co_sp = (int)Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, groupingNode, integer_check, "K_max_co_sp");
-    //Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "max_co_sp", "Maximum number of companions in a companion TAC", "", XML_TYPE_INTEGER, "2");
-
-    if( bm->K_max_co_sp > 0) {
-        for (i = 0; i < bm->K_num_tot_sp; i++) {
-            FunctGroupArray[i].co_sp = Util_Alloc_Init_1D_Int(bm->K_max_co_sp, 0);
-            FunctGroupArray[i].co_sp_catch = Util_Alloc_Init_2D_Double(bm->K_max_co_sp, bm->K_num_fisheries, 0.0);
-        }
-
-        Util_XML_Read_Species_Param(bm, fileName, groupingNode, max_co_sp_id);
-        readCompanionSpeciesXML(bm, fileName, groupingNode);
-        Util_XML_Read_Species_Param(bm, fileName, groupingNode, coType_id);
-        
-        Read_Fishery_Companion_Catch_XML(bm, fileName, groupingNode);
-    }
-
 
 }
 
-/* Read the Seasonal Fishery xml nodes */
+/* Create the Seasonal Fishery xml ndoes */
 void readSeaonalFisheryXML(MSEBoxModel *bm, char *fileName, xmlNodePtr rootnode) {
 
 	int i;
@@ -967,7 +874,7 @@ void readSeaonalFisheryXML(MSEBoxModel *bm, char *fileName, xmlNodePtr rootnode)
 	Util_XML_Read_Fishery_Param(bm, fileName, groupingNode, seasonclose_id);
 }
 
-/* Read the ryke based Fishery xml nodes */
+/* Create the Seasonal Fishery xml ndoes */
 void readRuleBasedFisheryManagementXML(MSEBoxModel *bm, char *fileName, xmlNodePtr rootnode) {
 
 	xmlNodePtr groupingNode;
@@ -1151,39 +1058,6 @@ void readSpatialManagementXML(MSEBoxModel *bm, char *fileName, xmlNodePtr rootno
 
 }
 
-/* Read the contaminant Fishery xml ndoes */
-void readContaminantFisheryXML(MSEBoxModel *bm, char *fileName, xmlNodePtr rootnode) {
-    int i, cIndex;
-    xmlNodePtr groupingNode;
-    char varStr[STRLEN*2];
-    double *values = 0;
-    char errorString[STRLEN];
-    sprintf(errorString, "%s/Fishery_Contaminant_Parameters", (char *)rootnode->name);
- 
-    groupingNode = Util_XML_Get_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, rootnode, "Fishery_Contaminant_Parameters");
-    if (groupingNode == NULL)
-        quit("readContaminantFisheryXML: %s attribute group not found in input file %s.\n", errorString, fileName);
-    
-    if(Util_XML_Read_Array_Double(ATLANTIS_ATTRIBUTE, fileName, errorString, groupingNode, integer_check, "ContamClosed", &values, bm->nbox) == FALSE){
-        quit("Error: Unable to find parameter '%s/ContamClosed' in input file %s\n",  errorString, fileName);
-    }
-    
-    for (i = 0; i < bm->nbox; i++) {
-        bm->ContamClosed[i] = values[i];
-    }
-    free(values);
-    
-    bm->flag_contam_fisheries_mgmt = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, integer_check, "flag_contam_fisheries_mgmt");
-    bm->contam_fishery_closure_day = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, integer_check, "contam_fishery_closure_day");
-    bm->contam_fishery_closure_period = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, integer_check, "contam_fishery_closure_period");
-    bm->contam_fishery_closure_option = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, integer_check, "contam_fishery_closure_option");
-
-    for(cIndex = 0; cIndex < bm->num_contaminants; cIndex++){
-        sprintf(varStr, "%s_fishery_thresh_level", bm->contaminantStructure[cIndex]->contaminant_name);
-        bm->contaminantStructure[cIndex]->fishery_thresh_level = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, no_checking, varStr);
-    }
-}
-
 /**
  *	This routine reads all parameters of the management models
  *
@@ -1213,9 +1087,7 @@ int Read_Manage_Paramaters(MSEBoxModel *bm, char *filename) {
 	readManagementPerformanceIndicatorsXML(bm, filename, inputDoc->children);
 	readSpatialManagementXML(bm, filename, inputDoc->children);
 	readGearConflictXML(bm, filename, inputDoc->children);
-    if(bm->track_contaminants){
-        readContaminantFisheryXML(bm, filename, inputDoc->children);
-    }    
+    
 	// Used to do tiered read-in here but moved to the assessment library
 
 	xmlFreeDoc(inputDoc);

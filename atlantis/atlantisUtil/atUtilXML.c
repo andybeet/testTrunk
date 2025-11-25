@@ -121,15 +121,6 @@ SpeciesParamStruct speciesParamStructArray[tot_prms] =
 		{ "FLAG_LOG_MULT", log_mult_id, "_log_mult$", no_checking, 1.0, SP_AGE_STRUCTURED },
         { "FLAG_NORM_SIGMA", norm_sigma_id, "_norm_sigma$", no_checking, 1.0, SP_AGE_STRUCTURED },
         { "FLAG_STOCASTIC_REC", flag_recruit_stochastic_id, "_flag_recruit_stochastic$", binary_check, 1.0, SP_AGE_STRUCTURED },
-        
-        { "FLAG_PROD_ALPHA", prod_alpha_id, "^prod_alpha_", no_checking, 1.0, SP_AGE_STRUCTURED },
-        { "FLAG_DDEPEND_BETA1", den_depend_beta1_id, "^den_depend_beta1_", no_checking, 1.0, SP_AGE_STRUCTURED },
-        { "FLAG_DDEPEND_BETA2", den_depend_beta2_id, "^den_depend_beta2_", no_checking, 1.0, SP_AGE_STRUCTURED },
-        { "FLAG_TEMP_COEFFT", temp_coefft_id, "^temp_coefft_", no_checking, 1.0, SP_AGE_STRUCTURED },
-        { "FLAG_RATE_COEFFT", rate_coefft_id, "^rate_coefft_", no_checking, 1.0, SP_AGE_STRUCTURED },
-        { "FLAG_WIND_COEFFT", wind_coefft_id, "^wind_coefft_", no_checking, 1.0, SP_AGE_STRUCTURED },
-        { "FLAG_REC_VAR", recruit_var_id, "^rec_var_", no_checking, 1.0, SP_AGE_STRUCTURED },
-        
 		{ "FLAG_MIN_SPAWN_TEMP", min_spawn_temp_id, "_min_spawn_temp$", no_checking, 1.0, SP_AGE_STRUCTURED },
 		{ "FLAG_MAX_SPAWN_TEMP", max_spawn_temp_id, "_max_spawn_temp$", no_checking, 1.0, SP_AGE_STRUCTURED },
 		{ "FLAG_MIN_SPAWN_SALT", min_spawn_salt_id, "_min_spawn_salt$", no_checking, 1.0, SP_AGE_STRUCTURED },
@@ -224,7 +215,7 @@ SpeciesParamStruct speciesParamStructArray[tot_prms] =
 
 		/* Temperature related parameters */
 		{ "FLAG_Q10", q10_id, "^q10_([A-Z]{2,3})$", no_checking, 1.0, SP_ALL },
-		{ "FLAG_Q10_METHOD", q10_method_id, "^q10_method_", integer_check, 1.0, SP_NOT_DET },
+		{ "FLAG_Q10_METHOD", q10_method_id, "^q10_method_", integer_check, 1.0, SP_ALL },
 		{ "FLAG_Q10_OPTIMAL_TEMP", q10_optimal_temp_id, "^q10_optimal_temp_", no_checking, 1.0, SP_Q10 },
 		{ "FLAG_Q10_CORRECTION", q10_correction_id, "^q10_correction_", no_checking, 1.0, SP_Q10 },
 
@@ -409,7 +400,6 @@ SpeciesParamStruct speciesParamStructArray[tot_prms] =
 		{ "SP_Concern", sp_concern_id, "", binary_check, 1.0, SP_FISHED },
 		{ "BasketQuotaFlag", basketSP_id, "^basketSP", binary_check, 1.0, SP_FISHED },
 		{ "BasketSize", basket_size_id, "^basket_size", integer_check, 1.0, SP_FISHED },
-        { "CompanionSpMax", max_co_sp_id, "^max_co_sp_", integer_check, 1.0, SP_FISHED },
 		{ "CompanionTACType", coType_id, "^coType_", integer_check, 1.0, SP_FISHED },
 		{ "TACResetPeriod", tac_resetperiod_id, "^tac_resetperiod", no_checking, 1.0, SP_FISHED },
         
@@ -526,7 +516,6 @@ SpeciesParamStruct RBCSpeciesParamStructArray[num_rbc_species_params_id] =
         { "FLAG_TIER3SIG", Tier3Sig_id, "^Tier3Sig_", no_checking, 1, SP_IMPACTED },
         
         { "FLAG_TRIGGERSP", isTriggerSpecies_id, "^isTriggerSpecies_", integer_check, 1, SP_IMPACTED },
-        { "FLAG_TRIGTHRESH", trigger_threshold_id, "^trigger_threshold_", no_checking, 1, SP_IMPACTED },
         { "FLAG_USERBCAVG", UseRBCAveraging_id, "^UseRBCAveraging_", integer_check, 1, SP_IMPACTED },
         
 	/** reference levels */
@@ -617,7 +606,7 @@ SpeciesParamStruct RBCSpeciesParamStructArray[num_rbc_species_params_id] =
         
     // Ratpack parameters
         { "FLAG_LFSSLIM", LFSSlim_id, "LFSSlim_", integer_check, 1, SP_IMPACTED },
-        { "FLAG_AFSSLIM", AFSSlim_id, "AFSSlim_", integer_check, 1, SP_IMPACTED },
+        { "FLAG_LFSSLIM", AFSSlim_id, "LFSSlim_", integer_check, 1, SP_IMPACTED },
         { "FLAG_NSURVEY", NumSurvey_id, "NumSurvey_", integer_check, 1, SP_IMPACTED },
         { "FLAG_REGIMEYR", Regime_year_assess_id, "Regime_year_assess_", integer_check, 1, SP_IMPACTED },
         { "FLAG_NBLOCK", NblockPattern_id, "NblockPattern_", integer_check, 1, SP_IMPACTED },
@@ -627,11 +616,7 @@ SpeciesParamStruct RBCSpeciesParamStructArray[num_rbc_species_params_id] =
         { "FLAG_MSASSESS", MultispAssessType_id, "MultispAssessType_", integer_check, 1, SP_IMPACTED },
         { "FLAG_INDIC_SP", mgt_indicator_id, "mgt_indicator_", integer_check, 1, SP_IMPACTED },
         { "FLAG_INITMGMT_CAT", init_mgt_category_id, "init_mgt_category_", integer_check, 1, SP_IMPACTED },
-        { "FLAG_INITMGMT_SP", init_mgt_sp_id, "init_mgt_sp_", integer_check, 1, SP_IMPACTED },
-        
-    // PGMSY parameters
-        { "FLAG_PGMSYALPHA", PGMSYBHalpha_id, "^PGMSYBHalpha_", no_checking, 1, SP_FISHED },
-        { "FLAG_PGMSYBETA", PGMSYBHbeta_id, "^PGMSYBHbeta_", no_checking, 1, SP_FISHED }
+        { "FLAG_INITMGMT_SP", init_mgt_sp_id, "init_mgt_sp_", integer_check, 1, SP_IMPACTED }
 	};
 
 
@@ -646,12 +631,10 @@ char AtlantisXMLObjectNAMES[NUM_ATLANTIS_NODE_TYPES][3][100] =
 		{ "CohortValue", "CohortName", "AttributeValue" },
 		{ "SexValue", "SexName", "AttributeValue" },
 		{ "FisheryValue", "FisheryName", "AttributeValue" },
-		{ "FisheyGroupValue", "GroupName", "AttributeValue" },
-        { "CompanionValue", "CompanionName", "AttributeValue" }
-    };
+		{ "FisheyGroupValue", "GroupName", "AttributeValue" } };
 
 
-char AtlantisXMLAttributeTypeStrings[10][100] =
+char AtlantisXMLAttributeTypeStrings[9][100] =
 	{
 		{ "Float" },
 		{ "Integer" },
@@ -661,8 +644,7 @@ char AtlantisXMLAttributeTypeStrings[10][100] =
 		{ "Lookup" },
 		{ "BooleanArray" },
 		{ "LookupArray" },
-        {"String" },
-        {"StringArray" }};
+		{"String"}};
 
 static int Check_Input_Array(double **p, int sized, int entry_type, char *key) {
 	int returnValue = TRUE;
@@ -1217,13 +1199,9 @@ int Util_XML_Get_Value_Double(char *fileName, int type, int localecotest, int is
 	if (verbose > 2)
 		printf("value = %e\n", value);
 	Check_Value(valueName, value, entry_type, valueName);
-	
-	printf("In atUtilXML printing ecosystem parameters");
-	
 	if (localecotest > 2)
 		printf("Ecosystem parameter: %s = %f\n", valueName, value);
-	printf("In atUtilXML printing ecosystem parameters");
-	
+
 	*returnValue = value;
 	return TRUE;
 }

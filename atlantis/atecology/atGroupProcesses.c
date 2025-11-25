@@ -161,19 +161,15 @@ static void Update_Detritus(MSEBoxModel *bm, BoxLayerValues *boxLayerInfo, HABIT
 
 			/* Release contaminants back into the water column */
             //fprintf(bm->logFile,"Calling Gain_Contaminants from Update_Detritus WC WC - %s-%d with initialBiomass: %e releaseNH: %e\n", FunctGroupArray[guild].groupCode, cohort, initialBiomass, FunctGroupArray[guild].releaseNH[cohort]);
-            if(bm->flag_detritus_contam) {
-                Gain_Contaminants(bm, boxLayerInfo, WC, WC, guild, cohort, FunctGroupArray[guild].releaseNH[cohort], 0, initialBiomass);
-            }
+            Gain_Contaminants(bm, boxLayerInfo, WC, WC, guild, cohort, FunctGroupArray[guild].releaseNH[cohort], 0, initialBiomass);
 
 
 			/* Now handle transfer due to predation - group gains contaminants due to eating detritus and bacteria */
             //fprintf(bm->logFile,"Calling Group_Transfer_Contaminant from Update_Detritus WC WC - %s-%d with grazebact: %e grazeDR: %e, grazeDL: %e EATINGinfobact: %e EATINGinfoDR: %e, EATINGinfoDL: %e\n", FunctGroupArray[guild].groupCode, cohort, GRAZEinfo[pelagicBactIndex][0][WC], GRAZEinfo[RefDetIndex][0][WC], GRAZEinfo[LabDetIndex][0][WC], EATINGinfo[pelagicBactIndex][0][WC], EATINGinfo[RefDetIndex][0][WC], EATINGinfo[LabDetIndex][0][WC]);
             
             Group_Transfer_Contaminant(bm, boxLayerInfo, WC, WC, guild, cohort, pelagicBactIndex, 0, GRAZEinfo[pelagicBactIndex][0][WC], 0, EATINGinfo[pelagicBactIndex][0][WC], bm->dtsz_stored, 1, 2);
-            if(bm->flag_detritus_contam) { // If allowing transfer of contaminants due to eating detritus
-                Group_Transfer_Contaminant(bm, boxLayerInfo, WC, WC, guild, cohort, RefDetIndex, 0, GRAZEinfo[RefDetIndex][0][WC], 0, EATINGinfo[RefDetIndex][0][WC], bm->dtsz_stored, 1, 3);
-                Group_Transfer_Contaminant(bm, boxLayerInfo, WC, WC, guild, cohort, LabDetIndex, 0, GRAZEinfo[LabDetIndex][0][WC], 0, EATINGinfo[LabDetIndex][0][WC], bm->dtsz_stored, 1, 4);
-            }
+			Group_Transfer_Contaminant(bm, boxLayerInfo, WC, WC, guild, cohort, RefDetIndex, 0, GRAZEinfo[RefDetIndex][0][WC], 0, EATINGinfo[RefDetIndex][0][WC], bm->dtsz_stored, 1, 3);
+			Group_Transfer_Contaminant(bm, boxLayerInfo, WC, WC, guild, cohort, LabDetIndex, 0, GRAZEinfo[LabDetIndex][0][WC], 0, EATINGinfo[LabDetIndex][0][WC], bm->dtsz_stored, 1, 4);
 		}
 
 		break;
@@ -238,19 +234,15 @@ static void Update_Detritus(MSEBoxModel *bm, BoxLayerValues *boxLayerInfo, HABIT
 
 			/* Release contaminants back into the water column */
             //fprintf(bm->logFile,"Calling Gain_Contaminants from Update_Detritus SED SED\n");
-            if(bm->flag_detritus_contam) {
-                Gain_Contaminants(bm, boxLayerInfo, SED, SED, guild, cohort,FunctGroupArray[guild].releaseNH[cohort], 0, initialBiomass);
-            }
+			Gain_Contaminants(bm, boxLayerInfo, SED, SED, guild, cohort,FunctGroupArray[guild].releaseNH[cohort], 0, initialBiomass);
+
 
 			/* Contaminant tracer due to predation */
             //fprintf(bm->logFile,"Calling Group_Transfer_Contaminant from Update_Detritus SED SED - %s-%d with %e grazebact: %e grazeDR: %e, grazeDL: %e EATINGinfo bact: %e EATINGinfoDR: %e EATINGinfoDL: %e\n", FunctGroupArray[guild].groupCode, cohort, initialBiomass, GRAZEinfo[SedBactIndex][0][SED], GRAZEinfo[RefDetIndex][0][SED], GRAZEinfo[LabDetIndex][0][SED], EATINGinfo[SedBactIndex][0][SED],EATINGinfo[RefDetIndex][0][SED], EATINGinfo[LabDetIndex][0][SED]);
 
             Group_Transfer_Contaminant(bm, boxLayerInfo, SED, SED, guild, cohort, SedBactIndex, 0, GRAZEinfo[SedBactIndex][0][SED], 0, EATINGinfo[SedBactIndex][0][SED], bm->dtsz_stored, 1, 7);
-            
-            if(bm->flag_detritus_contam) {  // If allowing transfer of contaminants due to eating detritus
-                Group_Transfer_Contaminant(bm, boxLayerInfo, SED, SED, guild, cohort, RefDetIndex, 0, GRAZEinfo[RefDetIndex][0][SED], 0, EATINGinfo[RefDetIndex][0][SED], bm->dtsz_stored, 1, 8);
-                Group_Transfer_Contaminant(bm, boxLayerInfo, SED, SED, guild, cohort, LabDetIndex, 0, GRAZEinfo[LabDetIndex][0][SED], 0, EATINGinfo[LabDetIndex][0][SED], bm->dtsz_stored, 1, 9);
-            }
+			Group_Transfer_Contaminant(bm, boxLayerInfo, SED, SED, guild, cohort, RefDetIndex, 0, GRAZEinfo[RefDetIndex][0][SED], 0, EATINGinfo[RefDetIndex][0][SED], bm->dtsz_stored, 1, 8);
+			Group_Transfer_Contaminant(bm, boxLayerInfo, SED, SED, guild, cohort, LabDetIndex, 0, GRAZEinfo[LabDetIndex][0][SED], 0, EATINGinfo[LabDetIndex][0][SED], bm->dtsz_stored, 1, 9);
 		}
 
 		break;
@@ -372,7 +364,7 @@ static void Update_Detritus(MSEBoxModel *bm, BoxLayerValues *boxLayerInfo, HABIT
                     //fprintf(bm->logFile,"Calling Gain_Contaminants from Update_Detritus EPIFUNA SED SED_EP_FF it_count 1 %s-%d releaseNH: %e bio: %e\n", FunctGroupArray[guild].groupCode, cohort, FunctGroupArray[guild].releaseNH[cohort], initialBiomass);
 					Gain_Contaminants(bm, boxLayerInfo, EPIFAUNA, SED, guild, cohort, FunctGroupArray[guild].releaseNH[cohort], 0, initialBiomass);
 
-                } else if(bm->flag_detritus_contam) {
+				} else {
 					/* Release contaminants back into the water column*/
                     //fprintf(bm->logFile,"Calling Gain_Contaminants from Update_Detritus EPIFUNA WC SED_EP_FF\n");
 					Gain_Contaminants(bm, boxLayerInfo, EPIFAUNA, WC, guild, cohort,FunctGroupArray[guild].releaseNH[cohort], 0, initialBiomass);
@@ -387,9 +379,7 @@ static void Update_Detritus(MSEBoxModel *bm, BoxLayerValues *boxLayerInfo, HABIT
 
 				/* Release contaminants back into the water column*/
                 //fprintf(bm->logFile,"Calling Gain_Contaminants from Update_Detritus EPIFUNA WC\n");
-                if(bm->flag_detritus_contam) {
-                    Gain_Contaminants(bm, boxLayerInfo, EPIFAUNA, WC, guild, cohort,FunctGroupArray[guild].releaseNH[cohort], 0, initialBiomass);
-                }
+				Gain_Contaminants(bm, boxLayerInfo, EPIFAUNA, WC, guild, cohort,FunctGroupArray[guild].releaseNH[cohort], 0, initialBiomass);
 			}
 
 			/* Transfer due to predation of detritus and bacteria */
@@ -400,22 +390,17 @@ static void Update_Detritus(MSEBoxModel *bm, BoxLayerValues *boxLayerInfo, HABIT
             Group_Transfer_Contaminant(bm, boxLayerInfo, EPIFAUNA, WC, guild, cohort, pelagicBactIndex, 0, GRAZEinfo[pelagicBactIndex][0][WC], 0, EATINGinfo[pelagicBactIndex][0][WC], bm->dtsz_stored, 1, 14);
 			Group_Transfer_Contaminant(bm, boxLayerInfo, EPIFAUNA, SED, guild, cohort, SedBactIndex, 0, GRAZEinfo[SedBactIndex][0][SED], 0, EATINGinfo[SedBactIndex][0][SED], bm->dtsz_stored, 1, 15);
 
-            if(bm->flag_detritus_contam) { // If allowing transfer of contaminants due to eating detritus
-                Group_Transfer_Contaminant(bm, boxLayerInfo, EPIFAUNA, WC, guild, cohort, RefDetIndex, 0, GRAZEinfo[RefDetIndex][0][WC], 0, EATINGinfo[RefDetIndex][0][WC], bm->dtsz_stored, 1, 16);
-                Group_Transfer_Contaminant(bm, boxLayerInfo, EPIFAUNA, WC, guild, cohort, LabDetIndex, 0, GRAZEinfo[LabDetIndex][0][WC], 0, EATINGinfo[LabDetIndex][0][WC], bm->dtsz_stored, 1, 17);
-                
-                Group_Transfer_Contaminant(bm, boxLayerInfo, EPIFAUNA, SED, guild, cohort, RefDetIndex, 0, GRAZEinfo[RefDetIndex][0][SED], 0, EATINGinfo[RefDetIndex][0][SED], bm->dtsz_stored, 1, 18);
-                Group_Transfer_Contaminant(bm, boxLayerInfo, EPIFAUNA, SED, guild, cohort, LabDetIndex, 0, GRAZEinfo[LabDetIndex][0][SED], 0, EATINGinfo[LabDetIndex][0][SED], bm->dtsz_stored, 1, 19);
-            }
+            Group_Transfer_Contaminant(bm, boxLayerInfo, EPIFAUNA, WC, guild, cohort, RefDetIndex, 0, GRAZEinfo[RefDetIndex][0][WC], 0, EATINGinfo[RefDetIndex][0][WC], bm->dtsz_stored, 1, 16);
+			Group_Transfer_Contaminant(bm, boxLayerInfo, EPIFAUNA, WC, guild, cohort, LabDetIndex, 0, GRAZEinfo[LabDetIndex][0][WC], 0, EATINGinfo[LabDetIndex][0][WC], bm->dtsz_stored, 1, 17);
+            
+            Group_Transfer_Contaminant(bm, boxLayerInfo, EPIFAUNA, SED, guild, cohort, RefDetIndex, 0, GRAZEinfo[RefDetIndex][0][SED], 0, EATINGinfo[RefDetIndex][0][SED], bm->dtsz_stored, 1, 18);
+			Group_Transfer_Contaminant(bm, boxLayerInfo, EPIFAUNA, SED, guild, cohort, LabDetIndex, 0, GRAZEinfo[LabDetIndex][0][SED], 0, EATINGinfo[LabDetIndex][0][SED], bm->dtsz_stored, 1, 19);
 		}
 		break;
 	case ICE_BASED:	/* Intentional follow through */
 	case LAND_BASED:
 		/* Do nothing yet */
 		break;
-    case MIXED:
-        quit("How did we get here as should come through a primary habitat\n");
-        break;
 	}
 }
 
@@ -497,13 +482,6 @@ void Update_Debug_Info(MSEBoxModel *bm, BoxLayerValues *boxLayerInfo, int habita
 			boxLayerInfo->DebugInfo[guild][EPIFAUNA][DiagnostDRsed_id] += FunctGroupArray[guild].transDR[cohort] / wcLayerThick;
 		}
 		break;
-    case LAND_BASED:
-    case ICE_BASED:
-        break;
-    case MIXED:
-        quit("How did we get here as should come through a primary habitat\n");
-        break;
-
 	}
 }
 
@@ -579,11 +557,9 @@ int Phytoplankton_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatTy
 			Primary_Production(bm, llogfp, guild, bm->flagmicro, lim_case, 0, initialBiomass,
 					boxLayerInfo->DIN, NH, NO, Si, Fe, P, PRatio, C, CRatio, IRR, mum, 1.0, 0, 0, 0, &uptakeNO, &uptakeSi, &uptakeFe, &uptakeP, &uptakeC, &hN);
 
-            // TODO: I think this is a bug and hangover from when did not have plankton mortality explciitly nut will screw with older models so include in bug trap flag
-            if (bm->flag_replicated_old_PPmort) {
-                /* Zero out the mortality value so we can use generic rate of change equations later */
-                FunctGroupArray[guild].mortality[0] = 0.0;
-            }
+
+			/* Zero out the mortality value so we can use generic rate of change equations later */
+			FunctGroupArray[guild].mortality[0] = 0.0;
 
 			boxLayerInfo->NutsLost[habitatType][NH_id] += FunctGroupArray[guild].uptakeNH[cohort];
 			boxLayerInfo->NutsLost[habitatType][NO_id] += uptakeNO;
@@ -592,13 +568,13 @@ int Phytoplankton_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatTy
 			boxLayerInfo->NutsLost[habitatType][P_id] += uptakeP;
 			boxLayerInfo->NutsLost[habitatType][C_id] += uptakeC;
 
-			boxLayerInfo->DetritusProd[habitatType][DLdet_id] += FunctGroupArray[guild].lysis[cohort] + FunctGroupArray[guild].mortality[0];
+			boxLayerInfo->DetritusProd[habitatType][DLdet_id] += FunctGroupArray[guild].lysis[cohort];
 
 			/* Contaminants transfer into detritus */
 			if(bm->track_contaminants){
-                //fprintf(bm->logFile,"Calling Group_Transfer_Contaminant from Phytoplankton_Process WC WC - %s-%d with initialBiomass: %e lysis: %e\n", FunctGroupArray[guild].groupCode, cohort, initialBiomass, FunctGroupArray[guild].lysis[cohort]);
+                //fprintf(bm->logFile,"Calling Group_Transfer_Contaminant from Update_Detritus WC WC - %s-%d with initialBiomass: %e lysis: %e\n", FunctGroupArray[guild].groupCode, cohort, initialBiomass, FunctGroupArray[guild].lysis[cohort]);
                 
-                Group_Transfer_Contaminant(bm, boxLayerInfo, WC, WC, LabDetIndex, 0, guild, cohort,  (FunctGroupArray[guild].lysis[cohort] + FunctGroupArray[guild].mortality[0]), 0, initialBiomass, bm->dtsz_stored, 1, 20);  // Was case 0 for need_prop
+                Group_Transfer_Contaminant(bm, boxLayerInfo, WC, WC, LabDetIndex, 0, guild, cohort,  FunctGroupArray[guild].lysis[cohort], 0, initialBiomass, bm->dtsz_stored, 0, 20);
 			}
 			FunctGroupArray[guild].chl = initialBiomass;
 
@@ -644,7 +620,7 @@ int Phytoplankton_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatTy
 					if(bm->track_contaminants){
                         //fprintf(bm->logFile,"Calling Group_Transfer_Contaminant from Update_Detritus SED SED - %s-%d with initialBiomass: %e lysis: %e\n", FunctGroupArray[guild].groupCode, cohort, initialBiomass, FunctGroupArray[guild].lysis[cohort]);
                         
-                        Group_Transfer_Contaminant(bm, boxLayerInfo, SED, SED, LabDetIndex, 0, guild, cohort,  FunctGroupArray[guild].lysis[cohort], 0, initialBiomass, bm->dtsz_stored, 1, 21);   // Was case 0 for need_prop
+                        Group_Transfer_Contaminant(bm, boxLayerInfo, SED, SED, LabDetIndex, 0, guild, cohort,  FunctGroupArray[guild].lysis[cohort], 0, initialBiomass, bm->dtsz_stored, 0, 21);
 					}
 
 
@@ -679,7 +655,7 @@ int Phytoplankton_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatTy
 					if(bm->track_contaminants){
                         //fprintf(bm->logFile,"Calling Group_Transfer_Contaminant from Update_Detritus SED SED - %s-%d with initialBiomass: %e mort: %e\n", FunctGroupArray[guild].groupCode, cohort, initialBiomass, FunctGroupArray[guild].mortality[cohort]);
 
-                        Group_Transfer_Contaminant(bm, boxLayerInfo, SED, SED, LabDetIndex, 0, guild, cohort,  FunctGroupArray[guild].mortality[cohort], 0, initialBiomass, bm->dtsz_stored, 1, 22);   // Was case 0 for need_prop
+                        Group_Transfer_Contaminant(bm, boxLayerInfo, SED, SED, LabDetIndex, 0, guild, cohort,  FunctGroupArray[guild].mortality[cohort], 0, initialBiomass, bm->dtsz_stored, 0, 22);
 					}
 
 
@@ -772,8 +748,8 @@ int Phytoplankton_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatTy
 				if(bm->track_contaminants){
                     //fprintf(bm->logFile,"Calling Group_Transfer_Contaminant from Update_Detritus EPIFAUNA SED - %s-%d with initialBiomass: %e FDL: %e\n", FunctGroupArray[guild].groupCode, cohort, initialBiomass, (FDL * FunctGroupArray[guild].mortality[cohort] / smLayerThick));
 
-                    Group_Transfer_Contaminant(bm, boxLayerInfo, EPIFAUNA, SED, LabDetIndex, 0, guild, cohort, (FDL * FunctGroupArray[guild].mortality[cohort] / smLayerThick), 0, initialBiomass, bm->dtsz_stored, 1, 23);   // Was case 0 for need_prop
-					Group_Transfer_Contaminant(bm, boxLayerInfo, EPIFAUNA, SED, RefDetIndex, 0, guild, cohort, ((1 - FDL) * FunctGroupArray[guild].mortality[cohort] / smLayerThick), 0, initialBiomass, bm->dtsz_stored, 1, 24);   // Was case 0 for need_prop
+                    Group_Transfer_Contaminant(bm, boxLayerInfo, EPIFAUNA, SED, LabDetIndex, 0, guild, cohort, (FDL * FunctGroupArray[guild].mortality[cohort] / smLayerThick), 0, initialBiomass, bm->dtsz_stored, 0, 23);
+					Group_Transfer_Contaminant(bm, boxLayerInfo, EPIFAUNA, SED, RefDetIndex, 0, guild, cohort, ((1 - FDL) * FunctGroupArray[guild].mortality[cohort] / smLayerThick), 0, initialBiomass, bm->dtsz_stored, 0, 24);
 				}
 
 
@@ -826,7 +802,7 @@ int Phytoplankton_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatTy
 				if(bm->track_contaminants){
                     //fprintf(bm->logFile,"Calling Group_Transfer_Contaminant from Update_Detritus EPIFAUNA SED - %s-%d with initialBiomass: %e mort: %e\n", FunctGroupArray[guild].groupCode, cohort, initialBiomass, FunctGroupArray[guild].mortality[cohort] / wcLayerThick);
                     
-                    Group_Transfer_Contaminant(bm, boxLayerInfo, EPIFAUNA, SED, LabDetIndex, 0, guild, cohort,  FunctGroupArray[guild].mortality[cohort] / wcLayerThick, 0, initialBiomass, bm->dtsz_stored, 1, 25);   // Was case 0 for need_prop
+                    Group_Transfer_Contaminant(bm, boxLayerInfo, EPIFAUNA, SED, LabDetIndex, 0, guild, cohort,  FunctGroupArray[guild].mortality[cohort] / wcLayerThick, 0, initialBiomass, bm->dtsz_stored, 0, 25);
 				}
 
 				if(bm->track_atomic_ratio == TRUE){
@@ -865,7 +841,7 @@ int Phytoplankton_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatTy
 			if(bm->track_contaminants){
                 //fprintf(bm->logFile,"Calling Group_Transfer_Contaminant from Update_Detritus ICE ICE - %s-%d with initialBiomass: %e mort+lysis: %e\n", FunctGroupArray[guild].groupCode, cohort, initialBiomass, (FunctGroupArray[guild].lysis[cohort] + FunctGroupArray[guild].mortality[0]));
 
-                Group_Transfer_Contaminant(bm, boxLayerInfo, ICE_BASED, ICE_BASED, LabDetIndex, 0, guild, cohort, (FunctGroupArray[guild].lysis[cohort] + FunctGroupArray[guild].mortality[0]), 0, initialBiomass, bm->dtsz_stored, 1, 26);   // Was case 0 for need_prop
+                Group_Transfer_Contaminant(bm, boxLayerInfo, ICE_BASED, ICE_BASED, LabDetIndex, 0, guild, cohort, (FunctGroupArray[guild].lysis[cohort] + FunctGroupArray[guild].mortality[0]), 0, initialBiomass, bm->dtsz_stored, 0, 26);
 			}
 
 			/* Diagnostic information storage */
@@ -875,10 +851,7 @@ int Phytoplankton_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatTy
 		case LAND_BASED: // Primary producers completely constrained to land
 			Land_PrimaryProduction(bm);
 			break;
-        case MIXED:
-            quit("How did we get here as should come through a primary habitat\n");
-            break;
-        default:
+		default:
 			quit("Process type %d not recognised.\n", habitatType);
 			break;
 		}
@@ -972,9 +945,6 @@ int Invert_Consumers_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habita
 		// Nothing to do as yet
 		quit("Invert_Consumers_Process - no support for land based invert consumers yet \n");
 		break;
-    case MIXED:
-        quit("How did we get here as should come through a primary habitat\n");
-        break;
 	}
 
 	/* Calculate the linear mortality due to oxygen */
@@ -1071,9 +1041,6 @@ int Invert_Consumers_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habita
 			break;
 		case LAND_BASED:	/* Not supported */
 			break;
-        case MIXED:
-            quit("How did we get here as should come through a primary habitat\n");
-            break;
 		}
 
 		stage = FunctGroupArray[guild].cohort_stage[cohort];
@@ -1086,9 +1053,8 @@ int Invert_Consumers_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habita
 
 		/* If scaling growth by available habitat - do so now */
 		realised_mum = FunctGroupArray[guild].scaled_mum[cohort];
-        if(bm->flag_benthos_sediment_link) {
-            realised_mum *= area_hab;
-        }
+		if(bm->flag_benthos_sediment_link)
+			realised_mum *= area_hab;
         
         /*
         if (guild == bm->which_check) {
@@ -1225,9 +1191,6 @@ int Coral_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatType, int 
 		DL = boxLayerInfo->localWCTracers[FunctGroupArray[LabDetIndex].totNTracers[0]];
 		DR = boxLayerInfo->localWCTracers[FunctGroupArray[RefDetIndex].totNTracers[0]];
 		break;
-    case MIXED:
-        quit("How did we get here as should come through a primary habitat\n");
-        break;
 	}
 
 	/* Calculate the linear mortality due to oxygen */
@@ -1423,12 +1386,9 @@ int Dinoflag_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatType, i
 			}
 
 
-            // TODO: I think this is a bug and hangover from when did not have plankton mortality explciitly nut will screw with older models so include in bug trap flag
-            if (bm->flag_replicated_old_PPmort) {
-                /* Zero out the mortality value so we can use generic rate of change equations later */
-                FunctGroupArray[guild].mortality[0] = 0.0;
-            }
-                
+			/* Zero out the mortality value so we can use generic rate of change equations later */
+			FunctGroupArray[guild].mortality[0] = 0.0;
+
 			/* Mixotrophic growth - modified from Stickney, Hood and Stoecker, 2000.
 			 The impact of mixotrophy on planktonic marine ecosystems. Ecol. Model. 125: 203-230.
 			 First determine potential grazing - dinoflagellates ae reported to feed on-
@@ -1529,14 +1489,14 @@ int Dinoflag_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatType, i
 			boxLayerInfo->DetritusLost[WC][DRdet_id] += GRAZEinfo[RefDetIndex][0][WC];
 			boxLayerInfo->DetritusLost[WC][DLdet_id] += GRAZEinfo[LabDetIndex][0][WC];
 
-			boxLayerInfo->DetritusProd[WC][DLdet_id] += FunctGroupArray[guild].lysis[cohort] + FunctGroupArray[guild].mortality[0];
+			boxLayerInfo->DetritusProd[WC][DLdet_id] += FunctGroupArray[guild].lysis[cohort];
 
 			/* Contaminants transfer */
 			if(bm->track_contaminants){
 				/* Gains in DL due to mortality */
                 //fprintf(bm->logFile,"Calling Group_Transfer_Contaminant from Update_Detritus WC WC - %s-%d with initialBiomass: %e lysis: %e\n", FunctGroupArray[guild].groupCode, cohort, initialBiomass, FunctGroupArray[guild].lysis[cohort]);
                 
-                Group_Transfer_Contaminant(bm, boxLayerInfo, WC, WC, LabDetIndex, 0, guild, cohort, (FunctGroupArray[guild].lysis[cohort] + FunctGroupArray[guild].mortality[0]), 0, initialBiomass, bm->dtsz_stored, 1, 27);   // Was case 0 for need_prop
+                Group_Transfer_Contaminant(bm, boxLayerInfo, WC, WC, LabDetIndex, 0, guild, cohort, FunctGroupArray[guild].lysis[cohort], 0, initialBiomass, bm->dtsz_stored, 0, 27);
 			}
 
 			if(bm->track_atomic_ratio == TRUE){
@@ -1570,7 +1530,7 @@ int Dinoflag_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatType, i
 			if(bm->track_contaminants){
                 
                 /* Gains in DL due to mortality */
-				Group_Transfer_Contaminant(bm, boxLayerInfo, SED, SED, LabDetIndex, 0, guild, cohort, FunctGroupArray[guild].mortality[cohort], 0, initialBiomass, bm->dtsz_stored, 1, 28);   // Was case 0 for need_prop
+				Group_Transfer_Contaminant(bm, boxLayerInfo, SED, SED, LabDetIndex, 0, guild, cohort, FunctGroupArray[guild].mortality[cohort], 0, initialBiomass, bm->dtsz_stored, 0, 28);
 
 				/* Record the deaths due to contaminants */
 				Contaminant_Record_Death(bm, guild, cohort, initialBiomass);
@@ -1586,9 +1546,6 @@ int Dinoflag_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatType, i
 			quit("Dinoflag_Process no support for epi or land based dinoflags\n");
 			/* Do nothing */
 			break;
-        case MIXED:
-            quit("How did we get here as should come through a primary habitat\n");
-            break;
 		}
 
 	}
@@ -1870,7 +1827,7 @@ int Sediment_Bacterica_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habi
 int Epibenthic_Invert_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatType, int guild, int cohort, BoxLayerValues *boxLayerInfo) {
 	int preyID, hab, prey_chrt;
 	double *tracerArray = getTracerArray(boxLayerInfo, habitatType);
-    double biomass, eatBiomass, hO_SP, area_hab, NumSp, x_Sp, BB_scale, realised_mum;
+	double biomass, eatBiomass, hO_SP, area_hab, NumSp, x_Sp, BB_scale, realised_mum;
 	double Crwd_Effect = 1.0;
 	double O2 = boxLayerInfo->localWCTracers[Oxygen_i];
 	double DR = boxLayerInfo->localWCTracers[FunctGroupArray[RefDetIndex].totNTracers[0]];
@@ -1942,22 +1899,17 @@ int Epibenthic_Invert_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habit
 
 		/* If scaling growth by available habitat - do so now */
 		realised_mum = FunctGroupArray[guild].scaled_mum[cohort];
-		if(bm->flag_benthos_sediment_link) {
+		if(bm->flag_benthos_sediment_link)
 			realised_mum *= area_hab;
-        } else {
-            realised_mum = FunctGroupArray[guild].scaled_mum[cohort];
-        }
-        
         /*
-        if(guild == bm->which_check) {
+        if(guild == bm->which_check)
             fprintf(llogfp, "Time: %e box%d-%d %s has realised_mum: %e (%e) area_hab: %e flag_benthos_sediment_link: %d\n",
                 bm->dayt, bm->current_box, bm->current_layer, FunctGroupArray[guild].groupCode, realised_mum, FunctGroupArray[guild].scaled_mum[cohort], area_hab, bm->flag_benthos_sediment_link);
-         }
          */
 
 		/* All other feeding regimes */
 		Eat(bm, llogfp, predcase_sp, guild, cohort, eatBiomass, FunctGroupArray[guild].scaled_C[cohort] * hO_SP * Crwd_Effect,
-            realised_mum, FunctGroupArray[guild].speciesParams[KL_id], FunctGroupArray[guild].speciesParams[KU_id],
+				FunctGroupArray[guild].scaled_mum[cohort], FunctGroupArray[guild].speciesParams[KL_id], FunctGroupArray[guild].speciesParams[KU_id],
 				FunctGroupArray[guild].speciesParams[vl_id], FunctGroupArray[guild].speciesParams[ht_id], FunctGroupArray[guild].speciesParams[E1_id],
 				FunctGroupArray[guild].speciesParams[E2_id], FunctGroupArray[guild].speciesParams[E3_id], FunctGroupArray[guild].speciesParams[E4_id],
 				inv_feed_while_spawn, inv_spawn_now, inv_mat_pcnt, PREYinfo, GRAZEinfo, CATCHGRAZEinfo, eatBiomass);
@@ -2029,7 +1981,7 @@ int Epibenthic_Invert_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habit
  */
 int Sediment_Epi_Other_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatType, int guild, int cohort, BoxLayerValues *boxLayerInfo) {
 	int predcase_sp, sp, prey, prey_chrt, preyID, hab;
-	double biomass, eatBiomass, BB_scale, hO_SP, depth_scalar = 1.0, prey_avail = 0.0, area_hab, realised_mum;
+	double biomass, eatBiomass, BB_scale, hO_SP, depth_scalar = 1.0, prey_avail = 0.0, realised_mum, area_hab;
 	int inv_feed_while_spawn = 1;
 	int inv_spawn_now = 0;
 	double inv_mat_pcnt = 0.0; // As want all to spawn as included in growth for invertebrate pools
@@ -2089,11 +2041,8 @@ int Sediment_Epi_Other_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habi
 		/* If scaling growth by available habitat - do so now */
 		area_hab = Get_Species_Area_Hab(bm, guild, cohort, boxLayerInfo);
 		realised_mum = FunctGroupArray[guild].scaled_mum[cohort];
-        if(bm->flag_benthos_sediment_link) {
-            realised_mum *= area_hab;
-        } else {
-            realised_mum = FunctGroupArray[guild].scaled_mum[cohort];
-        }
+		if(bm->flag_benthos_sediment_link)
+			realised_mum *= area_hab;
        
         /*
         if(guild == bm->which_check)
@@ -2105,7 +2054,7 @@ int Sediment_Epi_Other_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habi
 		 the total population size that benthic deposit feeders can grow to, as they are
 		 restricted to the oxygenated zone and so have a limited habitat  */
 		Eat(bm, llogfp, predcase_sp, guild, cohort, eatBiomass, FunctGroupArray[guild].scaled_C[cohort] * hO_SP,
-            realised_mum, FunctGroupArray[guild].speciesParams[KL_id], FunctGroupArray[guild].speciesParams[KU_id],
+				FunctGroupArray[guild].scaled_mum[cohort], FunctGroupArray[guild].speciesParams[KL_id], FunctGroupArray[guild].speciesParams[KU_id],
 				FunctGroupArray[guild].speciesParams[vl_id], FunctGroupArray[guild].speciesParams[ht_id], FunctGroupArray[guild].speciesParams[E1_id],
 				FunctGroupArray[guild].speciesParams[E2_id], FunctGroupArray[guild].speciesParams[E3_id], FunctGroupArray[guild].speciesParams[E4_id],
 				inv_feed_while_spawn, inv_spawn_now, inv_mat_pcnt, PREYinfo, GRAZEinfo, CATCHGRAZEinfo, eatBiomass);
@@ -2239,6 +2188,7 @@ int Refractory_Detritus_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES hab
 
 		/* If we are tracking ratios keep track of amount breaking down */
 		if(bm->track_atomic_ratio){
+
 			Calculate_Element_Release(bm, boxLayerInfo, guild, r_DR * DR, habitatType, WC);
 		}
 
@@ -2287,8 +2237,8 @@ int Carrion_Process(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatType, in
 			/* Gains in DL and DR due to mortality */
             //fprintf(bm->logFile,"Calling Group_Transfer_Contaminant from Update_Detritus WC WC - %s-%d with DC: %e prodDL: %e prodDR: %e\n", FunctGroupArray[guild].groupCode, cohort, DC, FunctGroupArray[guild].prodnDL[0], FunctGroupArray[guild].prodnDR[0]);
             
-            Group_Transfer_Contaminant(bm, boxLayerInfo, habitatType, habitatType, LabDetIndex, 0, guild, cohort, FunctGroupArray[guild].prodnDL[0], 0, DC, bm->dtsz_stored, 1, 29);    // Was case 0 for need_prop
-			Group_Transfer_Contaminant(bm, boxLayerInfo, habitatType, habitatType, RefDetIndex, 0, guild, cohort, FunctGroupArray[guild].prodnDR[0], 0, DC, bm->dtsz_stored, 1, 30);    // Was case 0 for need_prop
+            Group_Transfer_Contaminant(bm, boxLayerInfo, habitatType, habitatType, LabDetIndex, 0, guild, cohort, FunctGroupArray[guild].prodnDL[0], 0, DC, bm->dtsz_stored, 0, 29);
+			Group_Transfer_Contaminant(bm, boxLayerInfo, habitatType, habitatType, RefDetIndex, 0, guild, cohort, FunctGroupArray[guild].prodnDR[0], 0, DC, bm->dtsz_stored, 0, 30);
 		}
 
 		/* Update global fluxes */

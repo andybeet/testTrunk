@@ -610,11 +610,9 @@ void CharismaticEstimates(MSEBoxModel *bm, FILE *ofp) {
 					/* Sampling mammal size structure per zone */
 					fishery_id = (int) (FunctGroupArray[sp].speciesParams[primary_fishery_id]);
 					for (chrt = 0; chrt < FunctGroupArray[sp].numCohortsXnumGenes; chrt++) {
-						
-                        /*
-                        if (verbose > 1)
+						if (verbose > 1)
 							fprintf(stderr, "Box: %d mammal sampling %s cohort: %d\n", b, FunctGroupArray[sp].groupCode, chrt);
-                         */
+
 						/* Individual size */
 						raw = biolVERTinfo[bstruct_id][sp][chrt][b] + biolVERTinfo[bres_id][sp][chrt][b];
 
@@ -959,12 +957,9 @@ void FisheriesRecords(MSEBoxModel *bm, FILE *ofp) {
 					}
 					fishery_id = (int) (FunctGroupArray[sp].speciesParams[primary_fishery_id]);
 					for (chrt = 0; chrt < FunctGroupArray[sp].numCohortsXnumGenes; chrt++) {
-                        
-                        /*
 						if (verbose > 1)
 							fprintf(stderr, "Box: %d Fisheries sampling %s cohort: %d\n", b, FunctGroupArray[sp].groupCode, chrt);
-                         */
-                        
+
 						rawwgt = biolVERTinfo[bstruct_id][sp][chrt][b] + biolVERTinfo[bres_id][sp][chrt][b];
 						sample = samplenums[chrt][samplecatch_id] * totn[samplecatch_id];
 						samplen1 = (int) (ceil(sample));
@@ -1220,11 +1215,8 @@ void FishEstimates(MSEBoxModel *bm, FILE *ofp) {
 						samplenums[chrt][samplestock_id] /= (totn[samplestock_id] + TINY);
 
 					for (chrt = 0; chrt < bm->K_num_max_cohort * bm->K_num_max_genetypes; chrt++) {
-                        
-                        /*
 						if (verbose > 1)
 							fprintf(stderr, "Box: %d Independ sampling of %s cohort: %d\n", b, FunctGroupArray[sp].groupCode, chrt);
-                         */
 
 						rawwgt = biolVERTinfo[bstruct_id][sp][chrt][b] + biolVERTinfo[bres_id][sp][chrt][b];
 						rawlngth = Get_Length(bm, rawwgt, sp);

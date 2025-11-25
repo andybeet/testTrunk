@@ -75,7 +75,7 @@ void Init_Data_Array(MSEBoxModel *bm) {
 	int b, k, j, chrt;
 
 	if ((verbose > 1))
-		printf("Initialise data arrays\n");
+		fprintf(stderr, "Initialise data arrays\n");
 
 	for (b = 0; b < bm->nbox; b++) {
 		for (k = 0; k < 3; k++)
@@ -500,9 +500,6 @@ void Populate_Arrays(MSEBoxModel *bm, FILE *ofp)
 						case ICE_BASED:
 							biolprod[sp][b] += bm->diagnost[b][FunctGroupArray[sp].prodnTracers[0]] * bm->boxes[b].ice.max_ice_depth;
 							break;
-                        case MIXED:
-                            quit("How did we get here as should come through a primary habitat\n");
-                            break;
 						}
 					}
 				}
@@ -524,9 +521,6 @@ void Populate_Arrays(MSEBoxModel *bm, FILE *ofp)
 						case ICE_BASED:
 							bioleat[sp][b] += bm->diagnost[b][FunctGroupArray[sp].GrazingTracers[0]] * bm->boxes[b].ice.max_ice_depth;
 							break;
-                        case MIXED:
-                            quit("How did we get here as should come through a primary habitat\n");
-                            break;
 						}
 					}
 				}

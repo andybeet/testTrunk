@@ -98,7 +98,7 @@ void Harvest_Init(MSEBoxModel *bm, FILE *llogfp) {
 		for (i = 0; i < bm->K_num_fisheries; i++) {
 			for (b = 0; b < FunctGroupArray[sp].numStages; b++) {
 				if (FunctGroupArray[sp].groupAgeType == BIOMASS && FunctGroupArray[sp].isImpacted == TRUE) {
-					bm->selectivity[sp][i][b] = bm->SP_FISHERYprms[sp][i][sel_id];
+					selectivity[sp][i][b] = bm->SP_FISHERYprms[sp][i][sel_id];
 				}
 			}
 
@@ -140,7 +140,6 @@ void Harvest_Init(MSEBoxModel *bm, FILE *llogfp) {
 	Build_Fishery_Species_Linkage(bm, llogfp);
 	Build_Fishery_Tracers(bm);
 
-    bm->EffortModelsActive = 0;
 	for (nf = 0; nf < bm->K_num_fisheries; nf++) {
 		for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
 			if(FunctGroupArray[sp].groupType == MAMMAL){
@@ -156,10 +155,6 @@ void Harvest_Init(MSEBoxModel *bm, FILE *llogfp) {
 				}
 			}
 		}
-        
-        if((bm->FISHERYprms[nf][flageffortmodel_id] > 0) || (bm->FISHERYprms[nf][EffortLevel_id] > 0)) {
-            bm->EffortModelsActive = 1;
-        }
 	}
 
 }
@@ -185,7 +180,7 @@ void Harvest_Free(MSEBoxModel *bm) {
 	Close_Harvest_Output_Files(bm);
 
 	/* Free the arrays */
-	free3d(bm->selectivity);
+	free3d(selectivity);
 	free2d(k_cover);
 	free3d(FFCDR);
 	free2d(CatchSum);
@@ -443,7 +438,7 @@ void Allocate_Harvest_Memory(MSEBoxModel *bm) {
 
 	/* Allocate the arrays*/
 	k_cover = Util_Alloc_Init_2D_Double(bm->nbox, bm->K_num_fisheries, 0.0);
-	bm->selectivity = Util_Alloc_Init_3D_Double(bm->K_num_max_stages, bm->K_num_fisheries, bm->K_num_tot_sp, 0.0);
+	selectivity = Util_Alloc_Init_3D_Double(2, bm->K_num_fisheries, bm->K_num_tot_sp, 0.0);
 
 	FFCDR = Util_Alloc_Init_3D_Double(bm->K_num_max_cohort * bm->K_num_max_genetypes, bm->K_num_fisheries, bm->K_num_tot_sp, 0.0);
 

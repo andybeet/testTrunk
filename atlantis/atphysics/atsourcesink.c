@@ -331,14 +331,14 @@ void solarIrradiance(MSEBoxModel *bm, double ***newwattr, FILE *llogfp) {
 			for (b = 0; b < bm->nbox; b++) {
 				bm->boxes[b].swr = tsEvalXY(bm->swr, bm->swr_id, ask_t, bm->boxes[b].inside.x, bm->boxes[b].inside.y);
 				if (!(_finite(bm->boxes[b].swr))) {
-					quit("sourceSink - box: %d, Invalid value calculated for solar radiation 1 - ask_t: %e x: %e y: %e swr_id: %d\n", b, ask_t, bm->boxes[b].inside.x, bm->boxes[b].inside.y, bm->swr_id);
+					quit("sourceSink - box: %d, Invalid value calculated for solar radiation.\n", b);
 				}
 			}
 		} else {
 			for (b = 0; b < bm->nbox; b++) {
 				bm->boxes[b].swr = tsEvalR(bm->swr, bm->swr_id, ask_t, bm->swr_rewindid);
 				if (!(_finite(bm->boxes[b].swr))) {
-					quit("sourceSink - box: %d, Invalid value calculated for solar radiation 2 - ask_t: %e x: %e y: %e swr_id: %d\n", b, ask_t, bm->boxes[b].inside.x, bm->boxes[b].inside.y, bm->swr_id);
+					quit("sourceSink - box: %d, Invalid value calculated for solar radiation.\n", b);
 				}
 			}
 		}
@@ -508,12 +508,6 @@ void sourcesink_init(MSEBoxModel *bm) {
     /* Read recruitment environmental forcing timeseries */
     Ecology_Read_Enviro_Forcing(bm, "KWSR_forcing", &bm->KWSR_force, bm->t_units, warn);
     
-    /* Lake fish recruitment forcng timeseries */
-    if(bm->ice_on) {
-        read_bm_ts_rewind(bm, "thermal_index", &bm->thermal_index, bm->t_units, "tindex", "deg C", &bm->tindex_id, &bm->tindex_rewindid, warn);
-        read_bm_ts_rewind(bm, "rate_index", &bm->rate_index, bm->t_units, "rindex", "deg C", &bm->rindex_id, &bm->rindex_rewindid, warn);
-    }
-    
     /* Read linear mortality forcing timeseries - basing it on model time units rather than hydrodynamic time units for ease of use */
 	Ecology_Read_LinearMortality_TS(bm, "LinearMort", &bm->tslinearMort, bm->t_units, warn);
 
@@ -543,7 +537,7 @@ void sourcesink_init(MSEBoxModel *bm) {
 		for (b = 0; b < bm->nbox; b++) {
 			bm->boxes[b].swr = tsEvalXY(bm->swr, bm->swr_id, ask_t, bm->boxes[b].inside.x, bm->boxes[b].inside.y);
 			if (!(_finite(bm->boxes[b].swr))) {
-				quit("ERROR - sourceSink - box: %d, Invalid value calculated for solar radiation 3 - ask_t: %e x: %e y: %e swr_id: %d\n", b, ask_t, bm->boxes[b].inside.x, bm->boxes[b].inside.y, bm->swr_id);
+				quit("ERROR - sourceSink - box: %d, Invalid value calculated for solar radiation.\n", b);
 			}
 		}
 	}

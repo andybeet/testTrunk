@@ -155,9 +155,6 @@ void Refractory_Detritus_ROC(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habita
 		boxLayerInfo->DebugFluxInfo[RefDetIndex][ICE_BASED][loss_id] = loss + (double)boxLayerInfo->DetritusLost[ICE_BASED][DRdet_id];
 
 		break;
-    case MIXED:
-        quit("How did we get here as should come through a primary habitat\n");
-        break;
 	}
 }
 
@@ -270,9 +267,6 @@ void Labile_Detritus_ROC(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatTyp
 		boxLayerInfo->DebugFluxInfo[LabDetIndex][ICE_BASED][loss_id] = (double)boxLayerInfo->DetritusLost[ICE_BASED][DLdet_id] + loss;
 
 		break;
-    case MIXED:
-        quit("How did we get here as should come through a primary habitat\n");
-        break;
 	}
 }
 
@@ -348,9 +342,6 @@ void Carrion_ROC(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatType, BoxLa
 				+ (double)FunctGroupArray[CarrionIndex].preyEaten[0][ICE_BASED];
 
 		break;
-    case MIXED:
-        quit("How did we get here as should come through a primary habitat\n");
-        break;
 	}
 }
 
@@ -481,9 +472,6 @@ void Ammonium_ROC(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatType, int 
 		boxLayerInfo->DebugFluxInfo[PhysioChemArray[index].debugIndex][ICE_BASED][loss_id] = loss + (double)boxLayerInfo->NutsLost[ICE_BASED][NH_id];
 
 		break;
-    case MIXED:
-        quit("How did we get here as should come through a primary habitat\n");
-        break;
 	}
     
 	if(bm->include_atmosphere){
@@ -594,9 +582,7 @@ void Detrital_Silica_ROC(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatTyp
 		boxLayerInfo->DebugFluxInfo[PhysioChemArray[index].debugIndex][ICE_BASED][gain_id] = Si_Flux;
 		boxLayerInfo->DebugFluxInfo[PhysioChemArray[index].debugIndex][ICE_BASED][loss_id] = r_DSi * DSi;
 		break;
-    case MIXED:
-        quit("How did we get here as should come through a primary habitat\n");
-        break;
+
 	}
 }
 /**
@@ -673,9 +659,6 @@ void Nitrate_ROC(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatType, int i
 		boxLayerInfo->DebugFluxInfo[PhysioChemArray[index].debugIndex][ICE_BASED][gain_id] = FunctGroupArray[IceBactIndex].nitrif;
 		boxLayerInfo->DebugFluxInfo[PhysioChemArray[index].debugIndex][ICE_BASED][loss_id] = (double)boxLayerInfo->NutsLost[ICE_BASED][NO_id];
 		break;
-    case MIXED:
-        quit("How did we get here as should come through a primary habitat\n");
-        break;
 	}
     
 	if(bm->include_atmosphere){
@@ -746,10 +729,8 @@ void Micronutrient_ROC(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatType,
 
 			boxLayerInfo->DebugFluxInfo[PhysioChemArray[index].debugIndex][ICE_BASED][gain_id] = gain;
 			boxLayerInfo->DebugFluxInfo[PhysioChemArray[index].debugIndex][ICE_BASED][loss_id] = (double)boxLayerInfo->NutsLost[ICE_BASED][Fe_id];
+
 			break;
-        case MIXED:
-            quit("How did we get here as should come through a primary habitat\n");
-            break;
 		}
 	} else {
 		/* Set all the tracers and debug values to 0 */
@@ -818,9 +799,6 @@ void DON_ROC(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatType, int index
 		boxLayerInfo->DebugFluxInfo[PhysioChemArray[index].debugIndex][ICE_BASED][loss_id] = boxLayerInfo->DONremin;
 
 		break;
-    case MIXED:
-        quit("How did we get here as should come through a primary habitat\n");
-        break;
 	}
 }
 /**
@@ -864,11 +842,8 @@ void Oxygen_ROC(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatType, int in
 		boxLayerInfo->DebugFluxInfo[PhysioChemArray[index].debugIndex][ICE_BASED][gain_id] = FunctGroupArray[LabDetIndex].solDON
 				+ FunctGroupArray[RefDetIndex].solDON + FunctGroupArray[IceBactIndex].prodnDON;
 		boxLayerInfo->DebugFluxInfo[PhysioChemArray[index].debugIndex][ICE_BASED][loss_id] = boxLayerInfo->DONremin;
-		break;
-    case MIXED:
-        quit("How did we get here as should come through a primary habitat\n");
-        break;
 
+		break;
 	}
     
 	if(bm->include_atmosphere){
@@ -921,9 +896,6 @@ void Dissolved_Silica_ROC(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatTy
 		boxLayerInfo->DebugFluxInfo[PhysioChemArray[index].debugIndex][ICE_BASED][gain_id] = r_DSi * DSi;
 		boxLayerInfo->DebugFluxInfo[PhysioChemArray[index].debugIndex][ICE_BASED][loss_id] = (double)boxLayerInfo->NutsLost[ICE_BASED][Si_id];
 		break;
-    case MIXED:
-        quit("How did we get here as should come through a primary habitat\n");
-        break;
 	}
     
 	if(bm->include_atmosphere){
@@ -980,10 +952,6 @@ void Carbon_ROC(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatType, int in
 	case ICE_BASED:
 		/* Do nothing for now */
 		break;
-    case MIXED:
-        quit("How did we get here as should come through a primary habitat\n");
-        break;
-
 	}
     
 	if(bm->include_atmosphere){
@@ -1097,9 +1065,6 @@ void Phosphorus_ROC(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatType, in
 			case ICE_BASED:
 				/* Do nothing for now */
 				break;
-            case MIXED:
-                quit("How did we get here as should come through a primary habitat\n");
-                break;
 
 		}
 	}
@@ -1153,8 +1118,6 @@ void TOP_ROC(MSEBoxModel *bm, FILE *llogfp, HABITAT_TYPES habitatType, int index
 	case ICE_BASED:
 		/* Do nothing for now */
 		break;
-    case MIXED:
-        quit("How did we get here as should come through a primary habitat\n");
-        break;
+
 	}
 }

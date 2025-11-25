@@ -870,10 +870,7 @@ void Print_Eat_Diagnostics(MSEBoxModel *bm, FILE *llogfp, int guild, HABITAT_TYP
 				fp(bm, llogfp, sp, LAND_BASED, habitatType);
 			}
 		}
-        break;
-    case MIXED:
-        quit("How did we get here as should come through a primary habitat\n");
-        break;
+		break;
 	}
 
 }

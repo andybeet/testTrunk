@@ -713,9 +713,9 @@ void readFishingSelectivityXML(MSEBoxModel *bm, char *fileName, xmlNodePtr rootn
 
 	/* The type of checking depends on the curve_knife value */
 	if (knife_curve)
-		readGroupAgeGroupFisheryParamXML(bm, fileName, groupingNode, no_checking, "ConstantAgeGroupSelectivity", bm->selectivity);
+		readGroupAgeGroupFisheryParamXML(bm, fileName, groupingNode, no_checking, "ConstantAgeGroupSelectivity", selectivity);
 	else
-		readGroupAgeGroupFisheryParamXML(bm, fileName, groupingNode, proportion_check, "ConstantAgeGroupSelectivity", bm->selectivity);
+		readGroupAgeGroupFisheryParamXML(bm, fileName, groupingNode, proportion_check, "ConstantAgeGroupSelectivity", selectivity);
 
 	selGroupNode = Util_XML_Get_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, groupingNode, "Selectivity_Curve");
 	if (selGroupNode == NULL)

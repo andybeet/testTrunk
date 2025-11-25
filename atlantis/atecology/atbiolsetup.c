@@ -494,7 +494,7 @@ void Ecology_Init(MSEBoxModel *bm, FILE *llogfp) {
     if(bm->flag_migration_on == TRUE){
         //csv file step
         if (strcmp(bm->migrationIfname, "") == 0) {
-            Util_Usage(1);
+            Util_Usage();
         }
         
         Create_Migration_Arrays(bm, llogfp);
@@ -1357,7 +1357,6 @@ void Set_Active_Flag(MSEBoxModel *bm, FILE *llogfp) {
 		if (Bioflag[id]) {
 			/* Find out which group is being checked */
 			checkdone = -1;
-            foundchrt = 0;
 			for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
 				if (FunctGroupArray[sp].habitatType != EPIFAUNA) {
 					if (checkdone < 0) {
@@ -1383,7 +1382,6 @@ void Set_Active_Flag(MSEBoxModel *bm, FILE *llogfp) {
 									if (id == FunctGroupArray[sp].secondNutrientTracerIndex) {
 										guild = sp;
 										checkdone++;
-                                        foundchrt = chrt;
 										break;
 									}
 
@@ -1501,8 +1499,7 @@ void Set_Active_Flag(MSEBoxModel *bm, FILE *llogfp) {
  *	TODO: Check if this can be called from within Ecology_init.
  */
 void Ecology_Init_Populations(MSEBoxModel *bm, FILE *llogfp) {
-    int ij, n, sp, k, flag_sp, sp_stock_type, stock_id, nreg, qid, leave_day, ns, sn, rn, den, give_warn, alert_msg, fished_chrt, pid;
-    //int stage;
+    int ij, n, sp, k, flag_sp, sp_stock_type, stock_id, nreg, qid, leave_day, ns, sn, rn, den, give_warn, alert_msg, fished_chrt, stage, pid;
     //int num_mig;
 	int ncells = bm->nbox;
 	int totnum = bm->K_num_tot_sp + 1; // The +1 is for DIN
@@ -1589,7 +1586,7 @@ void Ecology_Init_Populations(MSEBoxModel *bm, FILE *llogfp) {
 
 				for (n = 0; n < FunctGroupArray[sp].numCohortsXnumGenes; n++) {
 					anycounted = 0;
-					//stage = FunctGroupArray[sp].cohort_stage[n];
+					stage = FunctGroupArray[sp].cohort_stage[n];
 
 					sn = FunctGroupArray[sp].structNTracers[n];
 					rn = FunctGroupArray[sp].resNTracers[n];
@@ -1846,7 +1843,7 @@ void Ecology_Init_Populations(MSEBoxModel *bm, FILE *llogfp) {
 	for (fgIndex = 0; fgIndex < bm->K_num_tot_sp; fgIndex++) {
 		if (FunctGroupArray[fgIndex].isVertebrate == FALSE && FunctGroupArray[fgIndex].isMobile == TRUE && FunctGroupArray[fgIndex].sp_geo_move == TRUE) {
 			for (cohort = 0; cohort < FunctGroupArray[fgIndex].numCohortsXnumGenes; cohort++) {
-				//stage = FunctGroupArray[fgIndex].cohort_stage[cohort];
+				stage = FunctGroupArray[fgIndex].cohort_stage[cohort];
 				for (qid = 0; qid < MIGRATION[fgIndex].num_in_queue; qid++) {
 					bm->totbiom[fgIndex] += MIGRATION[fgIndex].survival[qid] * MIGRATION[fgIndex].DEN[cohort][qid];
 					bm->totagepop[fgIndex][cohort] += MIGRATION[fgIndex].survival[qid] * MIGRATION[fgIndex].DEN[cohort][qid];
@@ -1927,7 +1924,7 @@ void Ecology_Init_Populations(MSEBoxModel *bm, FILE *llogfp) {
 
 								if(stock_id < 0)
 									quit("Group %s, box %d horizontal stock is -1. Check your biology input file.\n", FunctGroupArray[sp].groupCode, ij);
-								init_stock_struct_prop[sp][n][stock_id] += bm->recruit_hdistrib[n][ij][sp];  // As assume all genetypes have the same distribution initialy
+								init_stock_struct_prop[sp][n][stock_id] += bm->recruit_hdistrib[n][ij][sp];  // As assume all genetypes have teh same distribution initialy
 							}
 						}
 						break;
@@ -1969,9 +1966,8 @@ void Ecology_Init_Populations(MSEBoxModel *bm, FILE *llogfp) {
 						}
 
 						if (give_warn) {
-							warn("Ecology_Init: Renormalising %s recruit_hdistrib as entered values would cause artificial reseeding of stocks\n", FunctGroupArray[sp].groupCode);
-                            fprintf(bm->logFile,"Ecology_Init: Renormalising %s recruit_hdistrib as entered values would cause artificial reseeding of stocks\n", FunctGroupArray[sp].groupCode);
-
+							warn("Ecology_Init: Renormalising %s recruit_hdistrib as entered values would cause artificial reseeding of stocks\n",
+									FunctGroupArray[sp].groupCode);
 							for (ij = 0; ij < bm->nbox; ij++) {
 								if (bm->boxes[ij].type != BOUNDARY) {
 									stock_id = bm->stock_struct[ij][sp] - 1;
@@ -1982,12 +1978,10 @@ void Ecology_Init_Populations(MSEBoxModel *bm, FILE *llogfp) {
 						}
 
 						if (alert_msg) {
-							warn("Ecology_Init: %s has migrants outside model domain at model start so can't perform artifical reseeding preventative check.\n", FunctGroupArray[sp].groupCode);
-							warn("Ecology_Init: This is probably not an issue, but if you are having troubles with %s check recruit_hdistrib.\n", FunctGroupArray[sp].groupCode);
-                            
-                            fprintf(bm->logFile,"Ecology_Init: %s has migrants outside model domain at model start so can't perform artifical reseeding preventative check.\n", FunctGroupArray[sp].groupCode);
-                            fprintf(bm->logFile,"Ecology_Init: This is probably not an issue, but if you are having troubles with %s check recruit_hdistrib.\n", FunctGroupArray[sp].groupCode);
-
+							warn("Ecology_Init: %s has migrants outside model domain at model start so can't perform artifical reseeding preventative check.\n",
+									FunctGroupArray[sp].groupCode);
+							warn("Ecology_Init: This is probably not an issue, but if you are having troubles with %s check recruit_hdistrib.\n",
+									FunctGroupArray[sp].groupCode);
 						}
 
 						/** Recaste recruit_hdistrib so that can assume that internal sum of proportions for boxes
@@ -2213,37 +2207,6 @@ void Ecology_Boundary_Check(MSEBoxModel *bm, FILE *llogfp) {
 void Ecology_Free(MSEBoxModel *bm) {
 	/* Close the output files */
 	Close_Ecology_Output_Files(bm);
-    
-    // Free that used to be in Box_Bio_Processes
-    free1d(boxLayerInfo->localWCTracers);
-    free1d(boxLayerInfo->localSEDTracers);
-    free1d(boxLayerInfo->localEPITracers);
-    free1d(boxLayerInfo->localICETracers);
-    free1d(boxLayerInfo->localLANDTracers);
-
-    free1d(boxLayerInfo->localWCFlux);
-    free1d(boxLayerInfo->localSEDFlux);
-    free1d(boxLayerInfo->localEPIFlux);
-    free1d(boxLayerInfo->localICEFlux);
-    free1d(boxLayerInfo->localLANDFlux);
-    
-    free1d(boxLayerInfo->localDiagFlux);
-    free1d(boxLayerInfo->localDiagTracers);
-    free1d(boxLayerInfo->localFishFlux);
-    free1d(boxLayerInfo->localFishTracers);
-    free3d(boxLayerInfo->DebugInfo);
-    free3d(boxLayerInfo->DebugFluxInfo);
-
-    d_free2longd(boxLayerInfo->NutsProd);
-    d_free3longd(boxLayerInfo->NutsProdGlobal);
-    d_free2longd(boxLayerInfo->NutsLost);
-    d_free3longd(boxLayerInfo->NutsLostGlobal);
-    d_free2longd(boxLayerInfo->DetritusProd);
-    d_free3longd(boxLayerInfo->DetritusProdGlobal);
-    d_free2longd(boxLayerInfo->DetritusLost);
-    d_free3longd(boxLayerInfo->DetritusLostGlobal);
-
-    free(boxLayerInfo);
 
 	printf("Freeing biology specific arrays\n");
 
@@ -2267,10 +2230,10 @@ void Ecology_Free(MSEBoxModel *bm) {
 	i_free1d(DiagBioflag);
 	i_free1d(DiagActiveflag);
 
-	printf("freeing VERT arrays\n");
+	if (verbose > 0)
+		printf("freeing VERT arrays\n");
 
 	free2d(VERTabund_check);
-    free2d(totdenCheck);
 
 	free3d(VERTinfo);
 	free3d(AGE_stock_struct_prop);
@@ -2279,11 +2242,14 @@ void Ecology_Free(MSEBoxModel *bm) {
 		free3d(BEDchange);
 	free1d(BED_scale);
 
-	printf("freeing distribution arrays\n");
+	if (verbose > 0)
+		printf("freeing distribution arrays\n");
 
 	free3d(cysts);
+	i_free2d(counted);
     
-    printf("freeing consumption related arrays\n");
+    if (verbose > 0)
+		printf("freeing consumption related arrays\n");
     
 	free2d(CATCHEATINGinfo);
 	free2d(CATCHGRAZEinfo);
@@ -2297,11 +2263,12 @@ void Ecology_Free(MSEBoxModel *bm) {
     if(bm->flag_import_feed) {
         free2d(SUPPdistrib);
     }
-
+    
     d_free4d(newden);
 	i_free2d(nSTOCK);
-    
-	printf("freeing recruitment arrays\n");
+
+	if (verbose > 0)
+		printf("freeing recruitment arrays\n");
 
 	free3d(PREYinfo);
 	free3d(pSTOCK);
@@ -2316,14 +2283,16 @@ void Ecology_Free(MSEBoxModel *bm) {
     i_free1d(tsRecruitsid);
     i_free1d(bleaching_has_occurred);
 
-	printf("freeing salt and pH change arrays\n");
+	if (verbose > 0)
+		printf("freeing salt and pH change arrays\n");
 
 	if(bm->flagsaltchange)
 		free2d(Schange);
 	if(bm->flagpHchange)
 		free2d(PHchange);
 
-	printf("freeing tracker arrays\n");
+	if (verbose > 0)
+		printf("freeing tracker arrays\n");
 
 	i_free2d(shiftVERTON);
 	free1d(sizeMinMax);
@@ -2334,74 +2303,26 @@ void Ecology_Free(MSEBoxModel *bm) {
 	free2d(step1distrib);
 	if(bm->flagtempchange)
 		free2d(Tchange);
-    
-    printf("freesing movement related arrays\n");
-    
 	free2d(tempdistrib);
 	free2d(totden);
-    free2d(boxden);
-    free4d(currentden);
-    free2d(leftden);
-    free1d(newden_sum);
-    free3d(preyamt);
-    free1d(totad);
-    free1d(totboxden);
-    free1d(totroc);
-    
-    printf("freesing demography related integer arrays\n");
-    
-    i_free1d(active_den);
-    free1d(lostden_zero);
-    free1d(adults_spawning);
-    i_free1d(ngene_done);
-    i_free1d(not_finished);
-    free1d(yoy);
-    
-    i_free1d(stock_done);
-    free1d(totsum);
-    free1d(totksum);
-    free1d(tot_new_mat);
-    //i_free1d(mig_status);
-    free1d(coming_SPden);
-    free1d(numbers_entering);
-    free1d(numbers_already_present);
-    
-    printf("freesing box calculation related arrays\n");
-    
-    free1d(initialBiomass);
-    free1d(initialSedBiomass);
-    free1d(initialEpiBiomass);
-    free1d(initialWaterBiomass);
-    if(bm->ice_on == TRUE){
-        free1d(initialIceBiomass);
-    }
-    if(bm->terrestrial_on == TRUE){
-        free1d(initialLandBiomass);
-    }
-    
-    printf("freesing movement related integer arrays\n");
 
-    printf("freesing movement related integer arraysA1 \n");
-    i_free2d(prey_counted);
-    
-    printf("freesing movement related integer arrays A2\n");
-    i_free1d(mig_returners);
-    
-	printf("freeing tot arrays\n");
+	if (verbose > 0)
+		printf("freeing tot arrays\n");
 
 	free3d(totrecruit);
 	free1d(bm->tot_SSB);
-    free2d(bm->tot_cohort);
 	free2d(tot_yoy);
 	if(Vchange_max_num > 0)
 		free3d(Vchange);
 
-	printf("Free variable info\n");
+	if(verbose > 0)
+		printf("Free variable info\n");
 
 	c_free2d(Varname);
 	c_free2d(DiagVarname);
 
-	printf("Free coastal degradation and invader arrays\n");
+	if(verbose > 0)
+		printf("Free coastal degradation and invader arrays\n");
 
 	free1d(Box_degradedi);
 
@@ -2412,37 +2333,39 @@ void Ecology_Free(MSEBoxModel *bm) {
 	free5d(LinearMortChange);
 	i_free3d(numMortChanges);
 
-	printf("Free diet info\n");
+	if(verbose > 1)
+		printf("Free diet info\n");
 
 	free4d(spPreyAvail);
 	free5d(DIET_check);
 
-    printf("Free EMBRYO data structure\n");
-    
+    if(verbose > 1)
+		printf("Free EMBRYO data structure\n");
 	// Free EMBRYO data structure
 	Free_Embryo(bm);
 	
 	/* Free up the external scaling memory */
-	printf("Free external scaling\n");
-    
+	if(verbose > 1)
+		printf("Free external scaling\n");
 	Free_Imposed_Recruits(bm);
 	if (bm->use_external_scaling) {
 		Free_Scalar_Prop(bm, bm->externalBiologyInput);
 	}
 
 	// Free MIGRATION data structure
-    printf("Free MIGRATION data structure\n");
+    if(verbose > 1)
+		printf("Free MIGRATION data structure\n");
     
 	Free_Migration(bm);
 
 	// Free DNA data structure
-    printf("Free EVOLUTION data structure\n");
-    
+    if(verbose > 1)
+		printf("Free EVOLUTION data structure\n");
 	Free_Evolution(bm);
 
 	// Free Coral Reef data structure
-    printf("Free coral reef data structure\n");
-    
+    if(verbose > 1)
+		printf("Free coral reef data structure\n");
 	Free_CoralReef(bm);
 
 	if(bm->track_contaminants){
@@ -2463,7 +2386,9 @@ void Ecology_Free(MSEBoxModel *bm) {
 void Free_Migration(MSEBoxModel *bm) {
 	int sp;
 
-    printf("Free Migration info\n");
+    if(verbose > 0) {
+		printf("Free Migration info\n");
+    }
 
     if (!bm->flag_migration_on) {
         for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
@@ -2521,7 +2446,6 @@ void Free_Migration(MSEBoxModel *bm) {
             free2d(MIGRATION[sp].InitSN);
             free2d(MIGRATION[sp].InitRN);
             
-            i_free2d(MIGRATION[sp].ReprodAllowed);
             i_free1d(MIGRATION[sp].yrs_to_age_pre_model);
             i_free1d(MIGRATION[sp].end_pt);
             i_free1d(MIGRATION[sp].RecruitQueueMatch);
@@ -2544,13 +2468,7 @@ void Free_Migration(MSEBoxModel *bm) {
             i_free2d(MIGRATION[sp].IsPartialMigration_Prm);
             i_free2d(MIGRATION[sp].PartialMigration_MinPrm);
             i_free2d(MIGRATION[sp].PartialMigration_MaxPrm);
-            i_free2d(MIGRATION[sp].ReprodAllowedPrm);
-            
-            if(bm->track_contaminants) {
-                free3d(MIGRATION[sp].RecruitContam);
-                free3d(MIGRATION[sp].contam);
-                free2d(MIGRATION[sp].contam_return);
-            }
+
         }
 	}
 
@@ -2566,7 +2484,8 @@ void Free_Migration(MSEBoxModel *bm) {
 void Free_Embryo(MSEBoxModel *bm) {
 	int sp;
 
-	printf("Free Embryo info\n");
+	if(verbose > 0)
+		printf("Free Embryo info\n");
 
 	for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
 		if ((FunctGroupArray[sp].groupAgeType == AGE_STRUCTURED || FunctGroupArray[sp].groupAgeType == AGE_STRUCTURED_BIOMASS)) {
@@ -2585,16 +2504,8 @@ void Free_Embryo(MSEBoxModel *bm) {
 			free3d(EMBRYO[sp].Larvae);
 			free4d(EMBRYO[sp].num_recruits);
             free4d(EMBRYO[sp].num_recruits_updating);
-
-            i_free1d(EMBRYO[sp].readytospawn);
-
-            if(bm->track_contaminants) {
-                free4d(EMBRYO[sp].Contam);
-                free2d(EMBRYO[sp].AverageContam);
-                free2d(EMBRYO[sp].SettlerContam);
-                free5d(EMBRYO[sp].RecruitContam);
-            }
             
+            i_free1d(EMBRYO[sp].readytospawn);
 		}
 	}
 
@@ -2695,7 +2606,6 @@ void Check_Input_Data(MSEBoxModel *bm, FILE *llogfp) {
                     bm->recruit_hdistrib[ngene][b][sp] = bm->recruit_hdistrib[0][b][sp];  // As zero entry was read in from file
 				// (currently assumes all genetypes start with the same distrubtion initially)
                 bm->recruit_hdistrib_orig[ngene][b][sp] = bm->recruit_hdistrib[0][b][sp];
-                
 			}
 		}
 	}
@@ -2776,9 +2686,6 @@ void Allocate_Arrays_Post_Load(MSEBoxModel *bm, FILE *llogfp) {
 	int ncohorts = bm->K_num_max_cohort;
 	int nstock = bm->K_num_stocks_per_sp;
 	int ngenetypes = bm->K_num_max_genetypes;
-    int totout = bm->K_num_tot_sp + 2; // Extra entries for remineralisation and final flux
-    //int totfluxout = bm->K_num_tot_sp + num_nut_flux_id; // Extra entries for nutrient fluxes
-    int totfluxout = bm->K_num_tot_sp + bm->K_num_physiochem;
 
 	//printf("Creating PostLoad arrays\n");
 
@@ -2786,7 +2693,6 @@ void Allocate_Arrays_Post_Load(MSEBoxModel *bm, FILE *llogfp) {
 	/* Setup all arrays for vertebrate processes */
 	VERTabund_check = Util_Alloc_Init_2D_Double(ncohorts * ngenetypes, bm->K_num_tot_sp, 0.0);
 	VERTinfo = Util_Alloc_Init_3D_Double(3, ncohorts * ngenetypes, bm->K_num_tot_sp, 0.0);
-    totdenCheck = Util_Alloc_Init_2D_Double(2, ncohorts * ngenetypes, 0.0);
 
 	/* Set up arrays for migration out of model domain; total system state;
 	 other vertebrate state info, processes, and reproduction parameters.
@@ -2794,8 +2700,6 @@ void Allocate_Arrays_Post_Load(MSEBoxModel *bm, FILE *llogfp) {
 
 	/* Arrays - listed in alphabetical order for ease of access */
 	AGE_stock_struct_prop = (double ***) alloc3d(nstock, ncohorts * ngenetypes, bm->K_num_tot_sp);
-    active_den = Util_Alloc_Init_1D_Int((bm->K_num_max_cohort * bm->K_num_max_genetypes), 0);
-    adults_spawning = Util_Alloc_Init_1D_Double(bm->K_num_stocks_per_sp, 0.0);
 
 	// No initial values are set. These are set in InitiliseArrays.
 	BED_scale = Util_Alloc_Init_1D_Double(bm->K_num_bed_types, 1.0);
@@ -2809,29 +2713,11 @@ void Allocate_Arrays_Post_Load(MSEBoxModel *bm, FILE *llogfp) {
 	cysts = Util_Alloc_Init_3D_Double(bm->num_active_habitats, bm->nbox, bm->K_num_tot_sp, 0.0);
 	CATCHEATINGinfo = (double **) alloc2d(ncohorts * ngenetypes, bm->K_num_tot_sp);
 	CATCHGRAZEinfo = (double **) alloc2d(ncohorts * ngenetypes, bm->K_num_tot_sp);
-    coming_SPden = Util_Alloc_Init_1D_Double(bm->K_num_max_genetypes, 0.0);
-
-    DIET_check = Util_Alloc_Init_5D_Double(2, bm->K_num_tot_sp, bm->K_num_stocks_per_sp, bm->K_num_max_cohort * bm->K_num_max_genetypes, bm->K_num_tot_sp, 0.0);
+	DIET_check = Util_Alloc_Init_5D_Double(2, bm->K_num_tot_sp, bm->K_num_stocks_per_sp, bm->K_num_max_cohort * bm->K_num_max_genetypes, bm->K_num_tot_sp, 0.0);
     
 	EATINGinfo = (double ***) alloc3d(bm->num_active_habitats, ncohorts * ngenetypes, bm->K_num_tot_sp + 1);  // The +1 is the slot for aquaculture feed
 	FEEDinfo = (double ***) alloc3d(bm->num_active_habitats, ncohorts * ngenetypes, bm->K_num_tot_sp + 1);  // The +1 is the slot for aquaculture feed
 	GRAZEinfo = (double ***) alloc3d(bm->num_active_habitats, ncohorts * ngenetypes, bm->K_num_tot_sp + 1);  // The +1 is the slot for aquaculture feed
-    
-    initialBiomass = Util_Alloc_Init_1D_Double(bm->ntracer, 0.0);
-    initialSedBiomass = Util_Alloc_Init_1D_Double(bm->ntracer, 0.0);
-    initialEpiBiomass = Util_Alloc_Init_1D_Double(bm->ntracer, 0.0);
-    initialWaterBiomass = Util_Alloc_Init_1D_Double(bm->ntracer, 0.0);
-
-    if(bm->ice_on == TRUE){
-        initialIceBiomass = Util_Alloc_Init_1D_Double(bm->nicetracer, 0.0);
-    } else {
-        initialIceBiomass = NULL;
-    }
-    if (bm->terrestrial_on){
-        initialLandBiomass = Util_Alloc_Init_1D_Double(bm->nland, 0.0);
-    } else {
-        initialLandBiomass = NULL;
-    }
 
 	init_stock_struct_prop = Util_Alloc_Init_3D_Double(nstock, ncohorts * ngenetypes, bm->K_num_tot_sp, 0.0);
 
@@ -2839,16 +2725,10 @@ void Allocate_Arrays_Post_Load(MSEBoxModel *bm, FILE *llogfp) {
 	initVERTinfo = Util_Alloc_Init_3D_Double(3, ncohorts * ngenetypes, bm->K_num_tot_sp, 0.0);
 
 	bm->lastreg_prop = Util_Alloc_Init_2D_Double(bm->K_num_reg, ntotsp + 1, 0.0);
-    lostden_zero = Util_Alloc_Init_1D_Double(bm->K_num_max_genetypes, 0.0);
+	counted = Util_Alloc_Init_2D_Int(ncohorts * ngenetypes, bm->K_num_tot_sp, 0);
 
-    //mig_status = Util_Alloc_Init_1D_Int(bm->K_num_max_stages, 0);
-
-    ngene_done = Util_Alloc_Init_1D_Int(bm->K_num_max_genetypes, 0);
 	newden = Util_Alloc_Init_4D_Double(ncells, nlayer, ncohorts * ngenetypes, bm->K_num_tot_sp, 0.0);
-    not_finished = Util_Alloc_Init_1D_Int(bm->K_num_max_genetypes, 0);
 	nSTOCK = (int **) i_alloc2d(bm->maxspage, nstock);
-    numbers_entering = Util_Alloc_Init_1D_Double(bm->K_num_max_cohort * bm->K_num_max_genetypes, 0.0);
-    numbers_already_present = Util_Alloc_Init_1D_Double(bm->K_num_max_cohort * bm->K_num_max_genetypes, 0.0);
 
 	PREYinfo = (double ***) alloc3d(bm->num_active_habitats, ncohorts * ngenetypes, bm->K_num_tot_sp);
 
@@ -2870,44 +2750,22 @@ void Allocate_Arrays_Post_Load(MSEBoxModel *bm, FILE *llogfp) {
 	stock_prop = (double **) alloc2d(nstock, bm->K_num_tot_sp);
 	sumSTOCK = (double **) alloc2d(bm->maxspage, nstock);
 	step1distrib = (double **) alloc2d(bm->K_num_max_stages, bm->wcnz);
-    stock_done = Util_Alloc_Init_1D_Int(bm->K_num_stocks_per_sp, 0);
 
 	tempdistrib = (double **) alloc2d(bm->K_num_max_stages, bm->wcnz);
 	bm->tempPopRatio = (double ****) alloc4d(bm->maxspage, ncohorts * ngenetypes, bm->K_num_tot_sp, nstock);
 	bm->totbiom = Util_Alloc_Init_1D_Double(ntotsp + 1, 0.0);
 	bm->groupTotCatch = Util_Alloc_Init_2D_Double(bm->K_num_max_cohort * bm->K_num_max_genetypes, bm->K_num_tot_sp, 0.0);
 	bm->tot_SSB = (double *) alloc1d(ntotsp + 1); // Use same size as totbiom as can initialise it quickly
-    bm->tot_cohort = Util_Alloc_Init_2D_Double(bm->K_num_max_cohort * bm->K_num_max_genetypes, bm->K_num_tot_sp, 0.0);
 	totrecruit = Util_Alloc_Init_3D_Double(ngenetypes, nstock, bm->K_num_tot_sp, 0.0);
-    totsum = Util_Alloc_Init_1D_Double(bm->K_num_stocks_per_sp, 0.0);
-    totksum = Util_Alloc_Init_1D_Double(bm->K_num_stocks_per_sp, 0.0);
-    tot_new_mat = Util_Alloc_Init_1D_Double(bm->K_num_max_cohort * bm->K_num_max_genetypes, 0.0);
 
     totdensize = (ncohorts * ngenetypes);
     if((bm->K_max_invert_cohorts + 1) > totdensize)
         totdensize =  bm->K_max_invert_cohorts + 1; //As need an additional slot for propsum in invertebrate movement code
-    
-    boxden = Util_Alloc_Init_2D_Double(bm->K_num_max_cohort * bm->K_num_max_genetypes, bm->nbox, 0.0);
-    currentden = Util_Alloc_Init_4D_Double(bm->nbox, bm->wcnz, bm->K_num_max_cohort * bm->K_num_max_genetypes, bm->K_num_tot_sp, 0.0);
-    
-    leftden = Util_Alloc_Init_2D_Double(bm->K_num_max_cohort * bm->K_num_max_genetypes, bm->K_num_tot_sp, 0.0);
-    mig_returners = Util_Alloc_Init_1D_Int(bm->K_num_tot_sp, 0);
-    newden_sum = Util_Alloc_Init_1D_Double(bm->K_num_max_cohort * bm->K_num_max_genetypes, 0.0);
-    preyamt = Util_Alloc_Init_3D_Double(2, bm->nbox, bm->K_num_tot_sp, 0.0);
-    prey_counted = Util_Alloc_Init_2D_Int(bm->K_num_max_cohort * bm->K_num_max_genetypes, bm->K_num_tot_sp, 0);
-    totad = Util_Alloc_Init_1D_Double(bm->K_num_max_cohort * bm->K_num_max_genetypes, 0.0);
-    totboxden = Util_Alloc_Init_1D_Double(bm->K_num_max_cohort * bm->K_num_max_genetypes, 0.0);
     totden = Util_Alloc_Init_2D_Double(totdensize, bm->K_num_tot_sp, 0.0);
-    totden_check = Util_Alloc_Init_2D_Double(totdensize, bm->K_num_tot_sp, 0.0);
-    totroc = Util_Alloc_Init_1D_Double(bm->K_num_max_cohort * bm->K_num_max_genetypes, 0.0);
-    
-    fprintf(llogfp, "totboxden created with dimension bm->K_num_max_cohort: %d bm->K_num_max_genetypes: %d (final dim %d)\n", bm->K_num_max_cohort, bm->K_num_max_genetypes, bm->K_num_max_cohort * bm->K_num_max_genetypes);
     
 	bm->diagnosticBiom = Util_Alloc_Init_1D_Double(ntotsp + 1, 0.0);
 
-    tot_yoy = Util_Alloc_Init_2D_Double(nstock, bm->K_num_tot_sp, 0);
-    
-    yoy = Util_Alloc_Init_1D_Double(bm->K_num_max_genetypes, 0.0);
+	tot_yoy = (double **) alloc2d(nstock, bm->K_num_tot_sp);
 
 	if(Vchange_max_num > 0)
 		Vchange = (double ***) alloc3d(K_num_env_scales, bm->wcnz, Vchange_max_num);
@@ -2922,50 +2780,6 @@ void Allocate_Arrays_Post_Load(MSEBoxModel *bm, FILE *llogfp) {
         Create_Evolution_Parameters(bm);
     }
 
-    // Array that used to be in Box_Bio_Processes()
-    boxLayerInfo = (BoxLayerValues *) malloc(sizeof(BoxLayerValues));
-    boxLayerInfo->NutsProd = Util_Alloc_Init_2D_Long_Double(K_num_nutrients, bm->num_active_habitats, 0.0);
-    boxLayerInfo->NutsProdGlobal = Util_Alloc_Init_3D_Long_Double(K_num_nutrients, bm->num_active_habitats, bm->num_active_habitats, 0.0);
-    boxLayerInfo->NutsLost = Util_Alloc_Init_2D_Long_Double(K_num_nutrients, bm->num_active_habitats, 0.0);
-    boxLayerInfo->NutsLostGlobal = Util_Alloc_Init_3D_Long_Double(K_num_nutrients, bm->num_active_habitats, bm->num_active_habitats, 0.0);
-    boxLayerInfo->DetritusProd = Util_Alloc_Init_2D_Long_Double(K_num_nutrients, bm->num_active_habitats, 0.0);
-    boxLayerInfo->DetritusProdGlobal = Util_Alloc_Init_3D_Long_Double(K_num_nutrients, bm->num_active_habitats, bm->num_active_habitats, 0.0);
-    boxLayerInfo->DetritusLost = Util_Alloc_Init_2D_Long_Double(K_num_nutrients, bm->num_active_habitats, 0.0);
-    boxLayerInfo->DetritusLostGlobal = Util_Alloc_Init_3D_Long_Double(K_num_nutrients, bm->num_active_habitats, bm->num_active_habitats, 0.0);
-
-    /** Allocate storage for the local copies of the tracers and flux values */
-    boxLayerInfo->localWCTracers = Util_Alloc_Init_1D_Double(2 * numwcvar + numepivar, 0.0);
-    boxLayerInfo->localWCFlux = Util_Alloc_Init_1D_Double(2 * numwcvar + numepivar, 0.0);
-
-    boxLayerInfo->localSEDTracers = Util_Alloc_Init_1D_Double(numwcvar, 0.0);
-    boxLayerInfo->localSEDFlux = Util_Alloc_Init_1D_Double(numwcvar, 0.0);
-
-    boxLayerInfo->localEPITracers = Util_Alloc_Init_1D_Double(numwcvar, 0.0);
-    boxLayerInfo->localEPIFlux = Util_Alloc_Init_1D_Double(numwcvar, 0.0);
-
-    /* Number of ice tracers is the same as the number of wc tracers as the tracers are added onto the end of tinfo.*/
-    boxLayerInfo->localICETracers = Util_Alloc_Init_1D_Double(numwcvar, 0.0);
-    boxLayerInfo->localICEFlux = Util_Alloc_Init_1D_Double(numwcvar, 0.0);
-
-    boxLayerInfo->localLANDTracers = Util_Alloc_Init_1D_Double(numwcvar, 0.0);
-    boxLayerInfo->localLANDFlux = Util_Alloc_Init_1D_Double(numwcvar, 0.0);
-
-    boxLayerInfo->localDiagTracers = Util_Alloc_Init_1D_Double(numdiagvar, 0.0);
-    boxLayerInfo->localDiagFlux = Util_Alloc_Init_1D_Double(numdiagvar, 0.0);
-
-    boxLayerInfo->localFishTracers = Util_Alloc_Init_1D_Double(numfstatvar, 0.0);
-    boxLayerInfo->localFishFlux = Util_Alloc_Init_1D_Double(numfstatvar, 0.0);
-
-    boxLayerInfo->DebugInfo = Util_Alloc_Init_3D_Double(Diagnostnlevel_id, bm->num_active_habitats, totout, 0.0);
-    boxLayerInfo->DebugFluxInfo = Util_Alloc_Init_3D_Double(2, bm->num_active_habitats, totfluxout, 0.0);
-
-    boxLayerInfo->BB_DL = 0.0;
-    boxLayerInfo->BB_DR = 0.0;
-    boxLayerInfo->PB_DL = 0.0;
-    boxLayerInfo->PB_DR = 0.0;
-
-    boxLayerInfo->DIN = 0.0;
-    
 }
 /**
  * \brief Allocate the population ratios.
@@ -2974,7 +2788,7 @@ void Allocate_Arrays_Post_Load(MSEBoxModel *bm, FILE *llogfp) {
 void Init_Population_Ratios(MSEBoxModel *bm) {
 	int i, k, ij, b;
 	int sp, update_popratio;
-	double this_totsum, sp_ageClassSize;
+	double totsum, sp_ageClassSize;
 	int stock_id;
 
 	/* Do the actual initial allocations. If no popratios readin then simply assign numbers
@@ -3004,15 +2818,15 @@ void Init_Population_Ratios(MSEBoxModel *bm) {
 
 						/* Make sure the props sum to one */
 						update_popratio = 0;
-						this_totsum = 0;
+						totsum = 0;
 						for (ij = 0; ij < FunctGroupArray[sp].numStocks; ij++) {
-							this_totsum = 0;
+							totsum = 0;
 							for (i = 0; i < FunctGroupArray[sp].ageClassSize; i++) {
-								this_totsum += bm->tempPopRatio[ij][sp][b][i];
+								totsum += bm->tempPopRatio[ij][sp][b][i];
 							}
-							if (this_totsum != 1.0) {
+							if (totsum != 1.0) {
 								for (i = 0; i < FunctGroupArray[sp].ageClassSize; i++) {
-									bm->tempPopRatio[ij][sp][b][i] /= this_totsum;
+									bm->tempPopRatio[ij][sp][b][i] /= totsum;
 
 								}
 								update_popratio++;
@@ -3798,13 +3612,8 @@ void Ecology_Setup_Reproduction(MSEBoxModel *bm) {
         
         // Relevant EMBRYO alignment with MIGRATION array counter
         EMBRYO[sp].migIDmatch = Util_Alloc_Init_1D_Int(max_num, 0);
+
         
-        if(bm->track_contaminants) {
-            EMBRYO[sp].Contam = Util_Alloc_Init_4D_Double(bm->num_contaminants, max_num, FunctGroupArray[sp].numGeneTypes, num_stocks, 0);
-            EMBRYO[sp].AverageContam = Util_Alloc_Init_2D_Double(bm->num_contaminants, FunctGroupArray[sp].numGeneTypes, 0);
-            EMBRYO[sp].RecruitContam = Util_Alloc_Init_5D_Double(bm->num_contaminants, max_num, FunctGroupArray[sp].numGeneTypes, bm->wcnz, bm->nbox, 0);
-            EMBRYO[sp].SettlerContam = Util_Alloc_Init_2D_Double(bm->num_contaminants, FunctGroupArray[sp].numGeneTypes, 0);
-        }
 	}
 
 }

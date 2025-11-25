@@ -41,7 +41,7 @@ void Convert_Groups_To_XML(MSEBoxModel *bm, char *fileName, char *outputFileName
         numExpectedTokens = numExpectedTokens + 2;
     }
 
-    /* Init libxml */
+	/* Init libxml */
 	xmlInitParser();
 	LIBXML_TEST_VERSION
 
@@ -64,8 +64,8 @@ void Convert_Groups_To_XML(MSEBoxModel *bm, char *fileName, char *outputFileName
 	/* Now parse each group and create the XML */
 
 	fseek(inputFP, 0L, 0);
-    
-    /* Get the first line */
+
+	/* Get the first line */
 	fgets(buf, buflen, inputFP);
 
 	/* First we need to check that the number of tokens is correct */
@@ -79,8 +79,8 @@ void Convert_Groups_To_XML(MSEBoxModel *bm, char *fileName, char *outputFileName
 		quit("\n\nERROR: The functionalGroup input file does not have the correct number of columns %d it has %d columns\n\n", numExpectedTokens, count);
 
 	}
-    
-    count = 0;
+
+	count = 0;
 	while (fgets(buf, buflen, inputFP) != NULL) {
 
 		/* Ignore the first line */
@@ -90,8 +90,8 @@ void Convert_Groups_To_XML(MSEBoxModel *bm, char *fileName, char *outputFileName
 		ch = buf[0];
 
 		if (ch != '\t' && ch != '\n' && ch != '#' && ch != ',') {
-            
-            /* Create the node for the group */
+
+			/* Create the node for the group */
 			groupNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, rootnode, "FunctionalGroup", "The defintion of a functional group", "", "");
 
 			/* Group Code value. */
@@ -100,8 +100,8 @@ void Convert_Groups_To_XML(MSEBoxModel *bm, char *fileName, char *outputFileName
 
 			/* Get the index. - ignore this value */
 			varStr = strtok(NULL, seps);
-            
-            /* Is Active */
+
+			/* Is Active */
 			varStr = strtok(NULL, seps);
 			Util_XML_Create_Node(ATLANTIS_ATTRIBUTE, groupNode, "IsTurnedOn", "", "", varStr);
 
@@ -113,7 +113,7 @@ void Convert_Groups_To_XML(MSEBoxModel *bm, char *fileName, char *outputFileName
 			varStr = strtok(NULL, seps);
 			Util_XML_Create_Node(ATLANTIS_ATTRIBUTE, groupNode, "LongName", "", "", varStr);
 
-            /* NumCohorts */
+			/* NumCohorts */
 			varStr = strtok(NULL, seps);
 			Util_XML_Create_Node(ATLANTIS_ATTRIBUTE, groupNode, "NumCohorts", "", "", varStr);
 
@@ -125,7 +125,7 @@ void Convert_Groups_To_XML(MSEBoxModel *bm, char *fileName, char *outputFileName
 			varStr = strtok(NULL, seps);
 			Util_XML_Create_Node(ATLANTIS_ATTRIBUTE, groupNode, "NumStages", "", "", varStr);
 
-            /* NumSpawns */
+			/* NumSpawns */
 			varStr = strtok(NULL, seps);
 			Util_XML_Create_Node(ATLANTIS_ATTRIBUTE, groupNode, "NumSpawns", "", "", varStr);
  
@@ -137,7 +137,7 @@ void Convert_Groups_To_XML(MSEBoxModel *bm, char *fileName, char *outputFileName
 			varStr = strtok(NULL, seps);
 			Util_XML_Create_Node(ATLANTIS_ATTRIBUTE, groupNode, "NumStocks", "", "", varStr);
             
-            /* Vertically Mobile in day to day movement */
+			/* Vertically Mobile in day to day movement */
 			varStr = strtok(NULL, seps);
 			Util_XML_Create_Node(ATLANTIS_ATTRIBUTE, groupNode, "VerticallyMobile", "", "", varStr);
 
@@ -177,7 +177,7 @@ void Convert_Groups_To_XML(MSEBoxModel *bm, char *fileName, char *outputFileName
 			varStr = strtok(NULL, seps);
 			node = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE, groupNode, "GroupType", "", "", varStr);
 
-            if(count == 0){
+			if(count == 0){
 				lookupNode = Util_XML_Create_Lookup_Node(node);
 				Util_XML_Create_Lookup_Value_Node(lookupNode, "LG_PHY", "Large Phytoplankton");
 				Util_XML_Create_Lookup_Value_Node(lookupNode, "SM_PHY", "Small Phytoplankton");
@@ -206,8 +206,8 @@ void Convert_Groups_To_XML(MSEBoxModel *bm, char *fileName, char *outputFileName
 				Util_XML_Create_Lookup_Value_Node(lookupNode, "MAMMAL", "Mammal");
 				Util_XML_Create_Lookup_Value_Node(lookupNode, "SHARK", "Shark");
 			}
-            
-            /* IsPredator */
+
+			/* IsPredator */
 			varStr = strtok(NULL, seps);
 			Util_XML_Create_Node(ATLANTIS_ATTRIBUTE, groupNode, "IsPredator", "", "", varStr);
 
@@ -219,7 +219,7 @@ void Convert_Groups_To_XML(MSEBoxModel *bm, char *fileName, char *outputFileName
 			varStr = strtok(NULL, seps);
 			Util_XML_Create_Node(ATLANTIS_ATTRIBUTE, groupNode, "IsSiliconDep", "", "", varStr);
 
-            /* IsAssessed */
+			/* IsAssessed */
 			varStr = strtok(NULL, seps);
 			Util_XML_Create_Node(ATLANTIS_ATTRIBUTE, groupNode, "IsAssessed", "", "", varStr);
 
@@ -231,7 +231,7 @@ void Convert_Groups_To_XML(MSEBoxModel *bm, char *fileName, char *outputFileName
 			varStr = strtok(NULL, seps);
 			Util_XML_Create_Node(ATLANTIS_ATTRIBUTE, groupNode, "OverWinters", "", "", varStr);
 
-            /* IsCultured */
+			/* IsCultured */
 			varStr = strtok(NULL, seps);
 			Util_XML_Create_Node(ATLANTIS_ATTRIBUTE, groupNode, "isCultured", "", "", varStr);
 

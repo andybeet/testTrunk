@@ -9,7 +9,7 @@
 
  Purpose:        This file contains routines which
  perform forced vertical mixing (to represenmt upwelling).
- vertical_mixing - forced water column mixing.
+ vvertical_mixing - forced water column mixing.
 
  Arguments:      See below
 

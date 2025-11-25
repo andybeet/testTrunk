@@ -11,7 +11,7 @@ void redus_update_biomass(int year, char* groupCode, double biomass);
 
 double redus_do_hcr(int curyearC, char* groupCodeC);
 
-int initRedus(int ans);
+int initRedus();
 int redus_getRintObject(char *name);
 int exec_r(const char* str);
 

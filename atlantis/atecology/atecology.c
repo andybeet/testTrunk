@@ -411,10 +411,11 @@ void Water_Column_Box(MSEBoxModel *bm, double dtsz, BoxLayerValues *boxLayerInfo
 	int isGlobal;
 	double mortality_scalar = 1.0;
     double tot_dis, this_bio, realism_scalar;
+    double *initialBiomass = Util_Alloc_Init_1D_Double(bm->ntracer, 0.0);
     int i;
 
     if (verbose > 1) {
-        printf("Water_Column_Box for box %d-%d\n", bm->current_box, bm->current_layer);
+        printf("Water_Column_Box\n");
     }
 
     // Find local region
@@ -435,10 +436,8 @@ void Water_Column_Box(MSEBoxModel *bm, double dtsz, BoxLayerValues *boxLayerInfo
 	boxLayerInfo->sDRscale = 0.0;
 	boxLayerInfo->sDCscale = 0.0;
 
-    /*
 	if ((verbose > 1) || ((bm->debug == debug_biology_process) && (bm->dayt >= bm->checkstart) && (bm->dayt < bm->checkstop)))
 		fprintf(llogfp, "\nWater column processes running now (it_count = %d), t = %e\n", it_count, bm->dayt);
-    */
     
     /* Initialise the arrays */
 	Reset_Arrays(bm, WC, it_count, boxLayerInfo, llogfp);
@@ -475,7 +474,6 @@ void Water_Column_Box(MSEBoxModel *bm, double dtsz, BoxLayerValues *boxLayerInfo
 	 Transfer tracer values from array argument to local variables
 	 (see Table above):
 	 **/
-    Util_Init_1D_Double(initialBiomass, bm->ntracer, 0.0);
     for (i = 0; i < bm->ntracer; i++) {
 		initialBiomass[i] = boxLayerInfo->localWCTracers[i];
     }
@@ -527,7 +525,7 @@ void Water_Column_Box(MSEBoxModel *bm, double dtsz, BoxLayerValues *boxLayerInfo
 	 Fishing and induced incidental mortality on fish, invertebrates and benthic primary producers.
 	 This is done first so that animals can steal from the catch (if appropriate).
 	 ***/
-    
+
 	if (bm->flag_fisheries_on && (it_count == 1)) {
 
         if(bm->flagdepend_dis){
@@ -664,7 +662,7 @@ void Water_Column_Box(MSEBoxModel *bm, double dtsz, BoxLayerValues *boxLayerInfo
 			}
 		}
 	}
-    
+
     /********************** ECOLOGICAL INDICATORS *******************************/
 
 	if (it_count == 1) {
@@ -834,7 +832,7 @@ void Water_Column_Box(MSEBoxModel *bm, double dtsz, BoxLayerValues *boxLayerInfo
 	if(bm->track_contaminants){
         Change_Contaminant_Levels(bm, boxLayerInfo, WC, dtsz, 0);
 	}
-    
+
     /** Benthic returns needed for open lower boundary in offshore (deep water) boxes
 	 would be needed if model runs were on scale of 1000 years otherwise too negligible
 	 to worry about (on advice of John Parslow) **/
@@ -843,14 +841,14 @@ void Water_Column_Box(MSEBoxModel *bm, double dtsz, BoxLayerValues *boxLayerInfo
 	 Reconcile global consumption, and detritus and nutrient flows for adaptive timestep
 	 */
 	Reconcile_Global_Values(bm, boxLayerInfo, WC, llogfp);
-    
+
 	/*******************************************************************************************
 	 The equations for rate of change are therefore:
 	 */
 	for (guild = 0; guild < bm->K_num_tot_sp; guild++) {
 		if((int) (FunctGroupArray[guild].speciesParams[flag_id]) == TRUE){
 			isGlobal = (FunctGroupArray[guild].diagTol == 2 && it_count == 1);
-            
+
 			if(FunctGroupArray[guild].isDetritus == TRUE)
 				continue;
 
@@ -897,7 +895,8 @@ void Water_Column_Box(MSEBoxModel *bm, double dtsz, BoxLayerValues *boxLayerInfo
 							grazeEaten = FunctGroupArray[guild].preyEaten[cohort][habitat_type];
 						}
 
-						boxLayerInfo->localWCFlux[FunctGroupArray[guild].totNTracers[cohort]] = FunctGroupArray[guild].growth[cohort] - FunctGroupArray[guild].mortality[cohort] - FunctGroupArray[guild].dead[cohort] - (double)grazeEaten;
+						boxLayerInfo->localWCFlux[FunctGroupArray[guild].totNTracers[cohort]] = FunctGroupArray[guild].growth[cohort]
+														- FunctGroupArray[guild].mortality[cohort] - FunctGroupArray[guild].dead[cohort] - (double)grazeEaten;
 
 						if(bm->track_atomic_ratio == TRUE){
 							/* Predation and growth due to predation is handled seperately */
@@ -1049,7 +1048,7 @@ void Water_Column_Box(MSEBoxModel *bm, double dtsz, BoxLayerValues *boxLayerInfo
 	if(bm->scale_all_mortality == TRUE){
 		Scale_Detritus_Mortality(bm, boxLayerInfo);
 	}
-    
+
 	/* These are separate as the order is important to get the same output files */
 	/**
 	 Labile detritus in the water column
@@ -1127,7 +1126,7 @@ void Water_Column_Box(MSEBoxModel *bm, double dtsz, BoxLayerValues *boxLayerInfo
 				boxLayerInfo->localDiagTracers[DivCount_i] = DivHere;
 		}
 	}
-    
+
 	//TODO: Rewrite to allow for age structured biomass groups.
 	/* Update mortality estimates - Start with vertebrates */
 	for (guild = 0; guild < bm->K_num_tot_sp; guild++) {
@@ -1226,7 +1225,7 @@ void Water_Column_Box(MSEBoxModel *bm, double dtsz, BoxLayerValues *boxLayerInfo
 					- boxLayerInfo->DebugFluxInfo[bm->which_check][bm->habitat_check][loss_id]) * dtsz;
 		}
 	}
-    
+
 	if ((bm->checkNH || bm->checkDL || bm->checkDR) && ((bm->dayt >= bm->checkstart) && ((bm->checkbox > bm->nbox) || (bm->current_box == bm->checkbox))))
 		Call_Diagnostics(bm, boxLayerInfo, WC, llogfp, 0);
 
@@ -1374,7 +1373,7 @@ void Water_Column_Box(MSEBoxModel *bm, double dtsz, BoxLayerValues *boxLayerInfo
 			}
 		}
 	}
-    
+
 	if (!(_finite(boxLayerInfo->localWCFlux[NH3_i]))) {
 		/* Check diagnostic terms */
 		Call_Diagnostics(bm, boxLayerInfo, WC, llogfp, 1);
@@ -1391,6 +1390,8 @@ void Water_Column_Box(MSEBoxModel *bm, double dtsz, BoxLayerValues *boxLayerInfo
 				bm->boxes[bm->current_box].volume[bm->current_layer]);
 
 	}
+	/* Free up the arrays used in this function */
+	free1d(initialBiomass);
 
 	return;
 }
@@ -1436,10 +1437,11 @@ void Sediment_Box(MSEBoxModel *bm, double dtsz, BoxLayerValues *boxLayerInfo, FI
 	int fluxnum = -1;
 	HABITAT_TYPES habitat_type = SED;
 	int i, hab;
+	double *initialBiomass = Util_Alloc_Init_1D_Double(bm->ntracer, 0.0);
 	int isGlobal;
 
     if (verbose > 1)
-        printf("Sediment_Box for box %d-%d\n", bm->current_box, bm->current_layer);
+        printf("Sediment_Box\n");
 
     boxLayerInfo->sDLscale = 1.0;
 	boxLayerInfo->sDRscale = 1.0;
@@ -1468,7 +1470,7 @@ void Sediment_Box(MSEBoxModel *bm, double dtsz, BoxLayerValues *boxLayerInfo, FI
 	 Begin by transferring tracer values from array argument to local variables
 	 (see Table above):
 	 **/
-    Util_Init_1D_Double(initialBiomass, bm->ntracer, 0.0);
+    
 	for (i = 0; i < bm->ntracer; i++)
 		initialBiomass[i] = boxLayerInfo->localSEDTracers[i];
 
@@ -2017,6 +2019,9 @@ void Sediment_Box(MSEBoxModel *bm, double dtsz, BoxLayerValues *boxLayerInfo, FI
 		Textfile_Dump(bm, llogfp);
         quit("Sediment_Box: Got an QNAN result box: %d, layer: %d on day: %e, smflux: %e\n", bm->current_box, bm->current_layer, bm->dayt, smFlux);
 	}
+
+	free1d(initialBiomass);
+
 }
 
 /************ EPIBENTHIC MODULE***************************************************************
@@ -2061,39 +2066,47 @@ void Epibenthic_Box(MSEBoxModel *bm, double dtsz, BoxLayerValues *boxLayerInfo, 
     double tot_dis, this_bio = 0, realism_scalar;
     
 	int isGlobal;
+	double *initialIceBiomass;
+	double *initialLandBiomass;
     
-    if (verbose > 1) {
-        printf("Epibenthic_Box for box %d-%d\n", bm->current_box, bm->current_layer);
-    }
+	double *initialSedBiomass = Util_Alloc_Init_1D_Double(bm->ntracer, 0.0);
+	double *initialEpiBiomass = Util_Alloc_Init_1D_Double(bm->ntracer, 0.0);
+	double *initialWaterBiomass = Util_Alloc_Init_1D_Double(bm->ntracer, 0.0);
 
+    if (verbose > 1)
+        printf("Epibenthic_Box\n");
+
+    if(bm->ice_on == TRUE){
+		initialIceBiomass = Util_Alloc_Init_1D_Double(bm->nicetracer, 0.0);
+	}
+	else{
+		initialIceBiomass = NULL;
+	}
+	if (bm->terrestrial_on){
+		initialLandBiomass = Util_Alloc_Init_1D_Double(bm->nland, 0.0);
+	}	else{
+		initialLandBiomass = NULL;
+	}
 	/* Set pointers to sediment and epibenthic cells */
 
 	/***/
 	/* Set initial tracer values - note vertebrate values are set when
 	 Water_Column_Box are called
 	 */
-    Util_Init_1D_Double(initialSedBiomass, bm->ntracer, 0.0);
-    Util_Init_1D_Double(initialEpiBiomass, bm->ntracer, 0.0);
-    Util_Init_1D_Double(initialWaterBiomass, bm->ntracer, 0.0);
 
 	for (i = 0; i < bm->ntracer; i++) {
 		initialSedBiomass[i] = boxLayerInfo->localSEDTracers[i];
 		initialEpiBiomass[i] = boxLayerInfo->localEPITracers[i];
 		initialWaterBiomass[i] = boxLayerInfo->localWCTracers[i];
 	}
-	if(bm->terrestrial_on == TRUE){
-        Util_Init_1D_Double(initialLandBiomass, bm->nland, 0.0);
+	if(bm->terrestrial_on){
 		for(i = 0; i < bm->nland; i++){
 			initialLandBiomass[i] = boxLayerInfo->localLANDTracers[i];
 		}
 	}
-    
-    if(bm->ice_on == TRUE){
-        Util_Init_1D_Double(initialIceBiomass, bm->nicetracer, 0.0);
-        for (i = 0; i < bm->nicetracer; i++) {
-            initialIceBiomass[i] = boxLayerInfo->localICETracers[i];
-        }
-    }
+	for (i = 0; i < bm->nicetracer; i++) {
+		initialWaterBiomass[i] = boxLayerInfo->localICETracers[i];
+	}
 
 	DL = boxLayerInfo->localWCTracers[FunctGroupArray[LabDetIndex].totNTracers[0]];
 	DR = boxLayerInfo->localWCTracers[FunctGroupArray[RefDetIndex].totNTracers[0]];
@@ -2271,9 +2284,6 @@ void Epibenthic_Box(MSEBoxModel *bm, double dtsz, BoxLayerValues *boxLayerInfo, 
 					case LAND_BASED:
 						// TODO: May need to change this for ice and land
 						break;
-                    case MIXED:
-                        quit("How did we get here as should come through a primary habitat\n");
-                        break;
 					}
 				}
 			}
@@ -2327,9 +2337,6 @@ void Epibenthic_Box(MSEBoxModel *bm, double dtsz, BoxLayerValues *boxLayerInfo, 
                                     break;
                                 case ICE_BASED:
                                     this_bio = initialIceBiomass[FunctGroupArray[guild].totNTracers[cohort]];
-                                    break;
-                                case MIXED:
-                                    quit("How did we get here as should come through a primary habitat\n");
                                     break;
                             }
                         }
@@ -2425,12 +2432,7 @@ void Epibenthic_Box(MSEBoxModel *bm, double dtsz, BoxLayerValues *boxLayerInfo, 
 	 and pollution have degraded the base available habitat for biogenic habitat
 	 constituents such as the macrophytes and filter feeders.
 	 **/
-	
-	//printf("Degradation scalar");
-	
 	for (kij = 0; kij < bm->K_num_bed_types; kij++) {
-	  
-
 		if (Box_degradedi[bm->current_box] && bm->flagdegrade) {
 			BED_scale[kij] = Util_Get_Accumulative_Change_Scale(bm, BEDchange_max_num, BEDchange[kij]);
 			
@@ -2936,9 +2938,6 @@ void Epibenthic_Box(MSEBoxModel *bm, double dtsz, BoxLayerValues *boxLayerInfo, 
 					biomass = initialIceBiomass[FunctGroupArray[guild].totNTracers[cohort]];
 				}
 				break;
-            case MIXED:
-                quit("How did we get here as should come through a primary habitat\n");
-                break;
 			}
 
 			if (FunctGroupArray[guild].speciesParams[flag_lim_id] == simple_ben_lim) {
@@ -3199,6 +3198,17 @@ void Epibenthic_Box(MSEBoxModel *bm, double dtsz, BoxLayerValues *boxLayerInfo, 
 				TotFlux);
 	}
 
+	/* Free up the arrays used in this function */
+	free1d(initialSedBiomass);
+	free1d(initialEpiBiomass);
+	free1d(initialWaterBiomass);
+	if(bm->ice_on == TRUE){
+		free1d(initialIceBiomass);
+	}
+	if(bm->terrestrial_on){
+		free1d(initialLandBiomass);
+	}
+
 }
 
 
@@ -3248,12 +3258,9 @@ void Ice_Box(MSEBoxModel *bm, double dtsz, BoxLayerValues *boxLayerInfo, FILE *l
 	//int fluxnum = -1;
 	HABITAT_TYPES habitat_type = ICE_BASED;
 	int i, hab;
+	double *initialBiomass = Util_Alloc_Init_1D_Double(bm->ntracer, 0.0);
 	int isGlobal;
 	double iceFlux = 0.0;
-    
-    if (verbose > 1) {
-        printf("Ice_Box for box %d-%d\n", bm->current_box, bm->current_layer);
-    }
 
 	boxLayerInfo->sDLscale = 1.0;
 	boxLayerInfo->sDRscale = 1.0;
@@ -3279,7 +3286,7 @@ void Ice_Box(MSEBoxModel *bm, double dtsz, BoxLayerValues *boxLayerInfo, FILE *l
 	 Begin by transferring tracer values from array argument to local variables
 	 (see Table above):
 	 **/
-    Util_Init_1D_Double(initialBiomass, bm->ntracer, 0.0);
+
 	for (i = 0; i < bm->ntracer; i++){
 		initialBiomass[i] = boxLayerInfo->localICETracers[i];
 	}
@@ -3655,6 +3662,8 @@ void Ice_Box(MSEBoxModel *bm, double dtsz, BoxLayerValues *boxLayerInfo, FILE *l
         quit("Ice_box: Got an QNAN result box: %d, layer: %d on day: %e, iceflux: %e\n", bm->current_box, bm->current_layer, bm->dayt, iceFlux);
 	}
 
+	free1d(initialBiomass);
+
 }
 
 /**
@@ -3855,23 +3864,30 @@ static void Reconcile_Global_Values(MSEBoxModel *bm, BoxLayerValues *boxLayerInf
 				for (cohort = 0; cohort < FunctGroupArray[guild].numCohortsXnumGenes; cohort++) {
 					for (hab = WC; hab < bm->num_active_habitats; hab++) {
 						FunctGroupArray[guild].preyEaten[cohort][hab] += FunctGroupArray[guild].preyEatenGlobal[cohort][habitatType][hab];
+					}
 
-                        if(bm->track_atomic_ratio == TRUE){
-                            for(tracerIndex = 0; tracerIndex < num_atomic_id; tracerIndex++){
-                                FunctGroupArray[guild].ratioLost[hab][cohort][tracerIndex] += FunctGroupArray[guild].ratioLostGlobal[habitatType][hab][cohort][tracerIndex];
-                                FunctGroupArray[guild].ratioLostPred[hab][cohort][tracerIndex] += FunctGroupArray[guild].ratioLostPredGlobal[habitatType][hab][cohort][tracerIndex];
+					if(bm->track_atomic_ratio == TRUE){
+						for(tracerIndex = 0; tracerIndex < num_atomic_id; tracerIndex++){
+							FunctGroupArray[guild].ratioLost[hab][cohort][tracerIndex] += FunctGroupArray[guild].ratioLostGlobal[habitatType][hab][cohort][tracerIndex];
+							FunctGroupArray[guild].ratioLostPred[hab][cohort][tracerIndex] += FunctGroupArray[guild].ratioLostPredGlobal[habitatType][hab][cohort][tracerIndex];
 
-                                if(FunctGroupArray[guild].isDetritus == TRUE){
-                                    //FunctGroupArray[guild].ratioGainedPred[hab][cohort][tracerIndex] += FunctGroupArray[guild].ratioGainedPredGlobal[habitatType][hab][cohort][tracerIndex];
-                                    FunctGroupArray[guild].ratioGained[hab][cohort][tracerIndex] += FunctGroupArray[guild].ratioGainedGlobal[habitatType][hab][cohort][tracerIndex];
-                                }
 
-                                /**
-                                //							if ((bm->debug == debug_atomic) && (bm->dayt >= bm->checkstart) && (bm->dayt < bm->checkstop) && ((bm->checkbox > bm->nbox) || (bm->current_box == bm->checkbox)) && (guild == bm->which_check)) {
-                                    fprintf(bm->logFile, "FunctGroupArray[guild].ratioLost[%d][0][tracerIndex] = %.20Le, gained = %.20Le\n", hab, FunctGroupArray[guild].ratioGained[hab][cohort][tracerIndex], FunctGroupArray[guild].ratioGainedGlobal[habitatType][hab][cohort][tracerIndex]);
-                                //							}
-                                **/
-                            }
+							if(FunctGroupArray[guild].isDetritus == TRUE){
+								//FunctGroupArray[guild].ratioGainedPred[hab][cohort][tracerIndex] += FunctGroupArray[guild].ratioGainedPredGlobal[habitatType][hab][cohort][tracerIndex];
+								FunctGroupArray[guild].ratioGained[hab][cohort][tracerIndex] += FunctGroupArray[guild].ratioGainedGlobal[habitatType][hab][cohort][tracerIndex];
+							}
+
+
+//
+//								if ((bm->debug == debug_atomic)
+//											&& (bm->dayt >= bm->checkstart)
+//											&& (bm->dayt < bm->checkstop)
+//											&& ((bm->checkbox > bm->nbox) || (bm->current_box == bm->checkbox))
+//											&& (guild == bm->which_check)){
+//									fprintf(bm->logFile, "FunctGroupArray[guild].ratioLost[%d][0][tracerIndex] = %.20Le, gained = %.20Le\n",
+//										hab, FunctGroupArray[guild].ratioLost[hab][0][tracerIndex],
+//										FunctGroupArray[guild].ratioGainedPred[hab][cohort][tracerIndex]);
+//								}
 						}
 					}
 				}

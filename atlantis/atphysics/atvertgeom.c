@@ -263,10 +263,8 @@ void layer_coords(MSEBoxModel *bm, FILE *llogfp)
 			bp->cellz[k] = (bp->gridz[k] + bp->gridz[k+1])/2.0;
 		}
 
-        //fprintf(bm->logFile, "box: %d ", b);
-        
 		/* Sediment values */
-		sed_layer_coords(sm, llogfp);
+		sed_layer_coords(sm);
 
 		if(bm->ice_on){
 			/* Ice values */
@@ -276,12 +274,9 @@ void layer_coords(MSEBoxModel *bm, FILE *llogfp)
     }
 }
 
-void sed_layer_coords(SedModel *sm, FILE *llogfp)
+void sed_layer_coords(SedModel *sm)
 {
     int k = 0;
-    
-    //fprintf(llogfp, "topk: %d sm->dz[0]: %e ", sm->topk, sm->dz[0]);
-    
     for(k=0; k<sm->topk; k++) {
     	sm->gridz[k] = 0.0;
     	sm->dz[k] = 0.0;
@@ -291,8 +286,6 @@ void sed_layer_coords(SedModel *sm, FILE *llogfp)
     	sm->gridz[k+1] = sm->gridz[k] - sm->dz[k];
     	sm->cellz[k] = (sm->gridz[k] + sm->gridz[k+1])/2.0;
     }
-    
-    //fprintf(llogfp, "but ends sm->dz[0] %e \n", sm->dz[0]);
 
 }
 

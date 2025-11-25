@@ -1435,7 +1435,8 @@ void InitKMIGInvertXML(MSEBoxModel *bm, xmlNodePtr parent) {
 				zeroString = CreateZeroString(FunctGroupArray[guild].numCohorts);
 				Util_XML_Create_Node(ATLANTIS_GROUP_ATTRIBUTE, parent, FunctGroupArray[guild].groupCode, "", "", zeroString);
 				free(zeroString);
-			} else {
+			}else
+			{
 				 Util_XML_Create_Node(ATLANTIS_GROUP_ATTRIBUTE, parent, FunctGroupArray[guild].groupCode, "", "", "0");
 
 			}
@@ -2178,14 +2179,6 @@ void createPhysicalLim_n_FLagsXML(MSEBoxModel *bm, FILE *fp, char *fileName, xml
 		Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "Ksmother_const", "Sediment smothering constant", "", XML_TYPE_FLOAT,"0");
 	}
 
-    if(bm->track_atomic_ratio == TRUE){
-        Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "Pads_r_t0", "P adsorprtion starting r", "", XML_TYPE_FLOAT,"0");
-        Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "Pads_K", "P adsorprtion coefficient", "", XML_TYPE_FLOAT,"0");
-        Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "Pads_KO", "P adsorprtion base K", "", XML_TYPE_FLOAT,"0");
-        Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "r_immob_PIP_t0", "P immobilisation dtarting point", "", XML_TYPE_FLOAT,"0");
-        
-    }
-
 }
 
 void speciesXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr doc, xmlNodePtr rootnode) {
@@ -2409,16 +2402,13 @@ void createMovementXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr doc,
 
 	Create_Species_ParamXML(bm, fileName, fp, groupingNode, Speed_id, "Swimming speed", "m.hr-1", XML_TYPE_FLOAT, "12500");
 
-	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flagtempdepend_move", "Switch to turn on group temperature preferences for movement", "", XML_TYPE_BOOLEAN,"0");
-    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flagtempdepend_reprod", "Switch to turn on group temperature preferences for reproduction", "", XML_TYPE_BOOLEAN,"0");
+	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flagtempdepend", "Switch to turn on group temperature preferences", "", XML_TYPE_BOOLEAN,"0");
 	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flagsaltdepend", "Switch to turn on group salinity preferences", "", XML_TYPE_BOOLEAN,"0");
 	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flagO2depend", "Switch to turn on group O2 preferences", "", XML_TYPE_BOOLEAN,"0");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flagconstrain_epiwander", "Switch to indicate that want to prevent epibenthic wandering", "", XML_TYPE_BOOLEAN,"0");
 
-    Util_XML_Get_Value_Integer(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, no_checking, "flagtempdepend_move", &bm->flagtempdepend_move);
-    Util_XML_Get_Value_Integer(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, no_checking, "flagtempdepend_reprod", &bm->flagtempdepend_reprod);
-
-    if (bm->flagtempdepend_move) {
+    Util_XML_Get_Value_Integer(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, no_checking, "flagtempdepend", &bm->flagtempdepend);
+    if (bm->flagtempdepend) {
         Create_Species_ParamXML(bm, fileName, fp, groupingNode, max_move_temp_id, "Min tolerated temperatures", "deg C", XML_TYPE_FLOAT, "");
         Create_Species_ParamXML(bm, fileName, fp, groupingNode, min_move_temp_id, "Maximum tolerated temperatures", "deg C", XML_TYPE_FLOAT, "");
         Create_Species_ParamXML(bm, fileName, fp, groupingNode, K_temp_const_id, "Constant in bilogistic tolerated temperature relationship", "deg C", XML_TYPE_FLOAT, "");
@@ -3207,21 +3197,10 @@ void createReproductionXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr 
     Create_Species_ParamXML(bm, fileName, fp, groupingNode, norm_sigma_id, "Sigma for normal random recruitment", "", XML_TYPE_FLOAT, "");
     Create_Species_ParamXML(bm, fileName, fp, groupingNode, flag_recruit_stochastic_id, "Flag indicating whether to add normal random noise to recruitment", "", XML_TYPE_INTEGER, "");
 
-    if(bm->ice_on) {
-        Create_Species_ParamXML(bm, fileName, fp, groupingNode, prod_alpha_id, "Productivity scalar in lake recruitment function", "", XML_TYPE_FLOAT, "");
-        Create_Species_ParamXML(bm, fileName, fp, groupingNode, den_depend_beta1_id, "Density dependent coefficient in lake recruitment function", "", XML_TYPE_FLOAT, "");
-        Create_Species_ParamXML(bm, fileName, fp, groupingNode, den_depend_beta2_id, "Second density dependent coefficient in lake recruitment function", "", XML_TYPE_FLOAT, "");
-        Create_Species_ParamXML(bm, fileName, fp, groupingNode, temp_coefft_id, "Thermal index coefficient in lake recruitment function", "", XML_TYPE_FLOAT, "");
-        Create_Species_ParamXML(bm, fileName, fp, groupingNode, rate_coefft_id, "Air temperature rate of change coefficient in lake recruitment function", "", XML_TYPE_FLOAT, "");
-        Create_Species_ParamXML(bm, fileName, fp, groupingNode, wind_coefft_id, "Wind coefficient in lake recruitment function", "", XML_TYPE_FLOAT, "");
-        Create_Species_ParamXML(bm, fileName, fp, groupingNode, recruit_var_id, "Recruitment variability for use in lake recruitment function", "", XML_TYPE_FLOAT, "");
-    }
-    
 	Create_Species_ParamXML(bm, fileName, fp, groupingNode, KWSR_id, "Structural weight of group recruits", "mg N m-3", XML_TYPE_FLOAT, "0.01 - 117362680.0");
 	Create_Species_ParamXML(bm, fileName, fp, groupingNode, KWRR_id, "Reserve weight of group recruits", "mg N m-3", XML_TYPE_FLOAT, "0.038 -  311011104.0");
 
-    
-    if (bm->flagtempdepend_reprod) {
+    if (bm->flagtempdepend) {
         Create_Species_ParamXML(bm, fileName, fp, groupingNode, min_spawn_temp_id, "Minimum spawning temperature", "deg C", XML_TYPE_FLOAT, "4.0 - 22.0");
         Create_Species_ParamXML(bm, fileName, fp, groupingNode, max_spawn_temp_id, "Maximum spawning temperature", "deg C", XML_TYPE_FLOAT, "21.0 - 25.0");
     }
@@ -3531,33 +3510,18 @@ void createContaminantsXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr 
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_contamMortModel", "Flag indicating which contaminant mortality is being used - (1) simple, (0) InVitro", "", XML_TYPE_INTEGER,"0");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_contamInteractModel", "Flag indicating which contaminant interaction model is being used - (0) none, (1) additive, (2) multiplicative, (3) most limiting", "", XML_TYPE_INTEGER,"0");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_contamGrowthModel", "Flag indicating which contaminant growth effects model is being used - (0) InVitro, (1) logistic", "", XML_TYPE_INTEGER, "1");
-    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_contamReprodModel", "Flag indicating which contaminant reprod effects model is being used - (0) off (1) Lovindeer paper equation (2) InVitro, (3) logistic", "", XML_TYPE_INTEGER, "1");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_contamOnlyAmplify", "Flag indicating whether interacting contaminants can only amplify (1) or also buffer (0) each other", "", XML_TYPE_INTEGER,"0");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_contamMove", "Flag indicating avoidance scalar used - none (0), knife-edge (1), sigmoidal (2), left shoulder flat top (3)", "", XML_TYPE_INTEGER,"0");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_contamMinTemp", "Minimum temperature to consider in contaminants relationships that involve temperature corrections", "", XML_TYPE_FLOAT,"0");
-    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_contam_halflife_spbased", "Whether half life of contaminants is species specific", "", XML_TYPE_FLOAT,"0");
-    bm->flag_contam_halflife_spbased = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, integer_check, "flag_contam_halflife_spbased");
-    
-    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_contamMaternalTransfer", "Whether maternal transfer included", "", XML_TYPE_FLOAT,"0");
-    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_contam_distrib", "Whether contaminants track an average or a distreibution", "", XML_TYPE_FLOAT,"0");
 
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "biopools_dodge_contam", "Flag to turn on whetehr biomass pool groups can dodge contaminants..", "", XML_TYPE_BOOLEAN,"0");
     
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "contam_tau", "Tau coefficient", "", XML_TYPE_FLOAT, "1");
 
-    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "contam_sig_uptake_const", "Sigmoid uptake function coefficient", "", XML_TYPE_FLOAT, "1");
-
-    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_detritus_contam", "Flag indicating whether allow contaminant uptake from detritus or not", "", XML_TYPE_INTEGER, "1");
-        
     for(cIndex = 0; cIndex < bm->num_contaminants; cIndex++){
 		for(sp = 0; sp < bm->K_num_tot_sp; sp++){
 			if(FunctGroupArray[sp].speciesParams[flag_id] == TRUE && FunctGroupArray[sp].isDetritus == FALSE){
 
-                if(bm->flag_contam_halflife_spbased) {
-                    sprintf(varStr, "%s_%s_decay_half_life", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-                    sprintf(longStr, "Species specific half life value of group %s for contaminant %s.", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-                    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
-                }
 				sprintf(varStr, "%s_%s_uptake_rate", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
 				sprintf(longStr, "Uptake rate of group %s of contaminant %s.", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
 				Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
@@ -3594,13 +3558,6 @@ void createContaminantsXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr 
                 sprintf(longStr, "slope of EC50 function of value of group %s of contaminant %s.", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
                 Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
                 
-                sprintf(varStr, "%s_%s_EC50_r", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-                sprintf(longStr, "EC50 (50 percent reprod reduction) value of group %s of contaminant %s.", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-                Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
-                
-                sprintf(varStr, "%s_%s_ECslope_r", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-                sprintf(longStr, "slope of EC50_r function of value of group %s of contaminant %s.", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-                Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
                 
                 sprintf(varStr, "%s_%s_spL", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
                 sprintf(longStr, "growth effects model minimum (L) value for group %s of contaminant %s.", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
@@ -3614,18 +3571,6 @@ void createContaminantsXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr 
                 sprintf(longStr, "growth effects model midpoint (B) value for group %s of contaminant %s.", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
                 Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
 
-                sprintf(varStr, "%s_%s_spL_r", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-                sprintf(longStr, "Reprod effects model minimum (L) value for group %s of contaminant %s.", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-                Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
-                
-                sprintf(varStr, "%s_%s_spA_r", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-                sprintf(longStr, "Reprod effects model slope (A) value for group %s of contaminant %s.", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-                Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
-                
-                sprintf(varStr, "%s_%s_spB_r", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-                sprintf(longStr, "Reprod effects model midpoint (B) value for group %s of contaminant %s.", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-                Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
-                
                 sprintf(varStr, "%s_%s_avoid", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
                 sprintf(longStr, "level triggering avoidance behaviour in group %s of contaminant %s", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
                 Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
@@ -3653,11 +3598,6 @@ void createContaminantsXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr 
 				sprintf(longStr, "Threshold value of contaminant %s when %s sees growth effects ", bm->contaminantStructure[cIndex]->contaminant_name, FunctGroupArray[sp].groupCode);
 				Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
 
-				set_keyprm_errfn(quit);
-				sprintf(varStr, "%s_%s_ReprodThresh", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-				sprintf(longStr, "Threshold value of contaminant %s when %s sees reprod effects ", bm->contaminantStructure[cIndex]->contaminant_name, FunctGroupArray[sp].groupCode);
-				Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
-
                 set_keyprm_errfn(quit);
 				sprintf(varStr, "%s_%s_GrowthEffect", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
 				sprintf(longStr, "Growth effect for group %s once contaminant %s above the threshold", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
@@ -3677,16 +3617,7 @@ void createContaminantsXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr 
                 sprintf(varStr, "%s_%s_ContamScalar", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
                 sprintf(longStr, "Generic scalar for group %s once contaminant %s above the threshold", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
                 Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
-                
-                set_keyprm_errfn(quit);
-                sprintf(varStr, "%s_%s_maternal_transfer", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-                sprintf(longStr, "Maternal transfer for group %s and contaminant %s during recruitment and breeding", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-                Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
 
-                set_keyprm_errfn(quit);
-                sprintf(varStr, "%s_%s_suckling_transfer", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-                sprintf(longStr, "Maternal transfer for group %s and contaminant %s during sucking", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-                Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
 			}
 		}
 
@@ -3862,7 +3793,7 @@ void Convert_Migration_To_XML(MSEBoxModel *bm, char *fileName, char *outputFileN
     FILE *inputFP;
     //xmlNodePtr node;
     //xmlNodePtr lookupNode;
-    int numExpectedTokens = 17;
+    int numExpectedTokens = 16;
     int buflen = 2000;
     char ch, buf[2000], seps[] = ",";
     char *varStr;
@@ -3983,10 +3914,6 @@ void Convert_Migration_To_XML(MSEBoxModel *bm, char *fileName, char *outputFileN
             /* Upper End of age when partial migration occurs */
             varStr = strtok(NULL, seps);
             Util_XML_Create_Node(ATLANTIS_ATTRIBUTE, groupNode, "MaxAgeLeave", "", "", varStr);
-            
-            /* Whether can reproduce while outside the model */
-            varStr = strtok(NULL, seps);
-            Util_XML_Create_Node(ATLANTIS_ATTRIBUTE, groupNode, "ReprodAllowed", "", "", varStr);
 
         }
     }
@@ -4008,7 +3935,7 @@ int Util_Read_Migration_XML(MSEBoxModel *bm, char *fileName, FILE *llogfp) {
     xmlNodePtr groupNode;
     char groupStr[STRLEN];
     int speciesIndex;
-    int start_stage, migrationID, start_tofy, end_tofy, mig_period, mig_period2, minaway, maxaway, ret_stock, isAnnual, flagPartialExit, MinAgePartial, MaxAgePartial, ReprodAllowedPartial;
+    int start_stage, migrationID, start_tofy, end_tofy, mig_period, mig_period2, minaway, maxaway, ret_stock, isAnnual, flagPartialExit, MinAgePartial, MaxAgePartial;
     double grow_rate, survive_rate;
     char convertedXMLFileName[STRLEN];
     
@@ -4076,8 +4003,7 @@ int Util_Read_Migration_XML(MSEBoxModel *bm, char *fileName, FILE *llogfp) {
             Util_XML_Get_Value_Integer(convertedXMLFileName, ATLANTIS_ATTRIBUTE, 0, TRUE, groupNode, no_checking, "PartialExit", &flagPartialExit);
             Util_XML_Get_Value_Integer(convertedXMLFileName, ATLANTIS_ATTRIBUTE, 0, TRUE, groupNode, no_checking, "MinAgeLeave", &MinAgePartial);
             Util_XML_Get_Value_Integer(convertedXMLFileName, ATLANTIS_ATTRIBUTE, 0, TRUE, groupNode, no_checking, "MaxAgeLeave", &MaxAgePartial);
-            Util_XML_Get_Value_Integer(convertedXMLFileName, ATLANTIS_ATTRIBUTE, 0, TRUE, groupNode, no_checking, "ReprodAllowed", &ReprodAllowedPartial);
-            
+
             // Set parameters
             MIGRATION[speciesIndex].StartDay_Prm[start_stage][migrationID] = start_tofy;
             MIGRATION[speciesIndex].EndDay_Prm[start_stage][migrationID] = end_tofy;
@@ -4092,7 +4018,6 @@ int Util_Read_Migration_XML(MSEBoxModel *bm, char *fileName, FILE *llogfp) {
             MIGRATION[speciesIndex].IsPartialMigration_Prm[start_stage][migrationID] = flagPartialExit;
             MIGRATION[speciesIndex].PartialMigration_MinPrm[start_stage][migrationID] = MinAgePartial;
             MIGRATION[speciesIndex].PartialMigration_MaxPrm[start_stage][migrationID] = MaxAgePartial;
-            MIGRATION[speciesIndex].ReprodAllowedPrm[start_stage][migrationID] = ReprodAllowedPartial;
             
             MIGRATION[speciesIndex].Stagger_Prm[start_stage][migrationID][stagger_years_id] = MIGRATION[speciesIndex].MaxYearsAway_Prm[start_stage][migrationID] - MIGRATION[speciesIndex].MinYearsAway_Prm[start_stage][migrationID];
             if( MIGRATION[speciesIndex].Stagger_Prm[start_stage][migrationID][stagger_years_id] > 0) {

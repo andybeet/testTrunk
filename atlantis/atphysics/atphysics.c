@@ -110,7 +110,7 @@ void freePhysics(MSEBoxModel *bm) {
     i_free1d(bm->hdone);
 
 
-	free_diffusion1d(1);
+	free_diffusion1d();
 
 	freePhysicsStruct(bm);
 
@@ -492,7 +492,7 @@ void initPhysics(MSEBoxModel *bm) {
     bm->avg_cell_vol = base_cell_vol / ((double)bm->nbox);
 
 	/* Ice related info */
-	//readkeyprm_i(pfp, "ice_on", &bm->ice_on);  Removed as now set in tracerinfo read if it finds icenz in the in.nc file
+	//readkeyprm_i(pfp, "ice_on", &bm->ice_on);
 
 	if(bm->ice_on){
 		//readkeyprm_i(pfp, "icenz", &bm->icenz);
@@ -547,10 +547,10 @@ void physics(MSEBoxModel *bm, double ***newwctr, double ***newsedtr, FILE *llogf
     /* Add source/sink terms for this time */
 	if (bm->injection == 1)
 		sourceSink(bm, newwctr, llogfp);
-    
+
     /* Handle light from input forcing files*/
     solarIrradiance(bm, newwctr, llogfp);
-
+    
     /* Gas exchange with atmosphere */
 	if (bm->atmospherics == 1)
 		gasExchange(bm, newwctr);
@@ -618,9 +618,8 @@ void physics(MSEBoxModel *bm, double ***newwctr, double ***newsedtr, FILE *llogf
 	 * Allows for upwelling even when only explicitly
 	 * have horizontal transport information */
     if (bm->vert_mix == 1){
-        if (bm->use_VertMixfiles) {
+         if (bm->use_VertMixfiles)
              tracerForcingBM(bm, newwctr, newsedtr, &(bm->VertMixinput));
-        }
         
 		vertical_mixing(bm, newwctr);
     }
@@ -687,8 +686,6 @@ void physics(MSEBoxModel *bm, double ***newwctr, double ***newsedtr, FILE *llogf
 	if (bm->t >= bm->inputs_toutNext){
 		bm->inputs_toutNext = bm->t + bm->inputs_tout;
 	}
-
-    return;
 }
 
 void check_vals(MSEBoxModel *bm, double ***val, int nz, char *msg) {

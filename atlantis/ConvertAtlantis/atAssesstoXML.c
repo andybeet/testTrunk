@@ -689,7 +689,6 @@ void TierAssessmentXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr doc,
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "Num_Sexes", "Number of sexes in the model.", "", XML_TYPE_BOOLEAN, "0");
 	Util_XML_Get_Value_Integer(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, binary_check, "Num_Sexes", &bm->K_num_sexes);
 
-    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "UseAtlantisPGMSY", "Flag indicating whether using Atlantis version of PGMSY (1) or R version (0)", "", XML_TYPE_BOOLEAN, "0");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "UseSS", "Flag indicating whether using SS for Tier 1 (1) or if using perfect info + error (0)", "", XML_TYPE_BOOLEAN, "0");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "AssessDelay", "Length of delay in the assessment process (years from data collection to RBC setting)", "", XML_TYPE_INTEGER, "2");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "UseTierBuffers", "Flag indicating whether using US tier scalars (1) or not (0)", "", XML_TYPE_BOOLEAN, "0");
@@ -790,22 +789,13 @@ void TierAssessmentXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr doc,
 	Parse_File(bm, fp, fileName, childGroupingNode, "CPUECV", "^cpue_cv_", "CPUE cv by fleet", "", XML_TYPE_FLOATARRAY, bm->K_num_fisheries, TRUE, Init_Species_Zero_ValuesXML, Species_Last_XMLFunction);
 	Parse_File(bm, fp, fileName, childGroupingNode, "CPUEvar", "^cpue_var_", "CPUE variance catchability by fleet", "", XML_TYPE_FLOATARRAY, bm->K_num_fisheries, TRUE, Init_Species_Zero_ValuesXML, Species_Last_XMLFunction);
 	Parse_File(bm, fp, fileName, childGroupingNode, "CPUEcorr", "^cpue_corr_", "CPUE correlation catchability by fleet", "", XML_TYPE_FLOATARRAY, bm->K_num_fisheries, TRUE, Init_Species_Zero_ValuesXML, Species_Last_XMLFunction);
-    
     /*
      Parse_File(bm, fp, fileName, childGroupingNode, "CPUEqmu", "^cpue_qmu_", "CPUE average catchability by fleet", "", XML_TYPE_FLOATARRAY, bm->K_num_fisheries,
      TRUE, Init_Species_Zero_ValuesXML, Species_Last_XMLFunction);
      Parse_File(bm, fp, fileName, childGroupingNode, "CPUEpow", "^cpue_pow_", "CPUE power catchability by fleet", "", XML_TYPE_FLOATARRAY, bm->K_num_fisheries,
      TRUE, Init_Species_Zero_ValuesXML, Species_Last_XMLFunction);
      */
-
-    Parse_File(bm, fp, fileName, childGroupingNode, "PGMSY_q", "^PGMSY_q_", "Projection assumed catchability per fleet per species", "", XML_TYPE_FLOATARRAY, bm->K_num_fisheries, TRUE, Init_Species_Zero_ValuesXML, Species_Last_XMLFunction);
-
-   Parse_File(bm, fp, fileName, childGroupingNode, "PGMSY_sel_lsm", "^PGMSY_sel_lsm_", "Inflection point for projection assumed selectivity curve per fleet per species", "", XML_TYPE_FLOATARRAY, bm->K_num_fisheries, TRUE, Init_Species_Zero_ValuesXML, Species_Last_XMLFunction);
-
-    Parse_File(bm, fp, fileName, childGroupingNode, "PGMSY_sel_sigma", "^PGMSY_sel_sigma_", "Sigma for projection assumed selectivity curve per fleet per species", "", XML_TYPE_FLOATARRAY, bm->K_num_fisheries, TRUE, Init_Species_Zero_ValuesXML, Species_Last_XMLFunction);
-
-    Parse_File(bm, fp, fileName, childGroupingNode, "PGMSY_sel_curve", "^PGMSY_sel_curve_", "Projection assumed selectivity curve per fleet per species", "", XML_TYPE_FLOATARRAY, bm->K_num_fisheries, TRUE, Init_Species_Zero_ValuesXML, Species_Last_XMLFunction);
-
+    
     childGroupingNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, groupingNode, "StartSS", "StartSS", "", "");
 	Parse_File(bm, fp, fileName, childGroupingNode, "Start_SelInflect", "^Start_SelInflect_", "Starting values of selectivity parameters for SS control file", "", XML_TYPE_FLOATARRAY, bm->K_num_fisheries, TRUE, Init_Species_Zero_ValuesXML, Species_Last_XMLFunction);
 	Parse_File(bm, fp, fileName, childGroupingNode, "Start_SelWidth", "^Start_SelWidth_", "Starting values of selectivity parameters for SS control file", "", XML_TYPE_FLOATARRAY, bm->K_num_fisheries, TRUE, Init_Species_Zero_ValuesXML, Species_Last_XMLFunction);
@@ -871,11 +861,6 @@ void TierAssessmentXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr doc,
     Create_RBC_Species_ParamXML(bm, fileName, fp, childGroupingNode, mgt_indicator_id, "Management indicator species", "", XML_TYPE_INTEGER, "0");
     Create_RBC_Species_ParamXML(bm, fileName, fp, childGroupingNode, init_mgt_category_id, "Initial management category for indicator species harvest strategy", "", XML_TYPE_INTEGER, "0");
     Create_RBC_Species_ParamXML(bm, fileName, fp, childGroupingNode, init_mgt_sp_id, "Initial management indicator species", "", XML_TYPE_INTEGER, "0");
-                                   
-    Create_RBC_Species_ParamXML(bm, fileName, fp, childGroupingNode, PGMSYBHalpha_id, "Beverton Holt alpha assumed in PGMSY projection", "", XML_TYPE_INTEGER, "0");
-    Create_RBC_Species_ParamXML(bm, fileName, fp, childGroupingNode, PGMSYBHbeta_id, "Beverton Holt beta assumed in PGMSY projection", "", XML_TYPE_INTEGER, "0");
-
-                                   
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "ReviewPeriod", "Review period for indicator species for multispecies harvest strategy", "", XML_TYPE_INTEGER, "0");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "TriggerCheckPeriod", "Reference period for trigger species checks for multispecies harvest strategy", "", XML_TYPE_INTEGER, "0");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "LagPeriod", "Lag period for indicator species assesment for multispecies harvest strategy", "", XML_TYPE_INTEGER, "0");
@@ -884,11 +869,7 @@ void TierAssessmentXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr doc,
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "GradientBuffer", "Buffer when using indicator species harvest startegy and trying to match species - multispecies harvest strategy", "", XML_TYPE_FLOAT, "0");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "UseCategory", "Whether using category or species pair for setting TAC in multispecies harvest strategy", "", XML_TYPE_INTEGER, "0");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "UseClosest", "Whether using closest species when pairing for setting TAC in multispecies harvest strategy", "", XML_TYPE_INTEGER, "0");
-    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "UseTriggerMgmt", "Whether using trigger based assessments to get quasi- multispecies harvest strategy", "", XML_TYPE_INTEGER, "0");
-    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "ProjYr", "Length of the projection period for the assessments", "", XML_TYPE_INTEGER, "0");
-    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "ThresholdDepletion", "Threshold for depletion levels for PGMSY", "", XML_TYPE_FLOAT, "0");
-    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "ThresholdBound", "Bound on depletion levels for PGMSY", "", XML_TYPE_FLOAT, "0");
-    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "MaxIteration", "Maximum iterations allowed in PGMS", "", XML_TYPE_INTEGER, "0");
+ 
 
 	// SS3 Biological parameters
 	Create_RBC_Species_ParamXML(bm, fileName, fp, childGroupingNode, flagLAdirect_id, "Flag showing whether length at age input directly (1) or not (0)", "", XML_TYPE_INTEGER, "0");
@@ -971,7 +952,6 @@ void TierAssessmentXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr doc,
     // tier 6
     childGroupingNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, groupingNode, "Tier6", "Tier6", "", "");
     Create_RBC_Species_ParamXML(bm, fileName, fp, childGroupingNode, TriggerResponseScen_id, "WHat to do if Tier 6 triggered", "", XML_TYPE_INTEGER, "0");
-    Create_RBC_Species_ParamXML(bm, fileName, fp, childGroupingNode, trigger_threshold_id, "WHat to the proportional change for triggered action", "", XML_TYPE_FLOAT, "0");    
     
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "NumTriggers", "NumTriggers", "", XML_TYPE_INTEGER, "0");
 	Util_XML_Create_Node_Next_Line(fp, fileName, groupingNode, "TriggerPoints", "Trigger points versus historical catch levels", "", XML_TYPE_FLOAT);
@@ -1033,7 +1013,6 @@ void TierAssessmentXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr doc,
 	Create_RBC_Species_ParamXML(bm, fileName, fp, childGroupingNode, Tier3Sig_id, "Scalar to apply when taking OFL to ABC (RBC to TAC) - tier 3", "", XML_TYPE_FLOAT, "0.7");
 
     Create_RBC_Species_ParamXML(bm, fileName, fp, childGroupingNode, isTriggerSpecies_id, "is a Trigger species for the multispecies rules", "", XML_TYPE_INTEGER, "0");
-    Create_RBC_Species_ParamXML(bm, fileName, fp, childGroupingNode, trigger_threshold_id, "Change taht triggers a nreakout for the trigger based assessments", "", XML_TYPE_FLOAT, "0");
     Create_RBC_Species_ParamXML(bm, fileName, fp, childGroupingNode, UseRBCAveraging_id, "flag tp indicate RBC averaging", "", XML_TYPE_INTEGER, "0");
 
     printf("Leaving create\n");

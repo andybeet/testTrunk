@@ -74,7 +74,7 @@ double Util_Get_Change_Scale(MSEBoxModel *bm, int num_changes, double **changeAr
 double Util_Get_Accumulative_Change_Scale(MSEBoxModel *bm, int num_changes, double **changeArray);
 void Util_Copy_Change_Values(MSEBoxModel *bm, double **originalArray, double **newArray, int size, double start, double period, double mult);
 
-void Util_Usage(int dummy);
+void Util_Usage(void);
 void Util_Free(MSEBoxModel *bm);
 FILE *Util_fopen(MSEBoxModel *bm, const char *name, const char *mode);
 int Util_ncopen(const char *destFolder, const char* name ,int mode);

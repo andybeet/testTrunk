@@ -804,13 +804,6 @@ static void Read_Physical_Limitation(MSEBoxModel *bm, char *fileName, xmlNodePtr
             quit("You can not have CORAL functional groups but no rugosity and aragonite tracking - either reset the functional group to something else, like SED_EP_FF, OR set track_rugosity_arag to 1 in run.prm\n");
         
     }
-    
-    if(bm->track_atomic_ratio == TRUE){
-        bm->Pads_r_t0 = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, "Pads_r_t0");
-        bm->Pads_K = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, "Pads_K");
-        bm->Pads_KO = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, "Pads_KO");
-        bm->r_immob_PIP_t0 = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, "r_immob_PIP_t0");
-    }
 
 	/*** Do checking ***/
 	/* Check that the flag_macro-model value is ok*/
@@ -1920,14 +1913,13 @@ static void Read_Movement_Values(MSEBoxModel *bm, char *fileName, xmlNodePtr par
 	Read_VERT_Function(bm, fileName, attributeGroupNode);
 	Read_Sesonal_Dist_XML(bm, fileName, attributeGroupNode);
 
-	bm->flagtempdepend_move = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, integer_check, "flagtempdepend_move");
-    bm->flagtempdepend_reprod = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, integer_check, "flagtempdepend_reprod");
+	bm->flagtempdepend = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, integer_check, "flagtempdepend");
 	bm->flagsaltdepend = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, integer_check, "flagsaltdepend");
 	bm->flagO2depend = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, integer_check, "flagO2depend");
     bm->flagconstrain_epiwander = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, integer_check, "flagconstrain_epiwander");
 
 	Util_XML_Read_Species_Param(bm, fileName, attributeGroupNode, ddepend_move_id);
-	if (bm->flagtempdepend_move) {
+	if (bm->flagtempdepend) {
 		Util_XML_Read_Species_Param(bm, fileName, attributeGroupNode, max_move_temp_id);
 		Util_XML_Read_Species_Param(bm, fileName, attributeGroupNode, min_move_temp_id);
         Util_XML_Read_Species_Param(bm, fileName, attributeGroupNode, K_temp_const_id);
@@ -3504,20 +3496,10 @@ static void Read_Reproduction_Values(MSEBoxModel *bm, char *fileName, xmlNodePtr
     Util_XML_Read_Species_Param(bm, fileName, attributeGroupNode, norm_sigma_id);
     Util_XML_Read_Species_Param(bm, fileName, attributeGroupNode, flag_recruit_stochastic_id);
     
-    if(bm->ice_on) {
-        Util_XML_Read_Species_Param(bm, fileName, attributeGroupNode, prod_alpha_id);
-        Util_XML_Read_Species_Param(bm, fileName, attributeGroupNode, den_depend_beta1_id);
-        Util_XML_Read_Species_Param(bm, fileName, attributeGroupNode, den_depend_beta2_id);
-        Util_XML_Read_Species_Param(bm, fileName, attributeGroupNode, temp_coefft_id);
-        Util_XML_Read_Species_Param(bm, fileName, attributeGroupNode, rate_coefft_id);
-        Util_XML_Read_Species_Param(bm, fileName, attributeGroupNode, wind_coefft_id);
-        Util_XML_Read_Species_Param(bm, fileName, attributeGroupNode, recruit_var_id);
-    }
-        
 	Util_XML_Read_Species_Param(bm, fileName, attributeGroupNode, KWSR_id);
 	Util_XML_Read_Species_Param(bm, fileName, attributeGroupNode, KWRR_id);
 
-    if (bm->flagtempdepend_reprod) {
+    if (bm->flagtempdepend) {
         Util_XML_Read_Species_Param(bm, fileName, attributeGroupNode, min_spawn_temp_id);
         Util_XML_Read_Species_Param(bm, fileName, attributeGroupNode, max_spawn_temp_id);
     }
@@ -3694,22 +3676,13 @@ static void Read_Contaminant_Values(MSEBoxModel *bm, char *fileName, xmlNodePtr 
     bm->flag_contamMortModel = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, integer_check, "flag_contamMortModel");
     bm->flag_contamInteractModel = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, integer_check, "flag_contamInteractModel");
     bm->flag_contamGrowthModel = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, integer_check, "flag_contamGrowthModel");
-    bm->flag_contamReprodModel = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, integer_check, "flag_contamReprodModel");
     bm->flag_contamOnlyAmplify = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, integer_check, "flag_contamOnlyAmplify");
     bm->flag_contamMove = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, integer_check, "flag_contamMove");
     bm->flag_contamMinTemp = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, "flag_contamMinTemp");
-    bm->flag_contam_halflife_spbased = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, integer_check, "flag_contam_halflife_spbased");
-    bm->flag_contamMaternalTransfer = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, integer_check, "flag_contamMaternalTransfer");
-    bm->flag_contam_distrib = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, integer_check, "flag_contam_distrib");
     
     bm->biopools_dodge_contam = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, integer_check, "biopools_dodge_contam");
     
     bm->contam_tau = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, "contam_tau");
-    
-    bm->contam_sig_uptake_const = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, "contam_sig_uptake_const");
-    bm->flag_detritus_contam = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, integer_check, "flag_detritus_contam");
-    
-    //fprintf(bm->logFile, "contam_sig_uptake_const starts: %e\n", bm->contam_sig_uptake_const);
     
 	for(cIndex = 0; cIndex < bm->num_contaminants; cIndex++){
         double *values = 0;
@@ -3718,11 +3691,6 @@ static void Read_Contaminant_Values(MSEBoxModel *bm, char *fileName, xmlNodePtr 
 			//if(FunctGroupArray[sp].speciesParams[flag_id] == TRUE && FunctGroupArray[sp].isDetritus == FALSE){
 			if((FunctGroupArray[sp].speciesParams[flag_id] == TRUE) && (FunctGroupArray[sp].isDetritus == FALSE)){
 
-                if (bm->flag_contam_halflife_spbased) {
-                    sprintf(varStr, "%s_%s_decay_half_life", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-                    bm->contaminantStructure[cIndex]->sp_decay_half_life[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
-                }
-                
 				sprintf(varStr, "%s_%s_uptake_rate", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
 				bm->contaminantStructure[cIndex]->sp_uptake_rate[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
                 bm->contaminantStructure[cIndex]->sp_uptake_rate[sp] /= 86400.0; // So now per second rate
@@ -3754,39 +3722,24 @@ static void Read_Contaminant_Values(MSEBoxModel *bm, char *fileName, xmlNodePtr 
                 sprintf(varStr, "%s_%s_ECslope", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
                 bm->contaminantStructure[cIndex]->sp_ECslope[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
                 
-                sprintf(varStr, "%s_%s_EC50_r", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-                bm->contaminantStructure[cIndex]->sp_EC50_r[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
-                
-                sprintf(varStr, "%s_%s_ECslope_r", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-                bm->contaminantStructure[cIndex]->sp_ECslope_r[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
-                
                 sprintf(varStr, "%s_%s_TimeToLD50", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-                bm->contaminantStructure[cIndex]->sp_TimeToLD50[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
+				bm->contaminantStructure[cIndex]->sp_TimeToLD50[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
 
 				sprintf(varStr, "%s_%s_Cx", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-				bm->contaminantStructure[cIndex]->sp_Cx[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
+				bm->contaminantStructure[cIndex]->sp_Cx[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 0, attributeGroupNode, no_checking, varStr);
 
 				sprintf(varStr, "%s_%s_Cy", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-				bm->contaminantStructure[cIndex]->sp_Cy[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
+				bm->contaminantStructure[cIndex]->sp_Cy[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 0, attributeGroupNode, no_checking, varStr);
 
                 sprintf(varStr, "%s_%s_spL", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
                 bm->contaminantStructure[cIndex]->sp_L[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
                 
                 sprintf(varStr, "%s_%s_spA", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
                 bm->contaminantStructure[cIndex]->sp_A[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
-
+                
                 sprintf(varStr, "%s_%s_spB", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
                 bm->contaminantStructure[cIndex]->sp_B[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
 
-                sprintf(varStr, "%s_%s_spL_r", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-                bm->contaminantStructure[cIndex]->sp_L_r[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
-                
-                sprintf(varStr, "%s_%s_spA_r", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-                bm->contaminantStructure[cIndex]->sp_A_r[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
-                
-                sprintf(varStr, "%s_%s_spB_r", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-                bm->contaminantStructure[cIndex]->sp_B_r[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
-                
                 sprintf(varStr, "%s_%s_avoid", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
                 bm->contaminantStructure[cIndex]->sp_avoid[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
 
@@ -3794,30 +3747,21 @@ static void Read_Contaminant_Values(MSEBoxModel *bm, char *fileName, xmlNodePtr 
                 bm->contaminantStructure[cIndex]->sp_K_avoid[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
 
                 /* Don't think we will use this - invitro used instant dose mort for eating */
-                sprintf(varStr, "%s_%s_InstantDoseMortality", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-                bm->contaminantStructure[cIndex]->sp_instantDoseMortality[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
+				sprintf(varStr, "%s_%s_InstantDoseMortality", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
+				bm->contaminantStructure[cIndex]->sp_instantDoseMortality[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
                 
-                sprintf(varStr, "%s_%s_GrowthThresh", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-                bm->contaminantStructure[cIndex]->sp_GrowthThresh[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
+				sprintf(varStr, "%s_%s_GrowthThresh", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
+				bm->contaminantStructure[cIndex]->sp_GrowthThresh[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
                 
-                sprintf(varStr, "%s_%s_GrowthEffect", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-			          bm->contaminantStructure[cIndex]->sp_GrowthEffect[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
+				sprintf(varStr, "%s_%s_GrowthEffect", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
+				bm->contaminantStructure[cIndex]->sp_GrowthEffect[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
                 
                 sprintf(varStr, "%s_%s_MoveEffect", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
                 bm->contaminantStructure[cIndex]->sp_MoveEffect[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
                 
-                sprintf(varStr, "%s_%s_ReprodThresh", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-                bm->contaminantStructure[cIndex]->sp_ReprodThresh[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
-                
                 sprintf(varStr, "%s_%s_ReprodEffect", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
                 bm->contaminantStructure[cIndex]->sp_ReprodEffect[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
                 
-                sprintf(varStr, "%s_%s_maternal_transfer", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-                bm->contaminantStructure[cIndex]->sp_maternal_transfer[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
-                
-                sprintf(varStr, "%s_%s_suckling_transfer", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
-                bm->contaminantStructure[cIndex]->sp_suckling_transfer[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
-
                 sprintf(varStr, "%s_%s_ContamScalar", FunctGroupArray[sp].groupCode, bm->contaminantStructure[cIndex]->contaminant_name);
                 bm->contaminantStructure[cIndex]->sp_ContamScalar[sp] = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, attributeGroupNode, no_checking, varStr);
 
@@ -4198,9 +4142,6 @@ static void Read_KMIG_INVERT_XML(MSEBoxModel *bm, char *fileName, xmlNodePtr par
     char parameterNameMigNum[STRLEN];
     char errorString[STRLEN];
     
-    qid = 0; // As assume only one lot outside the model at start time.
-    // TODO: May need to change this - to allow for multiple queue entries at the start
-
     if (verbose)
         printf("Reading %s values\n", parameterName);
     
@@ -4218,16 +4159,9 @@ static void Read_KMIG_INVERT_XML(MSEBoxModel *bm, char *fileName, xmlNodePtr par
             
             // Load those migrations that do happen
             if (FunctGroupArray[guild].isVertebrate == FALSE && FunctGroupArray[guild].sp_geo_move == TRUE) {
-                
-                printf("Reading %s values for %s with %d genotypes and %d cohorts - %s\n", parameterName, FunctGroupArray[guild].groupCode, FunctGroupArray[guild].numGeneTypes, FunctGroupArray[guild].numCohortsXnumGenes, errorString);
-                
                 if (Util_XML_Read_Array_Double(ATLANTIS_GROUP_ATTRIBUTE, fileName, errorString, attributeNode, no_checking, FunctGroupArray[guild].groupCode, &values, FunctGroupArray[guild].numCohorts) == FALSE) {
                     quit("Error: Unable to find parameter '%s/%s' in input file %s\n", errorString, FunctGroupArray[guild].groupCode, fileName);
                 }
-                
-                printf("Read %s values for %s now to assign\n", parameterName, FunctGroupArray[guild].groupCode);
-
-                
                 for (b = 0; b < FunctGroupArray[guild].numCohortsXnumGenes; b++){
                     basechrt = (int)floor(b / FunctGroupArray[guild].numGeneTypes);
                     MIGRATION[guild].InitDEN[b][qid] = values[basechrt];
@@ -4286,8 +4220,7 @@ void Zero_Create_Migration_Arrays(MSEBoxModel *bm, FILE *llogfp) {
 /* Create the migration arrays */
 void Create_Migration_Arrays(MSEBoxModel *bm, FILE *llogfp) {
     int sp, cohort;
-    int maxnum, num_migs;
-    //int use_nyears;  // Was used previously but not anymore excpet for reporting
+    int maxnum, num_migs, use_nyears;
     int nyears = (int) (ceil((bm->tstop - bm->tstart) / (365.0 * 86400.0))) + 1;
     
     bm->K_max_num_migration = 0;
@@ -4305,10 +4238,10 @@ void Create_Migration_Arrays(MSEBoxModel *bm, FILE *llogfp) {
         cohort = FunctGroupArray[sp].numCohortsXnumGenes;
         maxnum = (FunctGroupArray[sp].numStages * nyears * FunctGroupArray[sp].num_migrate) + 1;  // Extra one to allow for species where returns in first year are due to migrations before the model began
         num_migs = FunctGroupArray[sp].num_migrate + 1;
-        //use_nyears = 1;
+        use_nyears = 1;
         if(FunctGroupArray[sp].multiyr_mig) {
             maxnum = (nyears * FunctGroupArray[sp].multiyr_mig * FunctGroupArray[sp].numStages * (FunctGroupArray[sp].num_migrate + 1));  // Extra one to allow for species where returns in first year are due to migrations before the model began
-            //use_nyears = nyears;
+            use_nyears = nyears;
             FunctGroupArray[sp].MaxNumMig = maxnum;
             
             //warn("maxnum set to %d for %s - as nyears: %d, multiyr_mig: %d, num_migrate: %d\n", maxnum, FunctGroupArray[sp].groupCode, nyears, FunctGroupArray[sp].multiyr_mig, FunctGroupArray[sp].num_migrate);
@@ -4366,8 +4299,6 @@ void Create_Migration_Arrays(MSEBoxModel *bm, FILE *llogfp) {
         MIGRATION[sp].InitSN = Util_Alloc_Init_2D_Double(maxnum, cohort, 0.0);
         MIGRATION[sp].InitRN = Util_Alloc_Init_2D_Double(maxnum, cohort, 0.0);
         
-        MIGRATION[sp].ReprodAllowed = Util_Alloc_Init_2D_Int(maxnum, cohort, 0.0);
-        
         MIGRATION[sp].yrs_to_age_pre_model = Util_Alloc_Init_1D_Int(maxnum, 0);
         MIGRATION[sp].end_pt = Util_Alloc_Init_1D_Int(maxnum, 0);
         
@@ -4391,13 +4322,8 @@ void Create_Migration_Arrays(MSEBoxModel *bm, FILE *llogfp) {
         MIGRATION[sp].IsPartialMigration_Prm = Util_Alloc_Init_2D_Int(num_migs, FunctGroupArray[sp].numStages, 0);
         MIGRATION[sp].PartialMigration_MinPrm = Util_Alloc_Init_2D_Int(num_migs, FunctGroupArray[sp].numStages, 0);
         MIGRATION[sp].PartialMigration_MaxPrm = Util_Alloc_Init_2D_Int(num_migs, FunctGroupArray[sp].numStages, 0);
-        MIGRATION[sp].ReprodAllowedPrm = Util_Alloc_Init_2D_Int(num_migs, FunctGroupArray[sp].numStages, 0);
-        
-        if(bm->track_contaminants) {
-            MIGRATION[sp].RecruitContam = Util_Alloc_Init_3D_Double(bm->num_contaminants, maxnum, FunctGroupArray[sp].numGeneTypes,0);
-            MIGRATION[sp].contam = Util_Alloc_Init_3D_Double(bm->num_contaminants, maxnum, cohort, 0);
-            MIGRATION[sp].contam_return = Util_Alloc_Init_2D_Double(bm->num_contaminants, cohort, 0);
-        }
+
+                
     }
 
     return;

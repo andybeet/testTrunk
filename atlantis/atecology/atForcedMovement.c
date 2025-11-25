@@ -453,7 +453,7 @@ void Ecology_Update_Move_Entry(MSEBoxModel *bm, FILE *llogfp) {
     int speciesIndex, stageIndex, tracerIndex;
     int qrt, next_qrt, last_qrt;
     double new_value;
-    //double distrib_last_qrt, distrib_qrt, distrib_next_qrt;
+    double distrib_last_qrt, distrib_qrt, distrib_next_qrt;
     int b = 0;
     
     if (verbose)
@@ -504,13 +504,11 @@ void Ecology_Update_Move_Entry(MSEBoxModel *bm, FILE *llogfp) {
                 /* Loop over each box to check the values */
                 for (b = 0; b < bm->nbox; b++) {
                     
-                    /*
                     distrib_last_qrt = FunctGroupArray[speciesIndex].distrib[b][last_qrt][stageIndex];
                     distrib_qrt = FunctGroupArray[speciesIndex].distrib[b][qrt][stageIndex];
                     distrib_next_qrt = FunctGroupArray[speciesIndex].distrib[b][next_qrt][stageIndex];
                     
-                    fprintf(llogfp, "Ecology_Update_Move_Entry Time: %e, %s-%d box: %d last_qrt: %d, qrt: %d next_qrt: %d distrib_last_qrt: %e distrib_qrt: %e orig distrib_next_qrt: %e ", bm->dayt, FunctGroupArray[speciesIndex].groupCode, stageIndex, b, last_qrt, qrt, next_qrt, distrib_last_qrt, distrib_qrt, distrib_next_qrt);
-                    */
+                    //fprintf(llogfp, "Ecology_Update_Move_Entry Time: %e, %s-%d box: %d last_qrt: %d, qrt: %d next_qrt: %d distrib_last_qrt: %e distrib_qrt: %e orig distrib_next_qrt: %e ", bm->dayt, FunctGroupArray[speciesIndex].groupCode, stageIndex, b, last_qrt, qrt, next_qrt, distrib_last_qrt, distrib_qrt, distrib_next_qrt);
                     
                     new_value = bm->forceMoveEntryInput[tracerIndex].dataBuffer[b][0]; // Take the entry for next time period from the file
 

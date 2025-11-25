@@ -55,8 +55,7 @@ double ***p_fishi = 0, **k_cover = 0, ***Effort_vdistrib = 0, ****p_fish_origi =
 	**FC_hdistrib = 0, **MPAendangered = 0, **SEASONAL = 0, **effort_scale = 0,
 	*oldFishEndDay = 0, *scale_effort = 0, *prev_mult = 0,
     **FC_case, *DistPeak = 0, *FrefAi = 0, *FrefHi = 0, *FreStarti = 0, *LeverUsei = 0,
-    *estErrori = 0, *estCVi = 0, *estBiasi = 0, *FrefLimi = 0, *FlagSystCapSPi = 0,
-    *SystCapSPprefi = 0, *AssessMorti = 0;
+    *estErrori = 0, *estCVi = 0, *estBiasi = 0;
 
 double **mEff;
 double **gear_conflict;

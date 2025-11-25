@@ -106,7 +106,7 @@ void Box_Ice_Flux(MSEBoxModel *bm, Box *pBox, FILE *llogfp) {
 		if(Y1[tr_id] < 0.0) Y1[tr_id] = 0.0;
 		if(Y2[tr_id] < 0.0) Y2[tr_id] = 0.0;
 	}
-    
+
 	return;
 }
 
@@ -160,8 +160,7 @@ void Box_Ice_Temperature_Related(MSEBoxModel *bm, Box *pBox, FILE *llogfp)
 */
 void Box_Ice_Light_Level(MSEBoxModel *bm, Box *pBox, FILE *llogfp) {
 	int i, k, guild;
-    //double icedepth;
-	double snow_cover, ice_cover, lightbot, lighttop, k_a;
+	double snow_cover, ice_cover, lightbot, lighttop, icedepth, k_a;
 	IceModel *ice = &pBox->ice;
 	double *Y1 = 0;
 	double phytoBiomass = 0.0;
@@ -180,7 +179,7 @@ void Box_Ice_Light_Level(MSEBoxModel *bm, Box *pBox, FILE *llogfp) {
 	lightbot = 0;
 
 	/* Calculate irradiance in each layer */
-	//icedepth = 0.0;
+	icedepth = 0.0;
 	for(i = ice->currentnz - 1; i >= 0 ; i--){
 		Y1 = (double*) pBox->ice.tr[i];
 
@@ -220,19 +219,20 @@ void Box_Ice_Light_Level(MSEBoxModel *bm, Box *pBox, FILE *llogfp) {
 
 		k_a = ka_star * phytoBiomass;// / ice->dz[i];
 
-/*
-		if(i == 0){
-			lighttop = lightbot;	// Surface ice layer
-		} else {
-			lighttop = light_surf * (1.0 - albedo_ice * ice_cover) * exp(k_a * icedepth); // Irradiance at the top of the ice layer
-		}
+//		if(i == 0){
+//			lighttop = lightbot;	/* Surface ice layer */
+//		}else{
+//			lighttop = light_surf * (1.0 - albedo_ice * ice_cover) * exp(k_a * icedepth); // Irradiance at the top of the ice layer
+//
+//		}
 
 		icedepth += ice->dz[i];
 
-		if(i <  (ice->currentnz - 1)){
-			lighttop = light_surf * (1.0 - albedo_ice * ice_cover) * exp(- k_a * icedepth); // Irradiance at the top of the ice layer
-		}
-*/
+
+//		if(i <  (ice->currentnz - 1)){
+//			lighttop = light_surf * (1.0 - albedo_ice * ice_cover) * exp(- k_a * icedepth); // Irradiance at the top of the ice layer
+//		}
+
 
 		step1 = -1.0 * (k_bs * snow_cover + k_bi * ice_cover);
 		step2 = -1.0 * (k_rs * snow_cover + k_ri * ice_cover);
@@ -500,40 +500,6 @@ void Ice_HabitatState(MSEBoxModel *bm, FILE *llogfp) {
 
 	return;
 }
-
-/*
- * brief\ Ice related habitat use by age structured groups
- *
- */
-double Get_Ice_Rating(MSEBoxModel *bm, int sp) {
-    double ans = 0.0;
-    double tot_ice = 0.0, tot_ice_possible = 0.0;
-    int i, z, b;
-    int ice_dependent = 0;
-    double sp_likeICE;
-
-    tot_ice = 0.0;
-    tot_ice_possible = 0.0;
-    for(i=0; i < bm->K_num_ice_classes; i++){
-        sp_likeICE = (double)(bm->ICE_HABITATlike[sp][adult_id][i]);
-        for(b=0; b<bm->nbox; b++) {
-            if (bm->boxes[b].type != BOUNDARY) {
-                for(z=0; z<bm->icenz; z++){
-                    tot_ice += bm->boxes[b].ice.ice_classes[z][i] * sp_likeICE;
-                    tot_ice_possible += (1.0 * sp_likeICE);
-                }
-            }
-        }
-    }
-    
-    if(!tot_ice_possible){
-        tot_ice_possible = 1.0;
-    }
-
-    ans = tot_ice / tot_ice_possible;
-    return ans;
-}
-
 
 /*
  * brief\ Ice related habitat use by age structured groups

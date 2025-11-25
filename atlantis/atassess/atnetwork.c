@@ -53,7 +53,7 @@ void Calc_Network_Info(MSEBoxModel *bm, int z, int id) {
 		netwkindx[k][z] = 0.0;
 
 	if (verbose > 1)
-		printf("Calculating network info\n");
+		fprintf(stderr, "Calculating network info\n");
 
 	eatnetwk[0][0][z] = 0;
 	prodnetwk[0][0][z] = 0.0;

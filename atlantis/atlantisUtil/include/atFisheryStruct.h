@@ -35,26 +35,4 @@ typedef struct {
 }FisheryStruct;
 extern FisheryStruct *FisheryArray;
 
-/* Data structure holding the evolution relevant information */
-typedef struct {
-
-    double **BIO;
-    double **DEN;
-    
-    double **Fout;
-    double **Catch;
-
-    double *LENGTH;
-    double *WEIGHT;
-    double *RBC;
-    
-    double *Fused;
-    double *totavailB;
-    double *SSB;
-    double *Depleted;
-
-}AssessProjectionStruct;
-extern AssessProjectionStruct *ASSESS_PROJECTION;
-
-
 #endif /* ATFISHERYSTRUCT_H_ */

@@ -83,8 +83,10 @@ double k_proprecfish;
  * are carried out in Annual_Fisheries_Mgmt()
  */
 void Manage_Calculate_Total_Effort(MSEBoxModel *bm, FILE *llogfp) {
-	double EFF_scale1 = 0.0, EFF_scale2 = 0.0, EFF_scale3 = 0.0, EFF_scale4, FCpressure, orig_FCpressure, fish_infringe, FCdisplaced, prop_pop_fish = 0.0, localcell_vol, FC_likeREEF, FC_likeFLAT, FC_likeSOFT, FC_dempel, reef_area, flat_area, soft_area, otherFC_likeREEF, otherFC_likeFLAT, totconflict, otherFC_likeSOFT, otherFC_dempel, dempel_match, K_GearConflict, conflict_contrib, active_scale, step1_cpue, totcatch, dummy, mpa_scale, mpa_infringe, F_displaced, F_rescale;
-	int ij, k, sp, nf, flagspeffortmodel, fishery_id, flagmanage, end_trigger_tripped, new_fish_loc = 0, nstock, flagfcmpa,
+	double EFF_scale1 = 0.0, EFF_scale2 = 0.0, EFF_scale3 = 0.0, EFF_scale4, FCpressure, orig_FCpressure, fish_infringe, FCdisplaced, prop_pop_fish = 0.0, localcell_vol,
+			FC_likeREEF, FC_likeFLAT, FC_likeSOFT, FC_dempel, reef_area, flat_area, soft_area, otherFC_likeREEF, otherFC_likeFLAT, totconflict,
+			otherFC_likeSOFT, otherFC_dempel, dempel_match, K_GearConflict, conflict_contrib, active_scale, step1_cpue, totcatch;
+	int ij, k, sp, nf, flagspeffortmodel, fishery_id, flagmanage, end_trigger_tripped, new_fish_loc = 0, nstock,
     crunch_id;
     //int do_debug_nf;
     //int do_debug;
@@ -104,53 +106,39 @@ void Manage_Calculate_Total_Effort(MSEBoxModel *bm, FILE *llogfp) {
     
 	if (verbose > 1)
 		printf("Determine total effort\n");
-
+printf("##### atManage.c #######\n");
     /* Store any CPUE information - do this before shift Effort values around */
-    if(bm->flagStoreShotCPUE) {
+    if(bm->flagStoreShotCPUE)
         GenerateCPUE(bm, llogfp);
-    }
-    if(bm->flagStoreCPUE) {
+    if(bm->flagStoreCPUE)
         Write_CPUE(bm, llogfp);
-    }
+
+printf("##### atManage.c - 1 #######\n");
     
     /* Initialise local arrays */
-    if(bm->EffortModelsActive) {
-        for (nf = 0; nf < bm->K_num_fisheries; nf++) {
-            Harvest_Set_Harvest_Index(bm, nf, checkdone_id, 0);
-            for (ij = 0; ij < ncells; ij++) {
-                bm->CumEffort[nf][ij] += bm->Effort[ij][nf];
-                bm->OldEffort[ij][nf] = bm->Effort[ij][nf];
-                bm->totOldEffort[nf] += bm->OldEffort[ij][nf];
-                bm->Effort[ij][nf] = 0.0;
-                bm->TempCPUE[ij][nf] = 0.0;
-                
-                /*
-                 if (do_debug && (nf == bm->which_fleet)) {
-                 fprintf(llogfp, "Time: %e, %s-%d, effort: %e (oldeffort: %e with totOldEffort: %e)\n", bm->dayt, FisheryArray[nf].fisheryCode, ij,
-                 bm->Effort[ij][nf], bm->OldEffort[ij][nf], bm->totOldEffort[nf]);
-                 }
-                 */
-                
-                
-            }
-            scale_effort[nf] = 0;
-            bm->totCPUE[nf] = 0;
-        }
-    }
+	for (nf = 0; nf < bm->K_num_fisheries; nf++) {
+		Harvest_Set_Harvest_Index(bm, nf, checkdone_id, 0);
+		for (ij = 0; ij < ncells; ij++) {
+			bm->CumEffort[nf][ij] += bm->Effort[ij][nf];
+			bm->OldEffort[ij][nf] = bm->Effort[ij][nf];
+			bm->totOldEffort[nf] += bm->OldEffort[ij][nf];
+			bm->Effort[ij][nf] = 0.0;
+			bm->TempCPUE[ij][nf] = 0.0;
+
+            /*
+			if (do_debug && (nf == bm->which_fleet)) {
+				fprintf(llogfp, "Time: %e, %s-%d, effort: %e (oldeffort: %e with totOldEffort: %e)\n", bm->dayt, FisheryArray[nf].fisheryCode, ij,
+						bm->Effort[ij][nf], bm->OldEffort[ij][nf], bm->totOldEffort[nf]);
+			}
+            */
+
+		}
+		scale_effort[nf] = 0;
+		bm->totCPUE[nf] = 0;
+	}
     
-    // If displaceing effort need to clean up the record keeping
-    if (bm->flagdisplace) {
-        for (nf = 0; nf < bm->K_num_fisheries; nf++) {
-            for (ij = 0; ij < ncells; ij++) {
-                if(bm->newmonth && bm->flagday) {
-                    bm->CumDisplaceEffort[ij][nf] = 0.0;
-                } else {
-                    bm->CumDisplaceEffort[ij][nf] += bm->Effort[ij][nf];
-                }
-            }
-        }
-    }
-    
+	printf("##### atManage.c - 2 #######\n");
+	
     for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
         if (FunctGroupArray[sp].isTAC) {
             for (ij = 0; ij < bm->K_num_fisheries; ij++) {
@@ -161,15 +149,16 @@ void Manage_Calculate_Total_Effort(MSEBoxModel *bm, FILE *llogfp) {
         }
     }
 
+	printf("##### atManage.c - 3 #######\n");
+
     /* Find distribution of catch across regions (for regional TAC based management).*/
 	for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
 		if (FunctGroupArray[sp].isFished == TRUE) {
 
 			/* Initialise regional catch contributions */
 			totcatch = 0.0;
-            for (nstock = 0; nstock < FunctGroupArray[sp].numStocks; nstock++) {
-                bm->RegionalData[sp][nstock][reg_catch_id] = 0;
-            }
+			for (nstock = 0; nstock < FunctGroupArray[sp].numStocks; nstock++)
+				bm->RegionalData[sp][nstock][reg_catch_id] = 0;
 
 			/* Get regional catch info */
 			for (nf = 0; nf < bm->K_num_fisheries; nf++) {
@@ -207,7 +196,9 @@ void Manage_Calculate_Total_Effort(MSEBoxModel *bm, FILE *llogfp) {
 			}
 		}
 	}
-    
+   
+
+	printf("##### atManage.c - 4 #######\n");   
     /* Find average CPUE for each box over the last fisheries recording period
 	 (becasue catch is cumulative you can't just divide the total catch recorded
 	 for the square by the effort from yesterday. As a first pass, reduce catch from
@@ -230,45 +221,10 @@ void Manage_Calculate_Total_Effort(MSEBoxModel *bm, FILE *llogfp) {
     if (bm->flagForceRec) {
 		Update_Port_Population(bm, llogfp);
     }
-     
-    if(!bm->EffortModelsActive) {
-        // Check MPAs active or not then jump out - need MPA check as used by some catch only models
-        if (bm->dayt != bm->predayt) {
-            for (fishery_id = 0; fishery_id < bm->K_num_fisheries; fishery_id++) {
-                Check_For_Active_MPA(bm, fishery_id);
-                
-                if (bm->flagdisplace) {
-                    for (ij = 0; ij < bm->nbox; ij++) {
-                        orig_FCpressure = 1.0;
-                        Effort_Displacement(bm, fishery_id, ij, orig_FCpressure, &FCpressure, &FCdisplaced, &new_fish_loc, llogfp);
-                        if (FCdisplaced < 0.0)
-                            FCdisplaced = 0.0;
-                        
-                        /* Find the proportion retained and displaced */
-                        F_rescale = 1.0 - (FCdisplaced / orig_FCpressure);
-                        F_displaced = FCdisplaced / orig_FCpressure;
-                        
-                        /* Updating scalars - overload via the use of effort array */
-                        bm->Effort[ij][fishery_id] *= F_rescale; /* this is so that accumulate additional fishing mortakity pressure due to displaced effort */
-                        bm->Effort[new_fish_loc][fishery_id] += F_displaced;
-                    }
-                }
-            }
-        }
-        return;
-    }
-        
+     	printf("##### atManage.c - 5 #######\n"); 
     for (ij = 0; ij < bm->nbox; ij++) {
 		if (bm->boxes[ij].type != BOUNDARY) {
 			for (nf = 0; nf < bm->K_num_fisheries; nf++) {
-                /* Determine effort model type */
-                flagspeffortmodel = (int) (bm->FISHERYprms[nf][flageffortmodel_id]);
-
-                if (!flagspeffortmodel) {
-                    continue;
-                }
-                
-                // If have active effort model then continue
 				if (!bm->totOldEffort[nf]) {
 					bm->TempCPUE[ij][nf] = 0.0;
 				} else {
@@ -327,7 +283,7 @@ void Manage_Calculate_Total_Effort(MSEBoxModel *bm, FILE *llogfp) {
 			}
 		}
 	}
-    
+	printf("##### atManage.c - 6 #######\n");     
     for (k = 0; k < bm->K_num_fisheries; k++) {
 		if (bm->totOldEffort[k] < small_num)
 			bm->totOldEffort[k] = 0.0;
@@ -341,10 +297,11 @@ void Manage_Calculate_Total_Effort(MSEBoxModel *bm, FILE *llogfp) {
 		}
         */
 	}
-    
+    	printf("##### atManage.c - 7 #######\n"); 
     /**** Calculate new distribution of effort *******************************************/
 	for (fishery_id = 0; fishery_id < bm->K_num_fisheries; fishery_id++) {
-
+	fflush(stdout);
+	printf("fishery number = %d\n",fishery_id);
         /*
         if (do_debug && (bm->which_fleet == fishery_id)) {
 			do_debug_nf = 1;
@@ -353,24 +310,31 @@ void Manage_Calculate_Total_Effort(MSEBoxModel *bm, FILE *llogfp) {
          }
         */
         /* Before do  management (spatially explicit or otherwise) identify active MPAs - needs to be hear as might want to use dynamic MOAs even without having an explicit effort model on - so need the routine here so it id activated regardless and isn't missed if the effort model is off and the 'continue' triggered */
-        if (bm->dayt != bm->predayt) {
+        if (bm->dayt != bm->predayt)
             Check_For_Active_MPA(bm, fishery_id);
-        }
 
 		/* Determine effort model type */
 		flagspeffortmodel = (int) (bm->FISHERYprms[fishery_id][flageffortmodel_id]);
-        
-        //fprintf(llogfp, "Time: %e %s flagspeffortmodel: %d\n", bm->dayt, FisheryArray[fishery_id].fisheryCode, flagspeffortmodel);
-
-        
-        /* Check if fishery activated and if no set to zero and only continue if fishery active this time step */
-		if (((!flagspeffortmodel) && ((!mEff[fishery_id][bm->NextQofY]) && (!mEff[fishery_id][bm->QofY]))) || (!bm->FISHERYprms[fishery_id][fisheriesactive_id])) {
+	fflush(stdout);
+   	printf("##### atManage.c - 7a #######\n"); 
+        /* Check if fishery activated and if no set to zero */
+		if ((!flagspeffortmodel) && ((!mEff[fishery_id][bm->NextQofY]) && (!mEff[fishery_id][bm->QofY]))) {
 			for (ij = 0; ij < bm->nbox; ij++) {
 				bm->Effort[ij][fishery_id] = 0;
 			}
 			continue;
 		}
-        
+	fflush(stdout);
+   	printf("##### atManage.c - 7b #######\n"); 
+		/* Only continue if fishery active this time step */
+		if (!bm->FISHERYprms[fishery_id][fisheriesactive_id]) {
+			for (ij = 0; ij < bm->nbox; ij++) {
+				bm->Effort[ij][fishery_id] = 0;
+			}
+			continue;
+		}
+	fflush(stdout);
+   	printf("##### atManage.c - 7c #######\n"); 
         /* If active determine what proportion of the entire day it is active
 		 and then compare that against dt, so can scale realised effort accordingly
 		 */
@@ -380,7 +344,8 @@ void Manage_Calculate_Total_Effort(MSEBoxModel *bm, FILE *llogfp) {
             active_scale = 1.0;
         
         if (flagspeffortmodel != readts_effort) {
-
+	fflush(stdout);
+   	printf("##### atManage.c - 7d #######\n"); 
             /* Effort management */
 			flagmanage = (int) (bm->FISHERYprms[fishery_id][flagmanage_id]);
 			EFF_scale0 = Effort_Restrict_Check(bm, fishery_id, flagmanage, &trigger_tripped, llogfp);
@@ -402,27 +367,28 @@ void Manage_Calculate_Total_Effort(MSEBoxModel *bm, FILE *llogfp) {
 				prop_pop_fish = 1.0;
             }
 
-            /* Before do spatially explicit management identify active MPAs - moved earlier so available even if not using dynamic effort
+            /* Before do spatially explicit management identify active MPAs - moved earlier so availabke even if not using dynamic effort
 			if (bm->dayt != bm->predayt)
 				Check_For_Active_MPA(bm, fishery_id);
              */
-        } else if (flagmanage > stock_adapt_mgmt){
-            /* TAC-check needed so discard if over TAC amount - dummy not used but TAC_over calculated within the routine is */
-            dummy = TAC_Check(bm, fishery_id, flagmanage, llogfp);
-        }
-
+		}
+	fflush(stdout);
+   	printf("##### atManage.c - 7e #######\n"); 
         /* Check port status and contribution */
         if (bm->FISHERYprms[fishery_id][fisheries_need_port_id]) {
 			Calculate_Port_Contrib(bm, fishery_id, flagspeffortmodel, llogfp);
         }
-
+	fflush(stdout);
+   	printf("##### atManage.c - 7f #######\n"); 
         /* Allocate effort */
 		for (ij = 0; ij < bm->nbox; ij++) {
+			printf("box num = %d\n",ij);
 			if (bm->boxes[ij].type != BOUNDARY) {
 
 				if (flagspeffortmodel != readts_effort) {
-
+printf("in\n");
 					FCpressure = Allocate_Immediate_Effort(bm, fishery_id, ij, flagspeffortmodel, prop_pop_fish, llogfp);
+printf("out\n");
 
 					/* Seasonal closures */
 					EFF_scale4 = Season_Check(bm, fishery_id, ij, llogfp);
@@ -437,24 +403,24 @@ void Manage_Calculate_Total_Effort(MSEBoxModel *bm, FILE *llogfp) {
 
 					scale_effort[fishery_id] = EFF_scale0 * EFF_scale1 * EFF_scale2 * EFF_scale3 * EFF_scale4;
 
-                    /**
-					//if (do_debug_nf) {
+                    /*
+					if (do_debug_nf) {
 						fprintf(llogfp, "Time: %e box %d %s in %d FCpressure: %e, EFF_scale0: %e, EFF_scale1: %e, EFF_scale2: %e, EFF_scale3: %e, EFF_scale4: %e\n", bm->dayt,
 								ij, FisheryArray[fishery_id].fisheryCode, ij, FCpressure, EFF_scale0, EFF_scale1, EFF_scale2, EFF_scale3, EFF_scale4);
-					//}
-                     **/
+					}
+                    */
 
 					/* Spatial management */
 					orig_FCpressure = FCpressure;
 					FCpressure = FCpressure * bm->MPA[ij][fishery_id];
-                    
-                    /**
-					//if (do_debug_nf) {
+
+                    /*
+					if (do_debug_nf) {
 						//if(fishery_id == trapBMS_id)
 						fprintf(llogfp, "Time: %e, box %d %s FCpressure: %e (with MPA_scale: %e)\n", bm->dayt, ij, FisheryArray[fishery_id].fisheryCode,
 								FCpressure, bm->MPA[ij][fishery_id]);
-					//}
-                    **/
+					}
+                    */
 
 					/* Potential infringement (if using spatial management) is calculated
 					 as a percentage of the fishing that would occur if the area wasn't spatially managed */
@@ -480,42 +446,18 @@ void Manage_Calculate_Total_Effort(MSEBoxModel *bm, FILE *llogfp) {
 
 				} else {
 					/* Load effort to impose */
+					fflush(stdout);
+					printf("Read in time series effort \n");
+					printf("fishery number = %d\n",fishery_id);
+					printf("box num = %d\n",ij);
+					printf("&bm->tsEffort[ij] = %d\n",&bm->tsEffort[ij]);
 					FisheryTimeSeries *this_tsEffort = &bm->tsEffort[ij];
 
 					if (bm->tsEfforttype == interpolate_id)
 						FCpressure = tsEval(&this_tsEffort->ts, bm->tseffortid[fishery_id], bm->t);
 					else
 						FCpressure = tsEvalEx(&this_tsEffort->ts, bm->tseffortid[fishery_id], bm->t);
-                    
-                    /* Spatial management */
-                    flagfcmpa = (int) (bm->FISHERYprms[fishery_id][flagmpa_id]);
-                    if (flagfcmpa) {
-                        mpa_scale = bm->MPA[bm->current_box][fishery_id];
-                        
-                        /* Allow for infringement */
-                        if (bm->flaginfringe) {
-                            mpa_infringe = bm->FISHERYprms[fishery_id][infringe_id];
-                            if (mpa_infringe > mpa_scale)
-                                mpa_scale = mpa_infringe;
-                        }
-                    } else {
-                        mpa_scale = 1.0;
-                    }
-                    
-                    FCpressure = FCpressure * mpa_scale;
-                    
-                    if (bm->flagdisplace) {
-                        orig_FCpressure = FCpressure;
-                        Effort_Displacement(bm, fishery_id, ij, orig_FCpressure, &FCpressure, &FCdisplaced, &new_fish_loc, llogfp);
-                        
-                        if (FCpressure < 0.0)
-                            FCpressure = 0.0;
-
-                        if (FCdisplaced < 0.0)
-                            FCdisplaced = 0.0;
-                    } else {
-                        FCdisplaced = 0.0;
-                    }
+					FCdisplaced = 0.0;
 				}
 
 				//fprintf(bm->logFile, "FCpressure = %.20e, active_scale = %.20e\n",FCpressure, active_scale);
@@ -544,7 +486,7 @@ void Manage_Calculate_Total_Effort(MSEBoxModel *bm, FILE *llogfp) {
 			}
 		}
 	}
-    
+    	printf("##### atManage.c - 8 #######\n"); 
     /* If overall effort declines not allowed for that fishery at that time rescale effort */
 	for (fishery_id = 0; fishery_id < bm->K_num_fisheries; fishery_id++) {
         
@@ -600,14 +542,14 @@ void Manage_Calculate_Total_Effort(MSEBoxModel *bm, FILE *llogfp) {
 			}
 		}
 	}
-    
+    	printf("##### atManage.c - 9 #######\n"); 
     /* Calculate final effort and any gear conflict */
 	crunch_id = bm->conflict_id;
     for (ij = 0; ij < bm->nbox; ij++) {
 		bm->boxes[ij].fishstat[crunch_id] = 0;
     }
 	totconflict = 0;
-    
+    	printf("##### atManage.c - 10 #######\n"); 
     /* Find a gear conflict indicator - how many fisheries and having conflicts with gear *
 	 * This has no impact on the dynamics at all its just an output indicator. */
 	for (fishery_id = 0; fishery_id < bm->K_num_fisheries; fishery_id++) {
@@ -658,7 +600,7 @@ void Manage_Calculate_Total_Effort(MSEBoxModel *bm, FILE *llogfp) {
 			}
 		}
 	}
-    
+    	printf("##### atManage.c - 11 #######\n"); 
     /* Check fishing effort cap */
 	Check_CAP(bm, llogfp);
     
@@ -670,7 +612,7 @@ void Manage_Calculate_Total_Effort(MSEBoxModel *bm, FILE *llogfp) {
 		bm->totOldEffort[sp] = 0.0;
 		bm->totNewEffort[sp] = 0.0;
 	}
-    
+    	printf("##### atManage.c - 12  #######\n"); 
 	return;
 }
 
@@ -688,14 +630,12 @@ double Effort_Restrict_Check(MSEBoxModel *bm, int fishery_id, int flagmanage, in
 
 	if (!flagmanage) {
 		sp_no_adapt_mgmt = 1;
-    } else if (flagmanage == stock_adapt_mgmt) {
+	} else if (flagmanage == stock_adapt_mgmt)
 		sp_stock_adapt_mgmt = 1;
-    }
 
 	/* Also apply stock based management if using effort based MSY levers */
-    if (bm->FISHERYprms[fishery_id][use_msy_effort_id]) {
+	if (bm->FISHERYprms[fishery_id][use_msy_effort_id])
 		sp_stock_adapt_mgmt = 1;
-    }
 
 	/* No adaptive management - do nothing */
 	if (sp_no_adapt_mgmt) {
@@ -1961,10 +1901,9 @@ void Distance_to_Port(MSEBoxModel *bm) {
  * \brief Check for which MPAs are active on current day of the year
  */
 void Check_For_Active_MPA(MSEBoxModel *bm, int fishery_id) {
-	int flagfcmpa, ij, k, sp, cohort, cIndex, ad, adbox;
-	double temp_scale, temp_scale2, catch_check, cGroupLevel, thresh_level;
+	int flagfcmpa, ij, k, sp;
+	double temp_scale, temp_scale2, catch_check;
 	int trigger_tripped, end_trigger_tripped;
-    double *tracerArray;
 
 	if (effort_scale[fishery_id][target_tac_id] != 1.0)
 		trigger_tripped = 1;
@@ -1977,7 +1916,7 @@ void Check_For_Active_MPA(MSEBoxModel *bm, int fishery_id) {
 
 	flagfcmpa = (int) (bm->FISHERYprms[fishery_id][flagmpa_id]);
 
-	for (ij = 0; ij < bm->nbox; ij++) {        
+	for (ij = 0; ij < bm->nbox; ij++) {
 		switch (flagfcmpa) {
 		case no_mpa: /* No spatial management - so set = 1.0 */
 			bm->MPA[ij][fishery_id] = 1.0;
@@ -2045,51 +1984,8 @@ void Check_For_Active_MPA(MSEBoxModel *bm, int fishery_id) {
 			quit("No such mpa case defined (%d) - value must be between %d and %d currently\n", flagfcmpa, no_mpa, cycle_stock_pet_mpa);
 			break;
 		}
+	}
 
-        /* Check for contaminant based closures */
-        if(bm->track_contaminants) {
-        
-            switch (bm->flag_contam_fisheries_mgmt) {
-                case no_closures: // Nothing to do
-                    break;
-                case set_closures: // Closed for a set period after the spill
-                    if((bm->dayt >= bm->contam_fishery_closure_day) && (bm->dayt <= (bm->contam_fishery_closure_day + bm->contam_fishery_closure_period))) {
-                        bm->MPA[ij][fishery_id] = 1.0 - bm->ContamClosed[ij];  // Assumes ContamClosed has 1 if closed due to contaminant and 0 if left open - so easier for people entering the parameters to udnerstand what is being done)
-                    }
-                    break;
-                case conc_based: // Based on concentration in species
-                    tracerArray = boxLayerInfo->localWCTracers;
-                    for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
-                        for(cohort = 0; cohort < FunctGroupArray[sp].numCohortsXnumGenes; cohort++){
-                            for (cIndex = 0; cIndex < bm->num_contaminants; cIndex++) {
-                                cGroupLevel = tracerArray[FunctGroupArray[sp].contaminantTracers[cohort][cIndex]];
-                                
-                                thresh_level = bm->contaminantStructure[cIndex]->fishery_thresh_level;
-                                if (cGroupLevel > thresh_level) {
-                                    if (!bm->contam_fishery_closure_option) {
-                                        bm->MPA[ij][fishery_id] = 0.0;  // Close only the immediate box
-                                    } else { // Close immediate box and adjactent boxes
-                                        bm->MPA[ij][fishery_id] = 0.0;
-                                        for (ad = 0; ad < bm->boxes[ij].nconn; ad++) {
-                                            adbox = bm->boxes[ij].ibox[ad];
-                                            bm->MPA[adbox][fishery_id] = 0.0;
-                                        }
-                                    }
-                                    
-                                    // Break loop as already closed now
-                                    sp = bm->K_num_tot_sp;
-                                }
-                            }
-                        }
-                    }
-                    break;
-                default:
-                    quit("This (%d) setting for flag_contam_fisheries_mgmt is not yet coded - please use %d (no closures), %d (set closures) or %d (based on concentration in stocks)\n", bm->flag_contam_fisheries_mgmt, no_closures, set_closures, conc_based);
-                    break;
-            }
-        }
-    }
-    
 	return;
 }
 
@@ -2337,12 +2233,16 @@ void Calculate_Port_Contrib(MSEBoxModel *bm, int fishery_id, int flagspeffortmod
  * \brief  US management stype - cumualtive trip limits based off TAC, and once TAC exhausted then trigger spatial management actions
  */
 void Manage_Visit_Council(MSEBoxModel *bm, FILE *llogfp) {
-	int do_stuff, nf, nreg, sp, tripped, overfished_sp, delay, implement_BiM, bim, ij, correct_reg, nd, QuarterOfYear, in_box, flagTACparticipate, co_sp, co_sp2, companion_ok, min_delay, flagfcmpa, Kreg;
-	double regTAC_scale, regC_scale, biom_ratio, FCperiod, other_biTAC_reg, TAC, CumCatch, catch_ratio, regTAC_scale_cosp = 0, regC_scale_cosp = 0, TAC_cosp, CumCatch_cosp, prop_yr_changed, catch_ratio_cosp;
+	int do_stuff, nf, nreg, sp, tripped, overfished_sp, delay, implement_BiM, bim, ij, correct_reg, nd, QuarterOfYear, in_box, flagTACparticipate, co_sp,
+			co_sp2, check_companion, companion_ok, do_sp1, do_sp2, min_delay, flagfcmpa, Kreg;
+	double regTAC_scale, regC_scale, biom_ratio, FCperiod, other_biTAC_reg, TAC, CumCatch, catch_ratio, regTAC_scale_cosp = 0, regTAC_scale_cosp2  = 0, regC_scale_cosp = 0,
+			regC_scale_cosp2 = 0, TAC_cosp1, TAC_cosp2, CumCatch_cosp1, CumCatch_cosp2, prop_yr_changed, catch_ratio_cosp, catch_ratio_cosp2;
 
 	do_stuff = 0;
-	TAC_cosp = 0;
-	CumCatch_cosp = 0;
+	TAC_cosp1 = 0;
+	TAC_cosp2 = 0;
+	CumCatch_cosp1 = 0;
+	CumCatch_cosp2 = 0;
 	implement_BiM = 0;
 	/* If no council needed do not enter this routine */
 	if (!bm->Council_needed){
@@ -2508,63 +2408,87 @@ void Manage_Visit_Council(MSEBoxModel *bm, FILE *llogfp) {
 					catch_ratio = CumCatch / (TAC + small_num);
 					if (catch_ratio < 1.0) {
 						/* Rescaling necessary - but only if companion species would be worse off, so check companions.*/
-                        
-                        for (co_sp = 0; co_sp < FunctGroupArray[sp].speciesParams[max_co_sp_id]; co_sp++ ) {
-                            co_sp2 = FunctGroupArray[sp].co_sp[co_sp];
-                            
-                            if ((co_sp2 < 0) || (co_sp2 > bm->K_max_impacted_sp) || (FunctGroupArray[co_sp2].isFished == FALSE)) {
-                                continue;
-                            }
+						co_sp = (int) (FunctGroupArray[sp].co_sp[0]);
+						co_sp2 = (int) (FunctGroupArray[sp].co_sp[1]);
 
-                            regTAC_scale_cosp = bm->RegionalData[co_sp2][nreg][reg_tac_id];
-							regC_scale_cosp = bm->RegionalData[co_sp2][nreg][reg_catch_id];
-							TAC_cosp = 0;
-                            CumCatch_cosp = 0.0;
-                            companion_ok = 1;
-                            
+						check_companion = 0;
+						if ((co_sp != -1 && FunctGroupArray[co_sp].isFished == TRUE) || (co_sp2 != -1 && FunctGroupArray[co_sp2].isFished == TRUE)) {
+							check_companion = 1;
+							companion_ok = 0;
+						} else {
+							/* No companions to check */
+							companion_ok = 1;
+						}
+
+						if (check_companion) {
+							do_sp1 = 0;
+							if (co_sp != -1 && FunctGroupArray[co_sp].isFished == TRUE) {
+								regTAC_scale_cosp = bm->RegionalData[co_sp][nreg][reg_tac_id];
+								regC_scale_cosp = bm->RegionalData[co_sp][nreg][reg_catch_id];
+								do_sp1 = 1;
+							}
+							do_sp2 = 0;
+							if (co_sp2 != -1 && FunctGroupArray[co_sp2].isFished == TRUE) {
+								regTAC_scale_cosp2 = bm->RegionalData[co_sp2][nreg][reg_tac_id];
+								regC_scale_cosp2 = bm->RegionalData[co_sp2][nreg][reg_catch_id];
+								do_sp2 = 1;
+							}
+
+							regC_scale_cosp2 = bm->RegionalData[sp][nreg][reg_catch_id];
+							TAC_cosp1 = 0;
+							TAC_cosp2 = 2;
 							for (nf = 0; nf < bm->K_num_fisheries; nf++) {
-								flagTACparticipate = (int)(bm->FISHERYprms[nf][flagTACpartipcate_id]);
+								flagTACparticipate = (int) (bm->FISHERYprms[nf][flagTACpartipcate_id]);
 								if (flagTACparticipate) {
 									/* Convert from tonnes wet weight to mg N */
-									TAC_cosp += (regTAC_scale_cosp * bm->TACamt[co_sp2][nf][now_id] * kg_2_mg) / bm->X_CN;
-                                    CumCatch_cosp += (Harvest_Get_TotCumCatch(co_sp2, nf, bm->thisyear)  + bm->TotOldCumCatch[co_sp2][nf]) * regC_scale_cosp;
+									if (do_sp1) {
+										TAC_cosp1 += (regTAC_scale_cosp * bm->TACamt[co_sp][nf][now_id] * kg_2_mg) / bm->X_CN;
+										CumCatch_cosp1 += (Harvest_Get_TotCumCatch(co_sp, nf, bm->thisyear) + bm->TotOldCumCatch[co_sp][nf]) * regC_scale_cosp;
+									}
+									if (do_sp2) {
+										TAC_cosp2 += (regTAC_scale_cosp2 * bm->TACamt[co_sp2][nf][now_id] * kg_2_mg) / bm->X_CN;
+										CumCatch_cosp2 += (Harvest_Get_TotCumCatch(co_sp2, nf, bm->thisyear)  + bm->TotOldCumCatch[co_sp2][nf]) * regC_scale_cosp2;
+									}
 								}
 							}
 							/* Check if scaled up CumCatch for companions would exceed TAC */
 							prop_yr_changed = (1.0 - implement_BiM / 6.0);
-							CumCatch_cosp *= 1.0 + ((1 / (catch_ratio + small_num)) * prop_yr_changed);
-							catch_ratio_cosp = CumCatch_cosp / (TAC_cosp + small_num);
 
-                            if (catch_ratio_cosp > 1.0) {
-                                companion_ok = 0;
-                            }
+							CumCatch_cosp1 *= 1.0 + ((1 / (catch_ratio + small_num)) * prop_yr_changed);
+							CumCatch_cosp2 *= 1.0 + ((1 / (catch_ratio + small_num)) * prop_yr_changed);
+							catch_ratio_cosp = CumCatch_cosp1 / (TAC_cosp1 + small_num);
+							catch_ratio_cosp2 = CumCatch_cosp2 / (TAC_cosp2 + small_num);
 
+							if ((catch_ratio_cosp > 1.0) || (catch_ratio_cosp2 > 1.0))
+								companion_ok = 0;
+						}
 
-                            /* Do rescaling */
-                            if (companion_ok) {
-                                min_delay = MAXINT;
-                                for (nf = 0; nf < bm->K_num_fisheries; nf++) {
-                                    /* Political process delay vs bimonthly council metting steps _ to see when action implemented */
-                                    FCperiod = bm->FISHERYprms[nf][FC_period_id];
-                                    delay = (int) (ceil(FCperiod / 60.0));
-                                    if (delay < min_delay)
-                                        min_delay = delay;
-                                    implement_BiM = bm->BiM + delay;
-                                    if (implement_BiM > 5) {
-                                        /* Would happen after end of year so no actual effect as would be superceded by next years' managememt */
-                                        continue;
-                                    }
-                                    if (!overfished_sp) {
-                                        /* Only rescale if not overfished. If overfished consider yourself lucky and take the opportunity for extra rebuilding.
-                                         */
-                                        for (bim = implement_BiM; bim < 6; bim++) {
-                                            bm->BiTAC_sp[bim][nreg][sp][now_id] = regTAC_scale * bm->BiTACamt[bim][sp][nf][now_id] * (1 / (catch_ratio + small_num));
-                                            other_biTAC_reg = (1.0 - regTAC_scale) * bm->BiTACamt[bim][sp][nf][now_id];
-                                            bm->BiTACamt[bim][sp][nf][now_id] = bm->BiTAC_sp[bim][nreg][sp][now_id] + other_biTAC_reg;
+						/* Do rescaling */
+						if (companion_ok) {
+							min_delay = MAXINT;
+							for (nf = 0; nf < bm->K_num_fisheries; nf++) {
+								/* Political process delay vs bimonthly council metting steps _ to see when action implemented */
+								FCperiod = bm->FISHERYprms[nf][FC_period_id];
+								delay = (int) (ceil(FCperiod / 60.0));
+								if (delay < min_delay)
+									min_delay = delay;
+								implement_BiM = bm->BiM + delay;
+								if (implement_BiM > 5) {
+									/* Would happen after end of year so no actual effect as would be superceded by next years' managememt */
+									continue;
+								}
+								if (!overfished_sp) {
+									/* Only rescale if not overfished. If overfished consider yourself lucky and take the opportunity
+									 for extra rebuilding.
+									 */
+									for (bim = implement_BiM; bim < 6; bim++) {
+										bm->BiTAC_sp[bim][nreg][sp][now_id] = regTAC_scale * bm->BiTACamt[bim][sp][nf][now_id]
+												* (1 / (catch_ratio + small_num));
+										other_biTAC_reg = (1.0 - regTAC_scale) * bm->BiTACamt[bim][sp][nf][now_id];
+										bm->BiTACamt[bim][sp][nf][now_id] = bm->BiTAC_sp[bim][nreg][sp][now_id] + other_biTAC_reg;
 
-                                            printf("Time2: %e, %s by %s, bim: %d, BiTACamt: %e\n", bm->dayt, FunctGroupArray[sp].groupCode,
+										printf("Time2: %e, %s by %s, bim: %d, BiTACamt: %e\n", bm->dayt, FunctGroupArray[sp].groupCode,
 												FisheryArray[nf].fisheryCode, bim, bm->BiTACamt[bim][sp][nf][now_id]);
-                                        }
 									}
 								}
 							}

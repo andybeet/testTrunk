@@ -64,7 +64,7 @@ void Convert_Run_To_XML(MSEBoxModel *bm, char *fileName, char *outputFileName) {
                                "", XML_TYPE_BOOLEAN,"1");
     bm->flag_migration_on = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, binary_check, "flag_migration_on");
 
-	groupingNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, rootnode, "ScenarioOptions", "Run settings", "", "");
+	groupingNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, rootnode, "ScenarioOptions", "The diagnostic output settings", "", "");
 
 	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "title", "ScenarioName", "", XML_TYPE_STRING, "");
 	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "dt", "Model Time Step in hours", "Hours", XML_TYPE_INTEGER, "12");
@@ -82,16 +82,7 @@ void Convert_Run_To_XML(MSEBoxModel *bm, char *fileName, char *outputFileName) {
 	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flaghemisphere", "Flag for hemisphere model is in (0 = southern; 1 = northern).", "", XML_TYPE_BOOLEAN,"0");
 
 	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "trackAtomicRatio", "Flag to turn on tracking atomic ratios.", "", XML_TYPE_BOOLEAN,"0");
-    bm->track_atomic_ratio = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, binary_check, "trackAtomicRatio");
-    if(bm->track_atomic_ratio) {
-        Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flagratio_warn", "Flag to turn on atomic ratio warning messages.", "", XML_TYPE_BOOLEAN,"0");
-        Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "N_to_C", "Base ratio of Nitrogen to Carbon.", "", XML_TYPE_FLOAT,"0");
-        Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "N_to_P", "Base ratio of Nitrogen to Phosphorous.", "", XML_TYPE_FLOAT,"0");
-    }
     
-    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "trackWind", "Flag to turn on tracking wind using forcing files.", "", XML_TYPE_BOOLEAN,"0");
-    bm->track_wind = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, binary_check, "trackWind");
-
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "external_populations", "Flag indicating use of external population model", "", XML_TYPE_BOOLEAN,"0");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_multiyr_migs", "Flag to turn on multiyear migrations.", "", XML_TYPE_BOOLEAN,"0");
 
@@ -102,19 +93,15 @@ void Convert_Run_To_XML(MSEBoxModel *bm, char *fileName, char *outputFileName) {
 	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "mirror_invalid", "Flag to indicate how to deal with invalid hydrodynamic exchanges.", "", XML_TYPE_BOOLEAN,"0");
 
 	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_replicated_old", "Flag to replicate old model results before the trunk code was merged.", "", XML_TYPE_BOOLEAN,"0");
-    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_replicated_old_PPmort", "Flag to replicate old model code assumptions around primary production mortality before the trunk code was merged.", "", XML_TYPE_BOOLEAN,"0");
-    
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_old_embryo_init", "Flag to use the old means of having embryoes carried over from spawning pre-model start.", "", XML_TYPE_BOOLEAN,"0");
-    
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_replicate_old_calendar", "Flag to replicate old calendar for aging and spawning - when done once per year rather than having 1 queue for the entire model run.", "", XML_TYPE_BOOLEAN,"0");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_sanity_check", "Flag to trigger sanity checks.", "", XML_TYPE_BOOLEAN,"0");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "store_aggregate_yoy", "Flag as to what YOY stored", "", XML_TYPE_BOOLEAN,"0");
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "store_mig_array", "Flag as to what Migration Array stored", "", XML_TYPE_BOOLEAN,"0");
     
-    /* Removed as was chucking up an odd ATTRIBUTE read that was had to sort out so just left the information with the Scenario options instead
- 	groupingNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, rootnode, "ContaminantSettings", "Contaminant Settings", "", "");
-    */
-    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "track_contaminants", "Flag to turn on tracking of contaminants", "", XML_TYPE_BOOLEAN,"0");
+	groupingNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, rootnode, "ContaminantSettings", "Contaminant Settings", "", "");
+    
+    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "track_contaminants", "Flag to turn on tracking of contaminants..", "", XML_TYPE_BOOLEAN,"0");
     bm->track_contaminants = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, integer_check, "track_contaminants");
   
 	if(bm->track_contaminants == TRUE){

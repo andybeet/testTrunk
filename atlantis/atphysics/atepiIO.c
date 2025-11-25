@@ -109,7 +109,7 @@ void readBMEpiInfo(int fid, MSEBoxModel *bm) {
 	ncopts = NC_VERBOSE | NC_FATAL;
 
 	if (verbose > 1)
-        printf( "Entering readBMEpiInfo\n");
+		fprintf(stderr, "Entering readBMEpiInfo\n");
 
 	/* Inquire about this file */
 	ncinquire(fid, &ndims, &nvars, &ngatts, &recdim);
@@ -140,7 +140,7 @@ void readBMEpiInfo(int fid, MSEBoxModel *bm) {
 	if (n < 1)
 		warn("readBMEpiInfo: No epibenthos variables\n");
 	if (verbose > 1)
-        printf( "readBMEpiInfo: %ld epibenthos variables\n", n);
+		fprintf(stderr, "readBMEpiInfo: %ld epibenthos variables\n", n);
 
 	/* Allocate space for epi info */
 	if ((bm->einfo = (EpiInfo *) malloc((size_t)n * sizeof(EpiInfo))) == NULL)

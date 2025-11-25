@@ -72,12 +72,13 @@ extern double k_pattern;
 extern double k_patches;
 extern double k_mismatch;	/** Reduction in effectiveness of gear due to mismatch in watercolumn of gear and vertebrates*/
 
+extern double ***selectivity;	/** Constant selectivity per cohort or stage for each group (for the invertebrates it is identical to the entries above for constant selectivity regardless of size.*/
 extern double ***FFCDR;			/** Array of discard rates */
 extern double ***SELchange;		/** Changes in selectivity through time*/
 extern double ***Pchange;
 extern double ****Qchange;
 extern double ***SWEPTchange;
-//extern double ****mFCchange;
+extern double ****mFCchange;
 
 extern double ****DISCRDchange;
 extern double **OldCatchSum;
@@ -118,7 +119,7 @@ int Read_Harvest_Parameters(MSEBoxModel *bm, char *filename);
  */
 double 	Get_Selectivity(MSEBoxModel *bm, int sp, int stage, int nf, double li, int sel_curve, double addlsm, double addsigma);
 double 	Get_Discards(MSEBoxModel *bm, int guildcase, int chrt, int stage, int nf, int do_debug, int do_debug_econ, int do_debug_dis, int flagimposecatch, int boxkey_id, double Biom, double li, double vert_scale, double loadFC, double *SPtoFC, double *quota, double *FCwaste, double mpa_losses,int depend_dis, FILE *llogfp);
-int Get_Catch(MSEBoxModel *bm, int sp, int chrt, int stage, int nf, int do_debug, int flagimposecatch, int depend_dis, int boxkey_id, double Biom, double li, double vert_scale, double *gear_change_scale, double *loadFC, double *SPtoFC, double *mpa_losses, FILE *llogfp);
+int 	Get_Catch(MSEBoxModel *bm, int sp, int chrt, int stage, int nf, int do_debug, int flagimposecatch, int depend_dis, int boxkey_id, double Biom, double li, double vert_scale, double *gear_change_scale, double *loadFC, double *SPtoFC, double *mpa_losses, FILE *llogfp);
 double 	Get_Fishery_Change_Scale(MSEBoxModel *bm, int nf, int paramID, int numChangeParamID, double ***changeArray);
 
 /**

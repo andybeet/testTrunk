@@ -36,7 +36,6 @@
 /* The file to report annual TAC set */
 FILE *anntacfp;
 FILE *annBrokenfp;
-FILE *annCapResultfp;
 FILE *cpuefp;
 FILE *grosscpuefp;
 
@@ -61,8 +60,6 @@ void Close_Manage_Output_Files(MSEBoxModel *bm) {
 	Util_Close_Output_File(anntacfp);
 	/* Close the broken stick output file */
 	Util_Close_Output_File(annBrokenfp);
-    /* Close the ecosystem caps output file */
-    Util_Close_Output_File(annCapResultfp);
 }
 
 /**
@@ -124,9 +121,7 @@ void Write_Annual_TAC(FILE *fid, MSEBoxModel *bm, FILE *llogfp)
 		}
 	}
 	fprintf(fid,"\n");
-    
-    fflush(fid);
-    
+
 	return;
 }
 
@@ -149,19 +144,19 @@ FILE * initAnnBrokenStickFile(MSEBoxModel *bm)
 
     /** Column definitions **/
     fprintf(fid,"Time ");
+
     fprintf(fid,"SpeciesName ");
+
     fprintf(fid,"FisheryName ");
-    fprintf(fid,"Tier ");
-    fprintf(fid,"FrefLim ");
-    fprintf(fid,"FrefA ");
-    fprintf(fid,"FrefH ");
-    fprintf(fid,"Blim ");
-    fprintf(fid,"BrefB ");
-    fprintf(fid,"BrefA ");
-    fprintf(fid,"FCurr ");
-    fprintf(fid,"FTARG ");
+
+    fprintf(fid, "FCurr ");
+
+    fprintf(fid, "FTARG ");
+
     fprintf(fid,"CurrentBiomass ");
+
     fprintf(fid,"BrokenStickScaler ");
+
 	fprintf(fid,"\n");
     /* Return file pointer */
     return(fid);
@@ -169,50 +164,12 @@ FILE * initAnnBrokenStickFile(MSEBoxModel *bm)
 /**
  * \brief Write out info to the broken stick output file.
  */
-void WriteAnnBrokenStickFile(MSEBoxModel *bm,  int species, int nf, int tier, double FrefLim, double FrefA, double FrefH, double Blim, double BrefA, double BrefB, double FCurr, double FTARG, double Bcurr, double scalar)
+void WriteAnnBrokenStickFile(MSEBoxModel *bm,  int species, int nf, double FCurr, double FTARG, double Bcurr, double scaler)
 {
 	if(annBrokenfp == NULL){
 		annBrokenfp = initAnnBrokenStickFile(bm);
 	}
-	fprintf(annBrokenfp, "%e %s %s %d %e %e %e %e %e %e %e %e %e %e\n", bm->dayt, FunctGroupArray[species].groupCode,  FisheryArray[nf].fisheryCode, tier, FrefLim, FrefA, FrefH, Blim, BrefA, BrefB, FCurr, FTARG, Bcurr, scalar);
-}
-
-/* Routine to initialise catch information file */
-FILE * initCapResultStickFile(MSEBoxModel *bm)
-{
-    FILE *fid;
-    char fname[STRLEN];
-
-    /** Create filename **/
-    sprintf(fname,"%s_EcosystemCapResult.txt",bm->startfname);
-    printf("Creating %s\n",fname);
-
-    /** Create file **/
-    if( (fid=Util_fopen(bm, fname,"w")) == NULL )
-        quit("initCapResultStickFile: Can't open %s\n",fname);
-
-    /** Column definitions **/
-    fprintf(fid,"Time ");
-    fprintf(fid,"SpeciesName ");
-    fprintf(fid,"FisheryName ");
-    fprintf(fid,"SpBased_Frescale ");
-    fprintf(fid,"PostSystCap_Frescale ");
-    fprintf(fid,"OrigExpectedCatch ");
-    fprintf(fid,"Deductions ");
-    fprintf(fid,"\n");
-    /* Return file pointer */
-    return(fid);
-}
-
-/**
- * \brief Write out info to do with the systems cap results output file.
- */
-void WriteAnnCapResultFile(MSEBoxModel *bm, int species, int nf)
-{
-    if(annCapResultfp == NULL){
-        annCapResultfp = initCapResultStickFile(bm);
-    }
-    fprintf(annCapResultfp, "%e %s %s %e %e %e %e\n", bm->dayt, FunctGroupArray[species].groupCode, FisheryArray[nf].fisheryCode, bm->SP_FISHERYprms[species][nf][orig_mFC_scale_id], bm->SP_FISHERYprms[species][nf][mFC_scale_id], FunctGroupArray[species].speciesParams[sp_fishery_expected_catch_id], FunctGroupArray[species].speciesParams[sp_fishery_deduction_id]);
+	fprintf(annBrokenfp, "%e %s %s %e %e %e %e\n", bm->dayt, FunctGroupArray[species].groupCode,  FisheryArray[nf].fisheryCode, FCurr, FTARG, Bcurr, scaler);
 }
 
 

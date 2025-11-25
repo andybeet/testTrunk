@@ -315,7 +315,7 @@ double Get_Loaded_FC(MSEBoxModel *bm, int guildcase, int nf, int chrt, int stage
 	default:
 		tsEvaled = 0.0;
 		distrib_scale = 0.0;	/* Deal with compiler warnings */
-		quit("No such case (%d) for flagimposecatch for %s - reset to a number 0 to 4\n", flagimposecatch, FunctGroupArray[guildcase].groupCode);
+		quit("No such case (%d) for flagimposecatch for %s - reset to 0, 1 or 2\n", flagimposecatch, FunctGroupArray[guildcase].groupCode);
 		break;
 	}
 

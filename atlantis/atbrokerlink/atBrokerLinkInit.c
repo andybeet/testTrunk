@@ -33,12 +33,12 @@ int Linkage_Read_XML(MSEBoxModel *bm, char *fileName) {
 	if (strlen(fileName) == 0) {
 		fprintf(stderr,
 				"\n\nERROR. Util_Read_Linkage_XML: Trying to read in the config file for the broker linkage information, but no file was provided.\n\n");
-		Util_Usage(1);
+		Util_Usage();
 		exit(-1);
 	}
 	if (strstr(fileName, ".xml") == NULL) {
 		fprintf(stderr, "\n\nERROR. Util_Read_Linkage_XML: Trying to read in the broker linkage file. This should be read in from an XML input file\n\n");
-		Util_Usage(1);
+		Util_Usage();
 		exit(-1);
 	}
 

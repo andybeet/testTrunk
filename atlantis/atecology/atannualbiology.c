@@ -219,8 +219,9 @@ static void Init_Spawning(MSEBoxModel *bm, FILE *llogfp, int do_debug, int sp) {
     int recruit_sp = (int) (FunctGroupArray[sp].speciesParams[flagrecruit_id]);
     double prod_scalar = 1.0;
     double maxstock = (double)(FunctGroupArray[sp].numStocks);
+	double *adults_spawning = (double *) alloc1d(bm->K_num_stocks_per_sp);
     double first_spawn = -1.0;
-    
+
 	AgeClassSize_sp = (double)(FunctGroupArray[sp].ageClassSize);
 	flagdem = (int) (FunctGroupArray[sp].speciesParams[flagdem_id]);
     recruit_sp = (int) (FunctGroupArray[sp].speciesParams[flagrecruit_id]);
@@ -234,8 +235,6 @@ static void Init_Spawning(MSEBoxModel *bm, FILE *llogfp, int do_debug, int sp) {
     if (verbose) {
         printf(" Doing Init_Spawning %s\n", FunctGroupArray[sp].groupCode);
     }
-    
-    Util_Init_1D_Double(adults_spawning, bm->K_num_stocks_per_sp, 0.0);
     
     //do_debug = 1;
 
@@ -267,6 +266,10 @@ static void Init_Spawning(MSEBoxModel *bm, FILE *llogfp, int do_debug, int sp) {
             adults_spawning[stock_id] = 1.0;
         }
     } else if ( FunctGroupArray[sp].groupAgeType == AGE_STRUCTURED_BIOMASS) {
+        for (stock_id = 0; stock_id < bm->K_num_stocks_per_sp; stock_id++) {
+            adults_spawning[stock_id] = 0.0;
+        }
+
         for(cohort = 0; cohort < FunctGroupArray[sp].numCohortsXnumGenes; cohort++){
             den = FunctGroupArray[sp].totNTracers[cohort];
             for (i = 0; i < nboxes; i++) {
@@ -583,11 +586,9 @@ static void Init_Spawning(MSEBoxModel *bm, FILE *llogfp, int do_debug, int sp) {
                 }
             }
 
-            /*
             if (sp == 9) {
                 fprintf(llogfp, "and larval_queue_extension: %d\n", larval_queue_extension);
             }
-            */
             
             /* Get actual number of recruits arriving and their settlement sites */
             if (larval_queue_extension) {
@@ -655,14 +656,14 @@ static void Init_Spawning(MSEBoxModel *bm, FILE *llogfp, int do_debug, int sp) {
                             }
                             
                             /**
-                            //if(do_debug && (bm->which_check == sp)) {
+                            if(do_debug && (bm->which_check == sp)) {
                                     fprintf(llogfp, "%s, num_recruits-%d-%d: %e, flag_old_embryo_init: %d, VERTembryo%s-%d: %e adults_spawning: %e, prod_scalar: %e vertdistrib: %e, bm->recruit_hdistrib%d-%s: %e, ngenes: %e tot_embryo: %e\n", FunctGroupArray[sp].groupCode, i, j, EMBRYO[sp].num_recruits[i][j][ngene][k], bm->flag_old_embryo_init, FunctGroupArray[sp].groupCode, stock_id, EMBRYO[sp].Larvae[stock_id][ngene][k], adults_spawning[stock_id], prod_scalar, vertdistrib, i, FunctGroupArray[sp].groupCode, bm->recruit_hdistrib[ngene][i][sp], ngenes, tot_embryo);
                             }
                             **/
                             
                             EMBRYO[sp].next_larvae = k;
                             if (EMBRYO[sp].next_larvae > EMBRYO[sp].num_in_spawn_queue)
-                                quit("EMBRYO[%s].next_larvae (%d, k %d) set > EMBRYO[].num_in_spawn_queue %d)\n", FunctGroupArray[sp].groupCode, EMBRYO[sp].next_larvae, k, EMBRYO[sp].num_in_spawn_queue);
+                                quit("EMBRYO[%s].next_larvae (%d) set > EMBRYO[].num_in_spawn_queue %d)\n", FunctGroupArray[sp].groupCode, EMBRYO[sp].next_larvae, EMBRYO[sp].num_in_spawn_queue);
                         }
                     }
                 }
@@ -753,6 +754,8 @@ static void Init_Spawning(MSEBoxModel *bm, FILE *llogfp, int do_debug, int sp) {
         quit("First spawning date for %s (%d) makes no sense - note testing against 0 and %e as tstop is : %e\n", FunctGroupArray[sp].groupCode, EMBRYO[sp].next_spawn_any_age, ((365.0 * bm->tstop) / 86400.0), bm->tstop);
     if ((EMBRYO[sp].next_age_any_age < 0) || (EMBRYO[sp].next_age_any_age > ((365.0 * bm->tstop) / 86400.0)))
         quit("First aging date for %s (%d) makes no sense - note testing against 0 and %e as tstop is : %e\n", FunctGroupArray[sp].groupCode, EMBRYO[sp].next_age_any_age, ((365.0 * bm->tstop) / 86400.0), bm->tstop);
+    
+	free1d(adults_spawning);
     
 	return;
 }
@@ -1065,8 +1068,6 @@ static double Get_Init_Embryos(MSEBoxModel *bm, int species, int ngene, int stoc
     double plankton = bm->ref_chl;
     double amt = 0.0;
     double this_t, this_larvae;
-    double this_stock = 0.0;
-    double prod_alpha, dd_beta1, dd_beta2, temp_coefft, rate_coefft, wind_coefft, recruit_var, current_ICE;
     
     int maxstock_id = FunctGroupArray[species].numStocks;
     int recruit_sp = (int) (FunctGroupArray[species].speciesParams[flagrecruit_id]);
@@ -1130,16 +1131,6 @@ static double Get_Init_Embryos(MSEBoxModel *bm, int species, int ngene, int stoc
             
             // Evolution only works for these spawning cases for now - TODO: Generalise so evolution works in all cases
             EMBRYO[species].Larvae[stock_id][ngene][qid] += EMBRYO[species].TotSpawn[ngene];
-            
-            /**
-            //if (do_debug && (bm->which_check == species)) {
-            if (species == 33) {
-                fprintf(bm->logFile,"Doing %s stock %d, ngene: %d, qid: %d, TotSpawn: %e, Larvae: %e\n",
-                FunctGroupArray[species].groupCode, stock_id, ngene, qid, EMBRYO[species].TotSpawn[ngene],
-                EMBRYO[species].Larvae[stock_id][ngene][qid]);
-            }
-            **/
-            
             break;
         case fixed_linear_recruit:/* Pupping or calving a fixed number per adult spawning */
             for(bcohort = 0; bcohort < FunctGroupArray[species].numCohorts; bcohort++){
@@ -1234,31 +1225,6 @@ static double Get_Init_Embryos(MSEBoxModel *bm, int species, int ngene, int stoc
         case SSB_ricker: /* SSB based version of the ricker given short lived and senescent - e.g. for cephalopods */
             temprec = bm->tot_SSB[species] * stock_prop[species][stock_id] * exp(recSTOCK[species][stock_id] * Ralpha_sp * (1.0 - bm->tot_SSB[species] * stock_prop[species][stock_id] / Rbeta_sp));
             break;
-        case ice_wimd_based: // For lake models - from Lynch et al (2015) Journal of Great Lakes Research 41: 415–422
-            if(bm->ice_on) {
-                // Load time series values for forcing values
-                bm->airtemp_index = tsEvalR(bm->thermal_index, bm->tindex_id, bm->t, bm->tindex_rewindid);
-                bm->airT_rate_index = tsEvalR(bm->rate_index, bm->rindex_id, bm->t, bm->rindex_rewindid);
-                current_ICE = Get_Ice_Rating(bm, species);
-                
-                this_stock = bm->tot_SSB[species] * stock_prop[species][stock_id];
-
-                prod_alpha = FunctGroupArray[species].speciesParams[prod_alpha_id];
-                dd_beta1 = FunctGroupArray[species].speciesParams[den_depend_beta1_id];
-                dd_beta2 = FunctGroupArray[species].speciesParams[den_depend_beta2_id];
-                temp_coefft = FunctGroupArray[species].speciesParams[temp_coefft_id];
-                rate_coefft = FunctGroupArray[species].speciesParams[rate_coefft_id];
-                wind_coefft = FunctGroupArray[species].speciesParams[wind_coefft_id];
-                
-                recruit_var = FunctGroupArray[species].speciesParams[recruit_var_id];
-                
-                step1 = prod_alpha - dd_beta1 * this_stock * dd_beta2 * current_ICE + temp_coefft * bm->airtemp_index + rate_coefft * bm->airT_rate_index +  recruit_var * 0.5;
-                if(bm->track_wind) {
-                    step1 += (wind_coefft * current_WIND);
-                }
-                temprec = this_stock * exp(step1);
-            }
-            break;
         default:
             quit("No such flagrecruit defined for vertebrates (%d) - value must be between 0 and 10 currently\n", recruit_sp);
             break;
@@ -1271,13 +1237,6 @@ static double Get_Init_Embryos(MSEBoxModel *bm, int species, int ngene, int stoc
     }
 
     ans = temprec;
-    
-    /**
-    //if (do_debug && (bm->which_check == species)) {
-    if (species == 33) {
-        fprintf(bm->logFile, "Initialisation, species %s, recruit_sp case: %d, BulkRecruits: %e, temprec: %e, Larvae: %e qid: %d)\n", FunctGroupArray[species].groupCode, recruit_sp, temprec, EMBRYO[species].Larvae[stock_id][ngene][qid], qid);
-    }
-    **/
     
     // Reset SSB in case spawn very soon after
     bm->tot_SSB[species] = 0.0;

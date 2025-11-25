@@ -63,10 +63,9 @@ void Init_Aging_Arrays(MSEBoxModel *bm, int species, int stock_id, int maxstock_
 void Prepare_Age_Distrib(MSEBoxModel *bm, int sp, FILE *llogfp);
 void Sanity_Check_Recruits(MSEBoxModel *bm, int species, FILE *llogfp);
 void Store_Recruitment_Diagnostics(MSEBoxModel *bm, int species, int use_aggregate, int do_debug, FILE *llogfp);
-void Record_End_Num(MSEBoxModel *bm, int species);
 void Reset_Mortality(MSEBoxModel *bm, int sp);
 void Update_Age_Distrib(MSEBoxModel *bm, int sp, int stock_id, int sp_ddepend_move, int rec_related, FILE *llogfp);
-void Update_Aging_Numbers(MSEBoxModel *bm, int species, int cohort, int stock_id, double dennow, double this_p_ageup, int do_debug, FILE *llogfp);
+void Update_Aging_Numbers(MSEBoxModel *bm, int species, int cohort, int stock_id, double dennow, int do_debug, FILE *llogfp);
 void Update_Migration_Array(MSEBoxModel *bm, int species, int cohort, int maxstock_id, int do_debug, FILE *llogfp);
 void Update_Local_dPool(MSEBoxModel *bm, int species, int cohort, double Spawned_Matter, double *recruitDEN, int sp_numGeneTypes, double *localWCTracers, int do_debug, FILE *llogfp);
 void Update_Age_Queue(MSEBoxModel *bm, int species, int cohort, int do_debug, FILE *llogfp);
@@ -80,7 +79,7 @@ double Ecology_Get_Plankton(MSEBoxModel *bm, double *localWCTracers, FILE *llogf
 double Get_Enviro_Recruit_Forcing(MSEBoxModel *bm, int species, int do_debug, FILE *llogfp);
 double Get_Invert_Settlers(MSEBoxModel *bm, int species, int ngene, int wclayer, int stock_id, int do_debug, FILE *llogfp);
 double Get_Vertical_Recruit_Position(int species, int wclayer, int maxdeep, int totaldeep);
-double Get_Numbers_Aging(MSEBoxModel *bm, int species, int cohort, int *active_den, double *lostden_zero, double *this_p_ageup, int do_debug, FILE *llogfp);
+double Get_Numbers_Aging(MSEBoxModel *bm, int species, int cohort, int *active_den, double *lostden_zero, int do_debug, FILE *llogfp);
 void Recruit_Migration(MSEBoxModel *bm, int species, int wclayer, int stock_id, int do_debug, FILE *llogfp);
 double Larval_Mortality(MSEBoxModel *bm, int species, int stock_id, FILE *llogfp);
 
@@ -111,11 +110,13 @@ void Vertebrate_Reproduction(MSEBoxModel *bm, int wclayer, int maxdeep, int tota
         sp_numGeneTypes, basecohort, semelparous_migrants, semelparous_parents;
     int overall_checkday = (int) (floor(bm->dayt));
     int sp_checkday = 0;
-    int done_something, recruits_arrive, cIndex;
+    int done_something, recruits_arrive;
     //double lostden = 0;
-    double dennow, CHLa, KWSR_sp, KWRR_sp, enviro_scalar, this_prop_ageup,
+    double dennow, CHLa, KWSR_sp, KWRR_sp, enviro_scalar,
             plankton, vertdistrib, starting_num, new_num, amt, sp_AgeClassSize;
-    
+    double *lostden_zero = Util_Alloc_Init_1D_Double(bm->K_num_max_genetypes, 0.0);
+    int *active_den = Util_Alloc_Init_1D_Int((bm->K_num_max_cohort * bm->K_num_max_genetypes), 0);
+
     //printf("Created Vertebrate Reproduction arrays\n");
 
     if (verbose > 1)
@@ -128,6 +129,7 @@ void Vertebrate_Reproduction(MSEBoxModel *bm, int wclayer, int maxdeep, int tota
                 for (cohort = 0; cohort < FunctGroupArray[species].numCohortsXnumGenes; cohort++) {
                     for (i = 0; i < 3; i++)
                         shiftVERT[species][cohort][i] = 0.0;
+                    active_den[cohort] = 0;
                     shiftVERTON[species][cohort] = 0;
 
                 }
@@ -170,10 +172,7 @@ void Vertebrate_Reproduction(MSEBoxModel *bm, int wclayer, int maxdeep, int tota
     for (species = 0; species < bm->K_num_tot_sp; species++) {
         if ((FunctGroupArray[species].speciesParams[flag_id] == TRUE) && ((FunctGroupArray[species].isVertebrate == TRUE)
                 || (FunctGroupArray[species].groupAgeType == AGE_STRUCTURED))) {
-            
-            // Reinitialise for this species
-            Util_Init_1D_Int(active_den, bm->K_num_max_cohort * bm->K_num_max_genetypes, 0);
-            
+
             if ((bm->which_check == species) && (((bm->current_box == bm->checkbox) || (bm->checkbox > bm->nbox)) && (bm->dayt >= bm->checkstart)))
                 do_debug = 1;
             else
@@ -238,15 +237,8 @@ void Vertebrate_Reproduction(MSEBoxModel *bm, int wclayer, int maxdeep, int tota
                     
                     done_something = 1;
                     /* Initalise TotSpawn for new values from current time step - needs to be reset for every box-layer as is the total spawn for that box-layer and added to EMBRYO.Larvae[] */
-                    for (ngene = 0; ngene < sp_numGeneTypes; ngene++) {
+                    for (ngene = 0; ngene < sp_numGeneTypes; ngene++)
                         EMBRYO[species].TotSpawn[ngene] = 0.0;
-                    }
-                    if(bm->track_contaminants && bm->flag_contamMaternalTransfer){  // Reinitialise for new spawning
-                        for (cIndex = 0; cIndex < bm->num_contaminants; cIndex++) {
-                            FunctGroupArray[species].reprodContam[cIndex] = 0.0;
-                            FunctGroupArray[species].reprodContamCount[cIndex] = 0.0;
-                        }
-                    }
 
                     /* Start evolution */
                     Find_Evolution_Stats(bm, species, llogfp, 0);
@@ -328,7 +320,9 @@ void Vertebrate_Reproduction(MSEBoxModel *bm, int wclayer, int maxdeep, int tota
                 }
                 
                 /******* Aging and Settlement of new young ******/
-                Util_Init_1D_Double(lostden_zero, bm->K_num_max_genetypes, 0.0);
+                for(ngene = 0; ngene < sp_numGeneTypes; ngene++){
+                    lostden_zero[ngene] = 0.0;
+                }
                 sp_checkday = EMBRYO[species].next_age_any_age;
                 
                 /* Find any recruits settling in this timestep */
@@ -386,10 +380,10 @@ void Vertebrate_Reproduction(MSEBoxModel *bm, int wclayer, int maxdeep, int tota
                             continue;
                         }
                         
-                        dennow = Get_Numbers_Aging(bm, species, cohort, active_den, lostden_zero, &this_prop_ageup, do_debug, llogfp);
+                        dennow = Get_Numbers_Aging(bm, species, cohort, active_den, lostden_zero, do_debug, llogfp);
                         
                         /* Update numbers to age and local distribution */
-                        Update_Aging_Numbers(bm, species, cohort, stock_id, dennow, this_prop_ageup, do_debug, llogfp);
+                        Update_Aging_Numbers(bm, species, cohort, stock_id, dennow, do_debug, llogfp);
 
                         /** Update Migration array **/
                         Update_Migration_Array(bm, species, cohort, maxstock_id, do_debug, llogfp);
@@ -466,10 +460,6 @@ void Vertebrate_Reproduction(MSEBoxModel *bm, int wclayer, int maxdeep, int tota
                         new_num += starting_num;
                         shiftVERT[species][cohort][SN_id] = (KWSR_sp * EMBRYO[species].recruitSPden[ngene] + VERTinfo[species][cohort][SN_id] * starting_num) / (new_num + small_num);
                         shiftVERT[species][cohort][RN_id] = (KWRR_sp * EMBRYO[species].recruitSPden[ngene] + (VERTinfo[species][cohort][RN_id] - EMBRYO[species].IndSpawn[cohort]) * starting_num) / (new_num + small_num);
-                                                
-                        if(bm->track_contaminants && bm->flag_contamMaternalTransfer){
-                            Apply_Settler_Contaminants(bm, species, cohort, starting_num, new_num, EMBRYO[species].next_recruit);
-                        }
 
                         // Also check if any den active for puroposes of updating the local pools
                         if((EMBRYO[species].recruitSPden[ngene] > 0) || (lostden_zero[ngene] != 0.0))
@@ -542,6 +532,8 @@ void Vertebrate_Reproduction(MSEBoxModel *bm, int wclayer, int maxdeep, int tota
         }
     }
     
+    i_free1d(active_den);
+    free1d(lostden_zero);
     return;
 }
 
@@ -655,10 +647,9 @@ void Ecology_Init_Spawn_Params(MSEBoxModel *bm, int species, int maxstock_id, in
 	int basecohort;
 	int sp_numGeneTypes = (int) (FunctGroupArray[species].numGeneTypes);
 	int overall_checkday = (int) (floor(bm->dayt));
-    
-    Util_Init_1D_Int(ngene_done, bm->K_num_max_genetypes, 0);
-    Util_Init_1D_Int(not_finished, bm->K_num_max_genetypes, 0);
-
+	int *not_finished;
+	int *ngene_done;
+	
     //int do_debug = 0;
 
 	//if((bm->current_box == bm->checkbox) && (bm->dayt > bm->checkstart) && (bm->which_check == species))
@@ -674,6 +665,9 @@ void Ecology_Init_Spawn_Params(MSEBoxModel *bm, int species, int maxstock_id, in
     //    do_debug = 1;
     
     //printf("Creating Init Spawn arrays\n");
+
+	not_finished = Util_Alloc_Init_1D_Int(sp_numGeneTypes, 0);
+	ngene_done = Util_Alloc_Init_1D_Int(sp_numGeneTypes, 0);
 
 	/* If no embryos there can be no recruits */
     for(chrt = 0; chrt < FunctGroupArray[species].numCohortsXnumGenes; chrt++) {
@@ -777,6 +771,8 @@ void Ecology_Init_Spawn_Params(MSEBoxModel *bm, int species, int maxstock_id, in
     }
     */
     
+	i_free1d(not_finished);
+	i_free1d(ngene_done);
 	return;
 }
 
@@ -871,7 +867,6 @@ void Ecology_Do_External_Age_Structured_Spawning(MSEBoxModel *bm, int species, i
 	int cohort = 0;
 	int overall_checkday = (int)(floor(bm->dayt));
 	int basecohort = 0;
-    int flag_allow_spawn = 1;
     *semelparous_migrants = 0;
     
     if(verbose)
@@ -915,8 +910,7 @@ void Ecology_Do_External_Age_Structured_Spawning(MSEBoxModel *bm, int species, i
             }
 
             for (mid = MIGRATION[species].num_in_queue_done; mid < MIGRATION[species].num_in_queue; mid++) {
-                flag_allow_spawn = MIGRATION[species].ReprodAllowed[cohort][mid];
-                if (flag_allow_spawn && (MIGRATION[species].DEN[cohort][mid] > bm->min_dens)) {
+                if (MIGRATION[species].DEN[cohort][mid] > bm->min_dens) {
                     
                     /* for those species with size-based age of maturity, check the age class is big enough to spawn */
                     Wgt = MIGRATION[species].SN[cohort][mid] + MIGRATION[species].RN[cohort][mid];
@@ -943,24 +937,18 @@ void Ecology_Do_External_Age_Structured_Spawning(MSEBoxModel *bm, int species, i
                     EMBRYO[species].TotSpawn[recieve_ngene] += MigIndSpawn * MIGRATION[species].DEN[cohort][mid];
                     MIGRATION[species].RN[cohort][mid] -= MigIndSpawn; // Mass lost in spawning
 
-                    
-                    if(bm->track_contaminants && bm->flag_contamMaternalTransfer){
-                        quit("Have not coded contaminant transfer for externally reproducing species - if you get this message contact teh developer group and ask them to sort this for you.... if it involves salmon Beth may swear, don't worry she will be fine after a bowl of ice cream\n");
-                    }
-
                     /* If semelparous reproduction */
                     if (flagmother < 0) {
                         *semelparous_migrants = 1;
                     }
 
-                    if (isnan(MIGRATION[species].RN[cohort][mid])) {
+                    if (isnan(MIGRATION[species].RN[cohort][mid]))
                         quit("Time %e - during external spawning of %s cohort %d mid: %d have got NAN RN: %e SN: %e MigIndSpawn: %e scaled_FSPB: %e step1: %e DEN: %e\n", bm->dayt, FunctGroupArray[species].groupCode, cohort, mid, MIGRATION[species].RN[cohort][mid], MIGRATION[species].SN[cohort][mid], MigIndSpawn, FunctGroupArray[species].scaled_FSPB[cohort], step1, MIGRATION[species].DEN[cohort][mid]);
-                    }
                     
                     /**
                     //if (do_debug) {
-                    if (species == 33) {
-                        fprintf(llogfp, "Time: %e, %s cohort %d external spawned %e DEN: %e RN: %e semelparous_migrants: %d  TotSpawn: %e\n", bm->dayt, FunctGroupArray[species].groupCode, cohort, (MigIndSpawn * MIGRATION[species].DEN[cohort][mid]), MIGRATION[species].DEN[cohort][mid], MIGRATION[species].RN[cohort][mid], *semelparous_migrants,  EMBRYO[species].TotSpawn[recieve_ngene]);
+                    if (species == 52) {
+                        fprintf(llogfp, "Time: %e, %s cohort %d spawned %e DEN: %e RN: %e semelparous_migrants: %d  TotSpawn: %e\n", bm->dayt, FunctGroupArray[species].groupCode, cohort, (MigIndSpawn * MIGRATION[species].DEN[cohort][mid]), MIGRATION[species].DEN[cohort][mid], MIGRATION[species].RN[cohort][mid], *semelparous_migrants,  EMBRYO[species].TotSpawn[recieve_ngene]);
                     }
                     **/
                 }
@@ -1032,23 +1020,14 @@ void Ecology_Do_Internal_Age_Structured_Spawning(MSEBoxModel *bm, int species, i
         thisSSB = (VERTinfo[species][cohort][RN_id] + VERTinfo[species][cohort][SN_id]) * VERTinfo[species][cohort][DEN_id];
         bm->tot_SSB[species] += FunctGroupArray[species].scaled_FSPB[cohort] * thisSSB;
 
-        if(bm->flag_do_evolution) {
-            recieve_ngene = Do_Inheritance(bm, species, ngene, basecohort, cohort, llogfp);
-        }
-        
-        if(bm->track_contaminants && bm->flag_contamMaternalTransfer){
-            if(EMBRYO[species].IndSpawn[cohort] > 0) {  // Only transfer contaminants if actually producing any spawn
-                Get_Parental_Contaminants(bm, species, cohort, flagmother, VERTinfo[species][cohort][DEN_id]);
-            }
-        }
-            
+		if(bm->flag_do_evolution)
+			recieve_ngene = Do_Inheritance(bm, species, ngene, basecohort, cohort, llogfp);
 		EMBRYO[species].TotSpawn[recieve_ngene] += EMBRYO[species].IndSpawn[cohort] * VERTinfo[species][cohort][DEN_id];
 
         /**
 		//if (do_debug && (bm->which_check == species)) {
-        //if (do_debug ) {
-        if (species == 33) {
-			fprintf(llogfp, "Time: %e, %s cohort %d, internal_Spawning Box %d, layer %d, TotSpawn: %e, IndSpawn[%d]: %e, DEN: %e, FSPB: %e, SN: %e, RN: %e, FSP: %e, KSPA: %e step1: %e\n", bm->dayt,
+        if (do_debug ) {
+			fprintf(llogfp, "Time: %e, %s , cohort %d, Box %d, layer %d, TotSpawn: %e, IndSpawn[%d]: %e, DEN: %e, FSPB: %e, SN: %e, RN: %e, FSP: %e, KSPA: %e step1: %e\n", bm->dayt,
 					FunctGroupArray[species].groupCode,cohort, bm->current_box, bm->current_layer, EMBRYO[species].TotSpawn[recieve_ngene], cohort, EMBRYO[species].IndSpawn[cohort], VERTinfo[species][cohort][DEN_id],
 					FunctGroupArray[species].scaled_FSPB[cohort], VERTinfo[species][cohort][SN_id], VERTinfo[species][cohort][RN_id], FSP_sp, KSPA_sp, step1);
 		}
@@ -1201,7 +1180,7 @@ void Ecology_Find_Embryoes(MSEBoxModel *bm, int species, int stock_id, double pl
 
             /**
             //if (do_debug && (bm->which_check == species)) {
-            if (species == 33) {
+            if ((species == 33) || (species == 32)) {
 				fprintf(llogfp,"Doing %s stock %d, ngene: %d, qid: %d, TotSpawn: %e, Larvae: %e\n",
 				FunctGroupArray[species].groupCode, stock_id, ngene, qid, EMBRYO[species].TotSpawn[ngene], 
 				EMBRYO[species].Larvae[stock_id][ngene][qid]);
@@ -1217,7 +1196,8 @@ void Ecology_Find_Embryoes(MSEBoxModel *bm, int species, int stock_id, double pl
 
                 /**
                 //if (do_debug && (bm->which_check == species)) {
-                if (species == 33) {
+                 //if (species == 33) {
+                if (species == 52) {
                     fprintf(llogfp,"Time: %e box%d-%d doing %s stock %d, ngene: %d, qid: %d, cohort: %d, recSTOCK: %e, KDENR: %e, scaledFSPB: %e, DEN: %e, Larvae: %e\n", bm->dayt, bm->current_box, bm->current_layer, FunctGroupArray[species].groupCode, stock_id, ngene, qid, cohort, recSTOCK[species][stock_id], KDENR_sp, FunctGroupArray[species].scaled_FSPB[cohort], VERTinfo[species][cohort][DEN_id], EMBRYO[species].Larvae[stock_id][ngene][qid]);
                 }
                 **/
@@ -1318,15 +1298,10 @@ void Ecology_Find_Embryoes(MSEBoxModel *bm, int species, int stock_id, double pl
 				EMBRYO[species].Larvae[stock_id][ngene][qid], EMBRYO[species].TotSpawn[ngene], recruit_sp);
 		}
         **/
-        
-        if(bm->track_contaminants && bm->flag_contamMaternalTransfer){
-            Store_Recruit_Contaminants(bm, species, stock_id, ngene, qid);
-        }
 	}
     
-    if (bm->flag_do_evolution){ /* Redistribute larvae across based on evolutiomn curve if necesary */
+    if (bm->flag_do_evolution) /* Redistribute larvae across based on evolutiomn curve if necesary */
         Evolution_Curve(bm, species, stock_id, qid, do_debug, llogfp);
-    }
     
     return;
 }
@@ -1337,7 +1312,6 @@ void Ecology_Find_Embryoes(MSEBoxModel *bm, int species, int stock_id, double pl
  */
 void Get_Recruits(MSEBoxModel *bm, int species, int stock_id, double plankton, FILE *llogfp) {
 	double step1, step2, jack_SSB, jack_B, jack_a, larval_scalar;
-    double current_ICE, prod_alpha, dd_beta1, dd_beta2, temp_coefft, rate_coefft, wind_coefft, recruit_var;
 	double temprec = 0.0;
 	double BHalpha_sp = FunctGroupArray[species].speciesParams[BHalpha_id];
 	double BHbeta_sp = FunctGroupArray[species].speciesParams[BHbeta_id];
@@ -1351,7 +1325,6 @@ void Get_Recruits(MSEBoxModel *bm, int species, int stock_id, double plankton, F
 	int recruit_sp = (int) (FunctGroupArray[species].speciesParams[flagrecruit_id]);
 	int sp_numGeneTypes = (int) (FunctGroupArray[species].numGeneTypes);
 	int ngene = 0;
-    double this_stock = 0.0;
 	//int do_debug = 0;
     //int qid = EMBRYO[species].next_spawn;
     int qid = EMBRYO[species].next_larvae;
@@ -1406,12 +1379,13 @@ void Get_Recruits(MSEBoxModel *bm, int species, int stock_id, double plankton, F
                 
 			break;
 		case BevHolt_recruit: /* Beverton-Holt stock-recruit relationship - Atlantis basic version (mix numbers and biomass) */
-			temprec = (recSTOCK[species][stock_id] * BHalpha_sp * EMBRYO[species].Larvae[stock_id][ngene][qid] / (BHbeta_sp + bm->totfishpop[species] * stock_prop[species][stock_id]));
+			temprec = (recSTOCK[species][stock_id] * BHalpha_sp * EMBRYO[species].Larvae[stock_id][ngene][qid] / (BHbeta_sp + bm->totfishpop[species]
+					* stock_prop[species][stock_id]));
 
             /**
 			//if (do_debug && (bm->which_check == species)) {
             //if (do_debug) {
-            if (species == 33) {
+            if ((species == 33) || (species == 32)) {
 				fprintf( llogfp,
 					"Time: %e, box%d-%d, species %s, ngene: %d, stock: %d, temprec: %e, recSTOCK: %e, BHalpha: %e, Larvae: %e, BHbeta: %e, totfish: %e, stock_prop: %e)\n",
 						bm->dayt, bm->current_box, bm->current_layer, FunctGroupArray[species].groupCode, 
@@ -1429,12 +1403,14 @@ void Get_Recruits(MSEBoxModel *bm, int species, int stock_id, double plankton, F
         case BevHolt_rand_recruit: /* Spawn is based on Beverton Holt with lognormal variation and
 		 dependence on plankton levels */
 			step1 = Util_Logx_Result(-lognorm_mu, lognorm_sigma);
-			step2 = (recSTOCK[species][stock_id] * BHalpha_sp * EMBRYO[species].Larvae[stock_id][ngene][qid] / (BHbeta_sp + bm->totfishpop[species] * stock_prop[species][stock_id])) * (plankton / bm->ref_chl);
+			step2 = (recSTOCK[species][stock_id] * BHalpha_sp * EMBRYO[species].Larvae[stock_id][ngene][qid] / (BHbeta_sp + bm->totfishpop[species]
+					* stock_prop[species][stock_id])) * (plankton / bm->ref_chl);
 			temprec = step2 * step1;
 			break;
 		case recover_recruit: /* Spawn is allowed a recovery encouraging boost of recruits
 		 after "recovery_span" years of depressed stock levels */
-			temprec = (recSTOCK[species][stock_id] * BHalpha_sp * EMBRYO[species].Larvae[stock_id][ngene][qid] / (BHbeta_sp + bm->totfishpop[species] * stock_prop[species][stock_id]));
+			temprec = (recSTOCK[species][stock_id] * BHalpha_sp * EMBRYO[species].Larvae[stock_id][ngene][qid] / (BHbeta_sp + bm->totfishpop[species]
+					* stock_prop[species][stock_id]));
 
 			if (recover_help[species][0] && (recover_help_set[species] <= bm->dayt - (recover_span * recover_subseq))) {
 				temprec *= recover_mult_sp;
@@ -1445,7 +1421,8 @@ void Get_Recruits(MSEBoxModel *bm, int species, int stock_id, double plankton, F
 			}
 			break;
 		case force_recover_recruit: /* Spawn has a pre-specified recovery encouraging boost of recruits */
-			temprec = (recSTOCK[species][stock_id] * BHalpha_sp * EMBRYO[species].Larvae[stock_id][ngene][qid] / (BHbeta_sp + bm->totfishpop[species] * stock_prop[species][stock_id]));
+			temprec = (recSTOCK[species][stock_id] * BHalpha_sp * EMBRYO[species].Larvae[stock_id][ngene][qid] / (BHbeta_sp + bm->totfishpop[species]
+					* stock_prop[species][stock_id]));
 
 			if ((bm->dayt >= recover_start_sp) && (bm->dayt <= (recover_start_sp + recover_subseq))) {
 				temprec *= recover_mult_sp;
@@ -1494,31 +1471,6 @@ void Get_Recruits(MSEBoxModel *bm, int species, int stock_id, double plankton, F
                 }
                  */
             break;
-        case ice_wimd_based: // For lake models - from Lynch et al (2015) Journal of Great Lakes Research 41: 415–422
-            if(bm->ice_on) {
-                // Load time series values for forcing values
-                bm->airtemp_index = tsEvalR(bm->thermal_index, bm->tindex_id, bm->t, bm->tindex_rewindid);
-                bm->airT_rate_index = tsEvalR(bm->rate_index, bm->rindex_id, bm->t, bm->rindex_rewindid);
-                current_ICE = Get_Ice_Rating(bm, species);
-                
-                this_stock = bm->tot_SSB[species] * stock_prop[species][stock_id];
-
-                prod_alpha = FunctGroupArray[species].speciesParams[prod_alpha_id];
-                dd_beta1 = FunctGroupArray[species].speciesParams[den_depend_beta1_id];
-                dd_beta2 = FunctGroupArray[species].speciesParams[den_depend_beta2_id];
-                temp_coefft = FunctGroupArray[species].speciesParams[temp_coefft_id];
-                rate_coefft = FunctGroupArray[species].speciesParams[rate_coefft_id];
-                wind_coefft = FunctGroupArray[species].speciesParams[wind_coefft_id];
-                
-                recruit_var = FunctGroupArray[species].speciesParams[recruit_var_id];
-                
-                step1 = prod_alpha - dd_beta1 * this_stock * dd_beta2 * current_ICE + temp_coefft * bm->airtemp_index + rate_coefft * bm->airT_rate_index +  recruit_var * 0.5;
-                if(bm->track_wind) {
-                    step1 += (wind_coefft * current_WIND);
-                }
-                temprec = this_stock * exp(step1);
-            }
-            break;
 		default:
 			quit("No such flagrecruit defined for vertebrates (%d) - value must be between 0 and 10 currently\n", recruit_sp);
 			break;
@@ -1543,16 +1495,12 @@ void Get_Recruits(MSEBoxModel *bm, int species, int stock_id, double plankton, F
         //if (do_debug && (bm->which_check == species)) {
         //if (do_debug) {
         //if (recruit_sp == fixed_linear_recruit) {
-        if (species == 33) {
+        if ((species == 33) || (species == 32)) {
 			fprintf( llogfp, "Time: %e, box%d-%d, species %s, ngene: %d, recruit_sp case: %d, BulkRecruits: %e, temprec: %e, Larvae: %e qid: %d)\n",
 					bm->dayt, bm->current_box, bm->current_layer, FunctGroupArray[species].groupCode, ngene, recruit_sp,
 					EMBRYO[species].BulkRecruits[ngene], temprec, EMBRYO[species].Larvae[stock_id][ngene][qid], qid);
 		}
         **/
-        
-        if(bm->track_contaminants && bm->flag_contamMaternalTransfer){
-            Get_Recruit_Contaminants(bm, species, ngene, stock_id, qid);
-        }
         
 	}
     
@@ -1601,16 +1549,7 @@ double Get_Enviro_Recruit_Forcing(MSEBoxModel *bm, int species, int do_debug, FI
 	double enviro_scalar = 1.0;
 	double pHscalar = 1.0;
 	double Tscalar = 1.0;
-    double recCcorr = 1.0;
     //int recruit_sp = (int) (FunctGroupArray[species].speciesParams[flagrecruit_id]);
-    
-    if(!bm->flagtempdepend_reprod) { // Have turned off temperature dependent movement
-        if(temp_sensitive_sp && bm->newmonth) {
-            warn("Time: %e Zeroing temperature sensitivity for reproduction of %s even though flagtempsensitive %d as flagtempdepend_move = %d\n", bm->dayt, FunctGroupArray[species].groupCode, temp_sensitive_sp, bm->flagtempdepend_move);
-        }
-        temp_sensitive_sp = 0;
-    }
-
 
 	/* pH contribution */
 	pHscalar = (FunctGroupArray[species].pHcorr - 1.0);
@@ -1677,8 +1616,7 @@ double Get_Enviro_Recruit_Forcing(MSEBoxModel *bm, int species, int do_debug, FI
 	/* If we have contaminant then take them into account as well. */
 	if(bm->track_contaminants){
 		/* Contaminant effects */
-        recCcorr = Calculate_Contaminant_Repro_Scalar(bm, species);
-		enviro_scalar *= recCcorr;
+		enviro_scalar *= FunctGroupArray[species].Ccorr;
 	}
 
 	/* Environmental forcing */
@@ -1727,8 +1665,7 @@ void Recruit_Migration(MSEBoxModel *bm, int species, int wclayer, int stock_id, 
 	int sp_numGeneTypes = (int) (FunctGroupArray[species].numGeneTypes);
 	int ngene = 0, mid, lid, recruit_outside, direct_recruit_entry;
 	int thisday = 0;
-    double oldDEN, oldSN, oldRN, embryo_recruits;
-    //double orig_den;
+    double oldDEN, oldSN, oldRN, embryo_recruits, orig_den;
 	double KWSR_sp = FunctGroupArray[species].speciesParams[KWSR_id];
 	double KWRR_sp = FunctGroupArray[species].speciesParams[KWRR_id];
     int larval_queue_extension = FunctGroupArray[species].speciesParams[larval_queue_extension_id];
@@ -1755,11 +1692,11 @@ void Recruit_Migration(MSEBoxModel *bm, int species, int wclayer, int stock_id, 
 
                         thisday = EMBRYO[species].StartDay[ngene][EMBRYO[species].next_recruit];
                     
-                        /**
-                        if(do_debug) {
+                        /**/
+                        //if(do_debug) {
                             fprintf(bm->logFile, "Time: %e %s mid: %d Return_Now = %d, Leave_Now = %d, thisday: %d\n",  bm->dayt, FunctGroupArray[species].groupCode, mid, MIGRATION[species].Return_Now[mid], MIGRATION[species].Leave_Now[mid], thisday);
-                        }
-                        **/
+                        //}
+                        /**/
 
                         /**/
                         if (thisday < MIGRATION[species].Leave_Now[mid])
@@ -1801,7 +1738,7 @@ void Recruit_Migration(MSEBoxModel *bm, int species, int wclayer, int stock_id, 
                             }
 
                             if((MIGRATION[species].recruit[ngene][mid] > 0.0) || (embryo_recruits)) {
-                                //orig_den = MIGRATION[species].DEN[ngene][mid];
+                                orig_den = MIGRATION[species].DEN[ngene][mid];
                                 MIGRATION[species].DEN[ngene][mid] += (MIGRATION[species].recruit[ngene][mid] + embryo_recruits); // As all in youngest cohort maps to ngene not cohort in Migration
                                 //MIGRATION[species].recruit[ngene][mid] = EMBRYO[species].BulkRecruits[ngene] * enviro_scalar;
                             
@@ -1811,12 +1748,8 @@ void Recruit_Migration(MSEBoxModel *bm, int species, int wclayer, int stock_id, 
                                 MIGRATION[species].RN[ngene][mid] = (oldRN * oldDEN + KWRR_sp *	MIGRATION[species].recruit[ngene][mid]) /
                                     (MIGRATION[species].recruit[ngene][mid] + oldDEN + small_num);
                             
-                                //fprintf(bm->logFile, "Time: %e %s-%d mid: %d now MigDEN: %e as MIGrecruit: %e MigYOY: %e embryo_recruits: %e with SN: %e and RN: %e\n", bm->dayt, FunctGroupArray[species].groupCode, ngene, mid, MIGRATION[species].DEN[ngene][mid], MIGRATION[species].recruit[ngene][mid], MIGRATION[species].MigYOY[ngene][mid], embryo_recruits, MIGRATION[species].SN[ngene][mid], MIGRATION[species].RN[ngene][mid]);
+                                fprintf(bm->logFile, "Time: %e %s-%d mid: %d now MigDEN: %e as MIGrecruit: %e MigYOY: %e embryo_recruits: %e with SN: %e and RN: %e\n", bm->dayt, FunctGroupArray[species].groupCode, ngene, mid, MIGRATION[species].DEN[ngene][mid], MIGRATION[species].recruit[ngene][mid], MIGRATION[species].MigYOY[ngene][mid], embryo_recruits, MIGRATION[species].SN[ngene][mid], MIGRATION[species].RN[ngene][mid]);
 
-                                if(bm->track_contaminants && bm->flag_contamMaternalTransfer){
-                                    Get_SettlerMigrant_Contaminants(bm, species, ngene, mid, oldDEN, MIGRATION[species].recruit[ngene][mid]);
-                                }
-                                
                                 // Reset now passed across
                                 MIGRATION[species].recruit[ngene][mid] = 0;
                             }
@@ -1834,9 +1767,9 @@ void Recruit_Migration(MSEBoxModel *bm, int species, int wclayer, int stock_id, 
  * \brief Get final distribution of recruits across horizontal boxes and vertical layers (taking into account local recruitment)
  */
 void Find_Final_Recruit_Distribution(MSEBoxModel *bm, int species, double enviro_scalar, double vertdistrib, int wclayer, int stock_id, int do_debug, FILE *llogfp) {
-    int recruit_outside = 0;
+    int recruit_outside = 0, leave_stage = 0;
 	int qid = EMBRYO[species].next_recruit;
-	//int thisday = 0;
+	int thisday = 0;
 	int sp_numGeneTypes = (int) (FunctGroupArray[species].numGeneTypes);
 	int ngene = 0;
 	int mid = 0;
@@ -1872,7 +1805,7 @@ void Find_Final_Recruit_Distribution(MSEBoxModel *bm, int species, double enviro
         /**
         if (do_debug && (bm->which_check == species)) {
 			fprintf( llogfp,
-					"Final recruit distrib Time: %e, box%d-%d, species %s ngene: %d, recruit_Type: %d, BulkRecruits: %e, enviro_scalar: %e, hab_scalar: %e, vertdistrib: %e, recruit_hdistrib[box%d][%s]: %e, recryut_type: %d (EMBRYO[%s][%d]: %e)\n",
+					"Time: %e, box%d-%d, species %s ngene: %d, recruit_Type: %d, BulkRecruits: %e, enviro_scalar: %e, hab_scalar: %e, vertdistrib: %e, recruit_hdistrib[box%d][%s]: %e, recryut_type: %d (EMBRYO[%s][%d]: %e)\n",
 					bm->dayt, bm->current_box, bm->current_layer, FunctGroupArray[species].groupCode, ngene,FunctGroupArray[species].recruitType, EMBRYO[species].BulkRecruits[ngene],
 					enviro_scalar, hab_scalar, vertdistrib, bm->current_box, FunctGroupArray[species].groupCode, bm->recruit_hdistrib[ngene][bm->current_box][species],
                     FunctGroupArray[species].recruitType, FunctGroupArray[species].groupCode, stock_id, EMBRYO[species].Larvae[stock_id][ngene][qid]);
@@ -1891,8 +1824,9 @@ void Find_Final_Recruit_Distribution(MSEBoxModel *bm, int species, double enviro
 			totrecruit[species][stock_id][ngene] += EMBRYO[species].num_recruits[bm->current_box][wclayer][ngene][qid];
 
             /**
-            if (do_debug && (species == bm->which_check)) {
-            //if (species < 6) {
+            //if (do_debug && (species == bm->which_check)) {
+             //if (species == 33) {
+            if ((species == 33) || (species == 32)) {
                 fprintf(llogfp,"Time: %e, %s box%d-%d ngene: %d, qid: %d, totrecruit: %e num_rec: %e (Bulkrecruits: %e, enviro_scalar: %e, vdistrib: %e, hdistrib: %e)\n", bm->dayt, FunctGroupArray[species].groupCode, bm->current_box, wclayer, ngene, qid, totrecruit[species][stock_id][ngene], EMBRYO[species].num_recruits[bm->current_box][wclayer][ngene][qid], EMBRYO[species].BulkRecruits[ngene], enviro_scalar, vertdistrib, bm->recruit_hdistrib[ngene][bm->current_box][species]);
             }
             **/
@@ -1908,10 +1842,10 @@ void Find_Final_Recruit_Distribution(MSEBoxModel *bm, int species, double enviro
                     recruit_outside = 0;
                 }
                 
+				thisday = EMBRYO[species].StartDay[ngene][qid];
+                leave_stage = FunctGroupArray[species].cohort_stage[ngene];
                         
                 /**
-                thisday = EMBRYO[species].StartDay[ngene][qid];
-
                 if ((species == 64) || (species == 69)) {
                     fprintf(bm->logFile, "Time: %e %s ngene: %d mid: %d thisday: %d Start: %d Return: %d recruit_outside: %d\n",
                             bm->dayt, FunctGroupArray[species].groupCode, ngene, mid, thisday, MIGRATION[species].Leave_Now[mid], MIGRATION[species].Return_Now[mid], recruit_outside);
@@ -1946,7 +1880,7 @@ void Find_Final_Recruit_Distribution(MSEBoxModel *bm, int species, double enviro
                     totrecruit[species][stock_id][ngene] += EMBRYO[species].num_recruits[bm->current_box][wclayer][ngene][qid];
                     
                     /**
-                    //if ((species == 64) || (species == 69)) {
+                    if ((species == 64) || (species == 69)) {
                         fprintf(bm->logFile, "Time: %e %s ngene: %d qid: %d box: %d-%d num_recruit: %e BulkRecruits: %e enviro_scalar: %e vertdistrib: %e hdistrib: %e\n",
                             bm->dayt, FunctGroupArray[species].groupCode, ngene, qid, bm->current_box, wclayer, EMBRYO[species].num_recruits[bm->current_box][wclayer][ngene][qid], EMBRYO[species].BulkRecruits[ngene], enviro_scalar, vertdistrib, bm->recruit_hdistrib[ngene][bm->current_box][species]);
                     }
@@ -1982,17 +1916,10 @@ void Find_Final_Recruit_Distribution(MSEBoxModel *bm, int species, double enviro
 
         EMBRYO[species].num_recruits_updating[bm->current_box][wclayer][ngene][qid] = EMBRYO[species].num_recruits[bm->current_box][wclayer][ngene][qid];
         
-        
-        /* Now find the contaminant content */
-        if(bm->track_contaminants && bm->flag_contamMaternalTransfer){
-            Set_Recruit_Final_Contaminants(bm, wclayer, species, ngene, mid, qid, recruit_outside);
-        }
-        
         /**
         //if (do_debug && (bm->which_check == species)) {
-        //if (species == 33) {
-        //if (species == 52) {
-        if (species < 6) {
+         //if (species == 33) {
+        if (species == 52) {
             fprintf(llogfp, "Time: %e %s-%d box %d-%d totrecruit: %e, num_recruit: %e, qid: %d recruitType: %d\n", bm->dayt, FunctGroupArray[species].groupCode, ngene, bm->current_box, wclayer, totrecruit[species][stock_id][ngene], EMBRYO[species].num_recruits[bm->current_box][wclayer][ngene][qid], qid, FunctGroupArray[species].recruitType);
 		}
         **/
@@ -2096,17 +2023,14 @@ void Store_Recruitment_Diagnostics(MSEBoxModel *bm, int species, int use_aggrega
 	int pred = 0;
 	int qid = EMBRYO[species].next_larvae;
 	int maxstock_id = FunctGroupArray[species].numStocks;
-    //double yoysum = 0.0;
-    double biomass, chrt_biomass;
+	double yoysum = 0.0, biomass, chrt_biomass;
 	double KWSR_sp = FunctGroupArray[species].speciesParams[KWSR_id];
 	double KWRR_sp = FunctGroupArray[species].speciesParams[KWRR_id];
 	int sp_numGeneTypes = (int) (FunctGroupArray[species].numGeneTypes);
-	int ngene = 0, i = 0, stock_id = 0, den, k, mid, thisday, recruit_outside = 0;
-    //int stage;
+	int ngene = 0, i = 0, stock_id = 0, den, k, mid, thisday, stage, recruit_outside = 0;
 	int fished_chrt = 0;
+    double *yoy = Util_Alloc_Init_1D_Double(sp_numGeneTypes, 0.0);
     
-    Util_Init_1D_Double(yoy, bm->K_num_max_genetypes, 0.0);
-
     /* yoy = young of the year */
 	for ( i = 0; i < maxstock_id; i++) {
 		for(ngene = 0; ngene < sp_numGeneTypes; ngene++){
@@ -2115,7 +2039,7 @@ void Store_Recruitment_Diagnostics(MSEBoxModel *bm, int species, int use_aggrega
                 KWRR_sp = KWSR_sp * FunctGroupArray[species].X_RS[ngene];
             }
             
-			//yoysum += EMBRYO[species].Larvae[i][ngene][qid];
+			yoysum += EMBRYO[species].Larvae[i][ngene][qid];
 			yoy[ngene] += EMBRYO[species].Larvae[i][ngene][qid];
 			if (use_aggregate) {
                 tot_yoy[species][i] = (totrecruit[species][i][ngene] * (KWRR_sp + KWSR_sp));
@@ -2128,7 +2052,7 @@ void Store_Recruitment_Diagnostics(MSEBoxModel *bm, int species, int use_aggrega
                     recruit_outside = 0;
                         
                     thisday = EMBRYO[species].StartDay[ngene][EMBRYO[species].next_recruit];
-                    //stage = FunctGroupArray[species].cohort_stage[ngene];
+                    stage = FunctGroupArray[species].cohort_stage[ngene];
                     
                     /* Outside the model when recruitment happens */
                     if ((MIGRATION[species].Return_Now[mid] >= thisday) && (MIGRATION[species].Leave_Now[mid] <= thisday)) {
@@ -2200,7 +2124,7 @@ void Store_Recruitment_Diagnostics(MSEBoxModel *bm, int species, int use_aggrega
 	biomass = 0.0;
 	for(ngene = 0; ngene < sp_numGeneTypes; ngene++){
 
-		if(bm->track_contaminants ){
+		if(bm->track_contaminants){
 			Contaminant_Update_ContactMort_Record(bm, species, ngene);
 		}
 
@@ -2220,16 +2144,6 @@ void Store_Recruitment_Diagnostics(MSEBoxModel *bm, int species, int use_aggrega
 			bm->calcTrackedMort[species][ngene][k][ongoingF_id] = 0.0;
 
 			bm->calcTrackedMort[species][ngene][k][start_id] = 0.0;
-            
-            if (!k) {
-                FunctGroupArray[species].min_B[ngene] = MAXDOUBLE;
-                FunctGroupArray[species].max_B[ngene] = MINDOUBLE;
-                
-                if(FunctGroupArray[species].groupAgeType == AGE_STRUCTURED) {
-                    FunctGroupArray[species].min_wgt[ngene] = MAXDOUBLE;
-                    FunctGroupArray[species].max_wgt[ngene] = MINDOUBLE;
-                }
-            }
 		}
 		// Now initialise the calcN and starting numbers in bm->calcTrackedMort
 		if (FunctGroupArray[species].groupAgeType == AGE_STRUCTURED) {
@@ -2285,6 +2199,7 @@ void Store_Recruitment_Diagnostics(MSEBoxModel *bm, int species, int use_aggrega
     // Mark diet updated
     FunctGroupArray[species].updatedDiet = 1;
 
+	free1d(yoy);
 	return;
 
 }
@@ -2354,18 +2269,14 @@ void Get_Settlers(MSEBoxModel *bm, int species, int wclayer, int stock_id, int *
                 MIGRATION[species].recruit[ngene][this_ID] = recruits_coming;
                 FunctGroupArray[species].speciesParams[direct_recruit_entry_id] = 1;
                 
-                /**
-                if (species == 33) {
-                fprintf(llogfp, "Time: %e, get settlers %s box%d wclayer: %d num_recruits: %e, period: %e, recruits_coming: %e MIGRATION.recruit[this_ID: %d]: %e\n", bm->dayt, FunctGroupArray[species].groupCode, bm->current_box, wclayer, EMBRYO[species].num_recruits[bm->current_box][wclayer][ngene][EMBRYO[species].next_recruit], EMBRYO[species].RecruitPeriod[EMBRYO[species].next_recruit], recruits_coming, EMBRYO[species].recruitSPden[ngene], this_ID, MIGRATION[species].recruit[ngene][this_ID]);
-                }
-                **/
+                //fprintf(llogfp, "Time: %e, get settlers %s box%d wclayer: %d num_recruits: %e, period: %e, recruits_coming: %e MIGRATION.recruit[this_ID: %d]: %e\n", bm->dayt, FunctGroupArray[species].groupCode, bm->current_box, wclayer, EMBRYO[species].num_recruits[bm->current_box][wclayer][ngene][EMBRYO[species].next_recruit], EMBRYO[species].RecruitPeriod[EMBRYO[species].next_recruit], recruits_coming, EMBRYO[species].recruitSPden[ngene], this_ID, MIGRATION[species].recruit[ngene][this_ID]);
 
             } else {
                 /* Recruiting within the model domain */
                 EMBRYO[species].recruitSPden[ngene] = recruits_coming;
                 
                 /**
-                if (species == 33) {
+                if (species == 52) {
                     fprintf(llogfp, "Time: %e, get settlers %s box%d wclayer: %d num_recruits: %e, period: %e, recruits_coming: %e recruitSPden: %e\n", bm->dayt, FunctGroupArray[species].groupCode, bm->current_box, wclayer, EMBRYO[species].num_recruits[bm->current_box][wclayer][ngene][EMBRYO[species].next_recruit], EMBRYO[species].RecruitPeriod[EMBRYO[species].next_recruit], recruits_coming, EMBRYO[species].recruitSPden[ngene]);
                 }
                **/
@@ -2386,7 +2297,7 @@ void Get_Settlers(MSEBoxModel *bm, int species, int wclayer, int stock_id, int *
             if ((species == 33) || (species == 32)) {
                 fprintf(llogfp, "Time: %e, %s ngene: %d, qid (next_recruit): %d StartDay: %d, EndDay: %d, sp_checkday: %d, recruitSPden: %e, remaining larvae: %e, num_recruits%d-%d: %e, temprec: %e, RecruitPeriod: %e, flagtrecruitdistrib: %d\n", bm->dayt, FunctGroupArray[species].groupCode, ngene, EMBRYO[species].next_recruit, EMBRYO[species].StartDay[ngene][EMBRYO[species].next_recruit], EMBRYO[species].EndDay[ngene][EMBRYO[species].next_recruit], sp_checkday, EMBRYO[species].recruitSPden[ngene], EMBRYO[species].num_recruits_updating[bm->current_box][wclayer][ngene][EMBRYO[species].next_recruit], bm->current_box, wclayer, EMBRYO[species].num_recruits[bm->current_box][wclayer][ngene][EMBRYO[species].next_recruit], temprec, EMBRYO[species].RecruitPeriod[EMBRYO[species].next_recruit], flagtrecruitdistrib);
             }
-            **/
+            /**/
             
             if (EMBRYO[species].num_recruits_updating[bm->current_box][wclayer][ngene][EMBRYO[species].next_recruit] < 0.0) {
                     
@@ -2418,11 +2329,6 @@ void Get_Settlers(MSEBoxModel *bm, int species, int wclayer, int stock_id, int *
             **/
 
 		}
-        
-        if(bm->track_contaminants && bm->flag_contamMaternalTransfer){
-            Get_Settler_Contaminants(bm, wclayer, species, ngene, EMBRYO[species].next_recruit, EMBRYO[species].recruitSPden[ngene]);
-        }
-
 	}
 	return;
 }
@@ -2534,7 +2440,7 @@ double Get_Proportion_Aging(MSEBoxModel *bm, int species, int cohort, int do_deb
 /**
  * \brief Get the numbers shifting age classes
  */
-double Get_Numbers_Aging(MSEBoxModel *bm, int species, int cohort, int *active_den, double *lostden_zero, double *this_p_ageup, int do_debug, FILE *llogfp) {
+double Get_Numbers_Aging(MSEBoxModel *bm, int species, int cohort, int *active_den, double *lostden_zero, int do_debug, FILE *llogfp) {
 	double p_ageup = 0;
 	double dennow = 0.0;
 	double num_aging = 0.0;
@@ -2579,7 +2485,6 @@ double Get_Numbers_Aging(MSEBoxModel *bm, int species, int cohort, int *active_d
 
 	} else {
 		p_ageup = Get_Proportion_Aging(bm, species, cohort, do_debug, llogfp);
-		*this_p_ageup = p_ageup;
 		dennow = p_ageup * VERTinfo[species][cohort][DEN_id];
 		shiftVERT[species][cohort][DEN_id] = VERTinfo[species][cohort][DEN_id] - dennow;
 
@@ -2594,7 +2499,6 @@ double Get_Numbers_Aging(MSEBoxModel *bm, int species, int cohort, int *active_d
                     FunctGroupArray[species].groupCode, cohort, bm->current_box, shiftVERT[species][cohort][DEN_id], p_ageup, VERTinfo[species][cohort][DEN_id], shiftVERTON[species][cohort], dennow);
 		}
         **/
-
 	}
 
     /**
@@ -2618,7 +2522,7 @@ double Get_Numbers_Aging(MSEBoxModel *bm, int species, int cohort, int *active_d
  * \brief Updating numbers of aging up through age classes. Also updating the local distributions
  *
  */
-void Update_Aging_Numbers(MSEBoxModel *bm, int species, int cohort, int stock_id, double dennow, double this_p_ageup, int do_debug, FILE *llogfp) {
+void Update_Aging_Numbers(MSEBoxModel *bm, int species, int cohort, int stock_id, double dennow, int do_debug, FILE *llogfp) {
 	int sp_AgeClassSize = FunctGroupArray[species].ageClassSize;
 	int i = 0;
 	int sp_numGeneTypes = FunctGroupArray[species].numGeneTypes;
@@ -2675,10 +2579,6 @@ void Update_Aging_Numbers(MSEBoxModel *bm, int species, int cohort, int stock_id
 			fprintf(llogfp, "Time: %e, box%d-%d %s-chrt_aged_into %d stock: %d, agingDEN: %e, agingSN: %e, agingRN: %e dennow: %e\n", bm->dayt, bm->current_box, bm->current_layer, FunctGroupArray[species].groupCode, nextcid, stock_id, FunctGroupArray[species].agingVERT[nextcid][stock_id][DEN_id], FunctGroupArray[species].agingVERT[nextcid][stock_id][SN_id], FunctGroupArray[species].agingVERT[nextcid][stock_id][RN_id], dennow);
 		}
         **/
-        
-        if(bm->track_contaminants){
-            Age_Contaminants_Store(bm, species, cohort, nextcid, dennow, this_p_ageup);
-        }
 	}
 	return;
 }
@@ -2756,10 +2656,6 @@ void Update_Migration_Array(MSEBoxModel *bm, int species, int cohort, int maxsto
                 MIGRATION[species].SN[nextcid][qid] = (oldden * oldSN + num_aging * newSN * sizeScalar) / (oldden + num_aging + small_num);
                 MIGRATION[species].RN[nextcid][qid] = (oldden * oldRN + num_aging * newRN * sizeScalar) / (oldden + num_aging + small_num);
                 
-                if(bm->track_contaminants){
-                    Age_MigrantContaminants_Update(bm, species, nextcid, cohort, qid, oldden, num_aging);
-                }
-                
                 /* Update numbers */
                 MIGRATION[species].DEN[nextcid][qid] += num_aging;
                 MIGRATION[species].DEN[cohort][qid] -= num_aging;
@@ -2813,9 +2709,9 @@ void Get_Latest_Additions(MSEBoxModel *bm, int wclayer, int species, int maxstoc
     int i = 0, nc = 0, cohort = 0, migstock_id = 0, ngene = 0, qid = 0, mxk = 0;
     //int stage = 0;
 	double sp_AgeClassSize = (double)(FunctGroupArray[species].ageClassSize);
-	int sp_numGeneTypes = (int) (FunctGroupArray[species].numGeneTypes);    
-    Util_Init_1D_Double(coming_SPden, bm->K_num_max_genetypes, 0.0);
-    
+	int sp_numGeneTypes = (int) (FunctGroupArray[species].numGeneTypes);
+	double *coming_SPden = Util_Alloc_Init_1D_Double(FunctGroupArray[species].numGeneTypes, 0.0);
+
 	/* Get total settlers that are in the process of arriving */
 	for ( ngene = 0; ngene < sp_numGeneTypes; ngene++ ){
 		coming_SPden[ngene] = EMBRYO[species].num_recruits[bm->current_box][wclayer][ngene][EMBRYO[species].next_recruit];
@@ -2891,7 +2787,7 @@ void Get_Latest_Additions(MSEBoxModel *bm, int wclayer, int species, int maxstoc
 			}
 		}
 	}
-	
+	free1d(coming_SPden);
 	return;
 }
 
@@ -2982,15 +2878,13 @@ void Update_Age_Distrib(MSEBoxModel *bm, int species, int stock_id, int sp_ddepe
 
 	int cohort, k, classize, maxstock_id, need_recupdate, i, ij, b, sp_recruitpeak;
 	double maxvalue, sp_recruitRange, sp_AgeClassSize;
-	int s_id, spmigrate, is_outside, qid, do_test;
-    //int stage;
+	int s_id, spmigrate, is_outside, qid, stage, do_test;
+	int *stock_done;
+	double *totsum;
+	double *totksum;
     //int do_debug = 0;
 	int NumCohort = FunctGroupArray[species].numCohortsXnumGenes;
 
-    Util_Init_1D_Int(stock_done, bm->K_num_stocks_per_sp, 0);
-    Util_Init_1D_Double(totsum, bm->K_num_stocks_per_sp, 0.0);
-    Util_Init_1D_Double(totksum, bm->K_num_stocks_per_sp, 0.0);
-    
 	/*
      
      if(((bm->nbox < bm->checkbox) || (bm->current_box == bm->checkbox)) && (bm->dayt > bm->checkstart) && (bm->which_check == species))
@@ -3018,6 +2912,9 @@ void Update_Age_Distrib(MSEBoxModel *bm, int species, int stock_id, int sp_ddepe
 	maxstock_id = FunctGroupArray[species].numStocks;
 	need_recupdate = (int) (FunctGroupArray[species].speciesParams[need_recupdate_id]);
 	sp_recruitpeak = (int) (FunctGroupArray[species].speciesParams[flagrecpeak_id]);
+	stock_done = Util_Alloc_Init_1D_Int(maxstock_id, 0);
+	totsum = Util_Alloc_Init_1D_Double(maxstock_id, 0.0);
+	totksum = Util_Alloc_Init_1D_Double(maxstock_id, 0.0);
 
 	if (sp_recruitpeak)
 		sp_recruitRange = bm->recruitRange;
@@ -3077,7 +2974,7 @@ void Update_Age_Distrib(MSEBoxModel *bm, int species, int stock_id, int sp_ddepe
 			 * allow for more the same variability in cohort strength to flow through
 			 */
             for (cohort = 0; cohort < NumCohort; cohort++) {
-				//stage = FunctGroupArray[species].cohort_stage[cohort];
+				stage = FunctGroupArray[species].cohort_stage[cohort];
 				for (qid = MIGRATION[species].num_in_queue_done; qid < MIGRATION[species].num_in_queue; qid++) {
                     is_outside = 0;
 					// If all leave the arena then see if currently gone
@@ -3401,6 +3298,9 @@ void Update_Age_Distrib(MSEBoxModel *bm, int species, int stock_id, int sp_ddepe
 		FunctGroupArray[species].speciesParams[need_recupdate_id] = 0;
 	}
 
+	i_free1d(stock_done);
+	free1d(totsum);
+	free1d(totksum);
 	return;
 }
 
@@ -3614,12 +3514,15 @@ void Determine_Stock_Prop(MSEBoxModel *bm, int species, int maxstock_id, int who
  *
  */
 void Ecology_Update_Vertebrate_Cohorts(MSEBoxModel *bm, FILE *llogfp) {
-    int ij, k, stock_id, species, cohort, age_mat, sn, rn, den, maxstock, need_update, sp_mignum, wk, do_debug, qid, cid, nextcid;
-    //int stage, next_stage;
+	int ij, k, stock_id, species, cohort, age_mat, sn, rn, den, maxstock, need_update, sp_mignum, wk, do_debug, qid, cid, nextcid, stage, next_stage;
 	double dennow, denup, snnow, rnnow, nextden, sp_AgeSize, oldden, oldSN, oldRN, finalmig, avgsn, avgrn, totmig, num_in_MIG_total, num_in_MIG;
 	// double totsum, sp_AgeClassSize;
+	double *tot_new_mat;
     //double diff;
 	//double totalDen = 0.0;
+	int *mig_status = Util_Alloc_Init_1D_Int(bm->K_num_max_stages, 0);
+    
+	tot_new_mat = (double *) alloc1d(bm->K_num_max_cohort * bm->K_num_max_genetypes);
 
 	if (((bm->debug == debug_age) || (bm->debug == debug_general)) && (bm->dayt >= bm->checkstart))
 		do_debug = 1;
@@ -3632,8 +3535,6 @@ void Ecology_Update_Vertebrate_Cohorts(MSEBoxModel *bm, FILE *llogfp) {
         //    do_debug = 1;
         
 		if (FunctGroupArray[species].speciesParams[flag_id] == TRUE && FunctGroupArray[species].isVertebrate == TRUE) {
-            Util_Init_1D_Double(tot_new_mat, bm->K_num_max_cohort * bm->K_num_max_genetypes, 0.0);
-            //Util_Init_1D_Int(mig_status, bm->K_num_max_stages, 0);
             
             /**
 			if((bm->dayt >= bm->checkstart) && (sp == bm->which_check))
@@ -3663,14 +3564,10 @@ void Ecology_Update_Vertebrate_Cohorts(MSEBoxModel *bm, FILE *llogfp) {
 			sp_mignum = MIGRATION[species].num_in_queue;
 			age_mat = (int) (FunctGroupArray[species].speciesParams[age_mat_id]);
 
-			if (need_update) {
-                /* Record final numbers if needed */
-                if(bm->M_est_method == Z_and_F_based) {
-                    Record_End_Num(bm, species);
-                }
-                
-				/* Initialise aging in general */
+			if (need_update) {                
+				/* Initialise */
 				for (cohort = 0; cohort < FunctGroupArray[species].numCohortsXnumGenes; cohort++) {
+					tot_new_mat[cohort] = 0;
 					for (k = 0; k < maxstock; k++) {
 
 						/* tot_new_mat = sum of vertebrates aging in this cohort */
@@ -3717,8 +3614,8 @@ void Ecology_Update_Vertebrate_Cohorts(MSEBoxModel *bm, FILE *llogfp) {
 						MIGRATION[species].totprop_mig[cohort] = 0.0;
 						cid = (int)(floor(cohort / FunctGroupArray[species].numGeneTypes));
 						nextcid = cid + FunctGroupArray[species].numGeneTypes;
-                        //stage = FunctGroupArray[species].cohort_stage[cohort];
-                        //next_stage = FunctGroupArray[species].cohort_stage[nextcid];
+                        stage = FunctGroupArray[species].cohort_stage[cohort];
+                        next_stage = FunctGroupArray[species].cohort_stage[nextcid];
                         
                         // For each migration group?
                         num_in_MIG_total = 0.0;
@@ -3920,10 +3817,6 @@ void Ecology_Update_Vertebrate_Cohorts(MSEBoxModel *bm, FILE *llogfp) {
 								if (nextden > 0 && MIGRATION[species].totprop_mig[cohort] < 0.99) {
 									bm->boxes[ij].tr[k][sn] = (dennow * snnow + FunctGroupArray[species].agingVERT[cohort][stock_id][SN_id] * denup) / nextden;
 									bm->boxes[ij].tr[k][rn] = (dennow * rnnow + FunctGroupArray[species].agingVERT[cohort][stock_id][RN_id] * denup) / nextden;
-                                    
-                                    if(bm->track_contaminants){
-                                        Age_Contaminants_Update(bm, species, cohort, denup, dennow, nextden, ij, k);
-                                    }
 								}
 								bm->boxes[ij].tr[k][den] = nextden;
 
@@ -4009,75 +3902,14 @@ void Ecology_Update_Vertebrate_Cohorts(MSEBoxModel *bm, FILE *llogfp) {
 			}
 		}
 	}
+	free1d(tot_new_mat);
+	i_free1d(mig_status);
 
 	if (do_debug)
 		Check_Gape(bm, llogfp);
 
 	return;
 
-}
-
-/************************************************************************************************************************************
- * Resetting the mortality
- */
-void Record_End_Num(MSEBoxModel *bm, int species) {
-    int ij, k, cohort, stock_id, den, fished_chrt;
-    double chrt_biomass;
-    double biomass = 0.0;
-    
-    for(cohort = FunctGroupArray[species].numGeneTypes; cohort<FunctGroupArray[species].numCohortsXnumGenes; cohort++){
-        fished_chrt = (int) (FunctGroupArray[species].speciesParams[Age95pcntV_id]);
-        if (fished_chrt < ((FunctGroupArray[species].numCohortsXnumGenes) / 2))
-            fished_chrt = ((FunctGroupArray[species].numCohortsXnumGenes) / 2);
-
-        // Now initialise the calcN and starting numbers in bm->calcTrackedMort - Zero here... Recruits done in reproduction step
-        for (stock_id = 0; stock_id < FunctGroupArray[species].numStocks; stock_id++) {
-            bm->calcTrackedMort[species][cohort][stock_id][endNum_id] = 0.0;
-        }
-        
-        if(FunctGroupArray[species].groupAgeType == AGE_STRUCTURED) {
-            den = FunctGroupArray[species].NumsTracers[cohort];
-            for (ij = 0; ij < bm->nbox; ij++) {
-                if (bm->boxes[ij].type != BOUNDARY) {
-                    for (k = 0; k < bm->boxes[ij].nz; k++) {
-                        if (fished_chrt == cohort )
-                            biomass += bm->boxes[ij].tr[k][den];
-                        
-                        stock_id = bm->group_stock[species][ij][k];
-                        
-                        bm->calcTrackedMort[species][cohort][stock_id][endNum_id] += bm->boxes[ij].tr[k][den];
-                    }
-                }
-            }
-        } else {
-            den = FunctGroupArray[species].totNTracers[cohort];
-            for (ij = 0; ij < bm->nbox; ij++) {
-                // Loop through each pelagic layer
-                for (k = 0; k < bm->boxes[ij].nz; k++) {
-                    
-                    stock_id = bm->group_stock[species][ij][k];
-                    
-                    chrt_biomass = bm->boxes[ij].tr[k][den] * bm->boxes[ij].dz[k] * bm->boxes[ij].area * FunctGroupArray[species].habitatCoeffs[WC];
-                    bm->calcTrackedMort[species][cohort][stock_id][endNum_id] += chrt_biomass;
-                }
-                // Set relk for sediment and epibenthos by assuming its the one in deepest vertical layer
-                stock_id = bm->group_stock[species][ij][0]; // As assuming k = 0
-                
-                // Loop through each sediment layer
-                for (k = 0; k < bm->boxes[ij].sm.nz; k++) {
-                    chrt_biomass = bm->boxes[ij].sm.tr[k][den] * bm->boxes[ij].sm.dz[k] * bm->boxes[ij].area * FunctGroupArray[species].habitatCoeffs[SED];
-                    bm->calcTrackedMort[species][cohort][stock_id][endNum_id] += chrt_biomass;
-                }
-                // Loop over epibenthic layer
-                if (FunctGroupArray[species].habitatCoeffs[EPIFAUNA] > 0) {
-                    chrt_biomass = bm->boxes[ij].epi[den] * bm->boxes[ij].area * FunctGroupArray[species].habitatCoeffs[EPIFAUNA];
-                    bm->calcTrackedMort[species][cohort][stock_id][endNum_id] += chrt_biomass;
-                }
-            }
-        }
-    }
-    
-    return;
 }
 
 /************************************************************************************************************************************
@@ -4149,16 +3981,6 @@ void Reset_Mortality(MSEBoxModel *bm, int species) {
 			bm->calcTrackedMort[species][cohort][k][ongoingF_id] = 0.0;
 
 			bm->calcTrackedMort[species][cohort][k][start_id] = 0.0;
-            
-            if (!k) {
-                FunctGroupArray[species].min_B[cohort] = MAXDOUBLE;
-                FunctGroupArray[species].max_B[cohort] = MINDOUBLE;
-                
-                if(FunctGroupArray[species].groupAgeType == AGE_STRUCTURED) {
-                    FunctGroupArray[species].min_wgt[cohort] = MAXDOUBLE;
-                    FunctGroupArray[species].max_wgt[cohort] = MINDOUBLE;
-                }
-            }
 		}
 
 		// Now initialise the calcN and starting numbers in bm->calcTrackedMort - Zero here... Recruits done in reproduction step
@@ -4470,11 +4292,6 @@ void Invertebrate_Reproduction(MSEBoxModel *bm, int wclayer, int maxdeep, int to
 
 				// TODO: Make this work for more than two age stages for biomass pools
 				if (sp_Age_Now) {
-                    /* Record final numbers if needed */
-                    if(bm->M_est_method == Z_and_F_based) {
-                        Record_End_Num(bm, species);
-                    }
-                    
 					Init_Aging_Arrays(bm, species, stock_id, maxstock_id, llogfp);
 
 					/* Add the cohort that is maturing (if senescent they will just age out of the system and die) */
@@ -4630,13 +4447,11 @@ double Ecology_Do_External_InVert_Spawning(MSEBoxModel *bm, int species, int coh
 	int flagmother = (int) (FunctGroupArray[species].speciesParams[flagmother_id]);
 	double prop_mat = FunctGroupArray[species].scaled_FSPB[cohort];
 	double spawn_active = FunctGroupArray[species].speciesParams[FSP_id];
-    double flag_allow_spawn = 1.0;
 
 	/* If spawn outside model and in first dynamic box then add in spawning due to migrants */
 	if ((FunctGroupArray[species].externalReproducer) && ((bm->current_box == bm->first_box) && (bm->current_layer == bm->top_layer))) {
 		for (qid = MIGRATION[species].num_in_queue_done; qid < MIGRATION[species].num_in_queue; qid++) {
-            flag_allow_spawn = (double)(MIGRATION[species].ReprodAllowed[cohort][qid]);
-			MigSpawn = flag_allow_spawn * spawn_active * prop_mat * MIGRATION[species].DEN[cohort][qid]; // In this case DEN is the total biomass of the migrating group
+			MigSpawn = spawn_active * prop_mat * MIGRATION[species].DEN[cohort][qid]; // In this case DEN is the total biomass of the migrating group
 
 			/* Update biomass left in migrating cohort */
 			if (flagmother < 0) {
@@ -4827,9 +4642,6 @@ void Ecology_Update_Invert_Cohorts(MSEBoxModel *bm, FILE *llogfp) {
 						bm->calcTrackedMort[species][n][k][ongoingM2_id] = 0.0;
 						bm->calcTrackedMort[species][n][k][ongoingF_id] = 0.0;
 						bm->calcTrackedMort[species][n][k][start_id] = 0.0;
-                        
-                        FunctGroupArray[species].min_B[n] = MAXDOUBLE;
-                        FunctGroupArray[species].max_B[n] = MINDOUBLE;
 
 					}
 					for (ij = 0; ij < bm->nbox; ij++) {
@@ -4886,10 +4698,9 @@ void Ecology_Update_Invert_Cohorts(MSEBoxModel *bm, FILE *llogfp) {
  *
  */
 void Find_Final_Invert_Recruit_Distribtuion(MSEBoxModel *bm, int species, int ngene, int qid, int stock_id, double spawned_biomass, int wclayer, FILE *llogfp) {
-	int recruit_outside = 0, cohort = 0, bcohort = 0;
+	int recruit_outside = 0, pid = 0, cohort = 0, bcohort = 0;
 	//int qid = EMBRYO[species].latest_in_larval_queue;
-    int mid = 0;
-    //int pid;
+	int mid = 0;
 	double thisday = 0;
 	double hab_scalar = Get_Habitat_Mediated_Recruit_Scalar(bm, species, llogfp);
 
@@ -4934,7 +4745,7 @@ void Find_Final_Invert_Recruit_Distribtuion(MSEBoxModel *bm, int species, int ng
 						cohort = (FunctGroupArray[species].numGeneTypes * bcohort) + ngene;
 						//thisday = (double)(EMBRYO[species].Spawn_Now[cohort][EMBRYO[species].next_spawn]);
                         thisday = (double)EMBRYO[species].StartDay[cohort][EMBRYO[species].next_recruit];
-						//pid = FunctGroupArray[species].cohort_stage[cohort];
+						pid = FunctGroupArray[species].cohort_stage[cohort];
                         
 						/* Recruit while outside the model */
 						if ((MIGRATION[species].Return_Now[mid] >= thisday) && (MIGRATION[species].Leave_Now[qid] <= thisday)) {
@@ -5149,7 +4960,7 @@ void Update_Invert_Aging(MSEBoxModel *bm, double *localWCTracers, int species, i
  */
 void Update_Invert_Cohorts(MSEBoxModel *bm, int species, int stock_id, int maxstock_id, FILE *llogfp) {
 	int i = 0, k = 0, classize = 1, sp_recruitpeak = 0, cohort = 0, qid;
-	double totksum = 0, sp_recruitRange = 0, this_totsum = 0, maxvalue = 0;
+	double totksum = 0, sp_recruitRange = 0, totsum = 0, maxvalue = 0;
 	double sp_AgeClassSize = (double)(FunctGroupArray[species].ageClassSize);
     
     if ((int) (sp_AgeClassSize) == 0)
@@ -5180,19 +4991,19 @@ void Update_Invert_Cohorts(MSEBoxModel *bm, int species, int stock_id, int maxst
 				/* Nothing to do as want to keep local distributions unchanged */
 			} else {
 				/* Site attached case done box by box */
-				this_totsum = 0;
+				totsum = 0;
 				for (k = 0; k < classize; k++) {
-                    this_totsum += bm->tempPopRatio[stock_id][species][cohort][k] ;
+                    totsum += bm->tempPopRatio[stock_id][species][cohort][k] ;
 				}
                 for (qid = MIGRATION[species].num_in_queue_done; qid < MIGRATION[species].num_in_queue; qid++) {
-                    this_totsum += MIGRATION[species].aging[cohort][qid];
+                    totsum += MIGRATION[species].aging[cohort][qid];
                 }
 
-				if (!this_totsum){
-					this_totsum = small_num;
+				if (!totsum){
+					totsum = small_num;
 					//quit("%s-%d had ltotsum = 0\n", FunctGroupArray[species].groupCode, cohort);
 				}
-				fprintf(bm->logFile, "species %s, totsum = %e\n",FunctGroupArray[species].groupCode, this_totsum);
+				fprintf(bm->logFile, "species %s, totsum = %e\n",FunctGroupArray[species].groupCode, totsum);
 
 				/* Normalise and find maximum entry */
 				maxvalue = -MAXDOUBLE;
@@ -5204,9 +5015,9 @@ void Update_Invert_Cohorts(MSEBoxModel *bm, int species, int stock_id, int maxst
                         for (qid = MIGRATION[species].num_in_queue_done; qid < MIGRATION[species].num_in_queue; qid++) {
                             bm->tempPopRatio[stock_id][species][cohort][k] += MIGRATION[species].aging[cohort][qid];
                         }
-                        bm->tempPopRatio[stock_id][species][cohort][k] /= (this_totsum + small_num);
+                        bm->tempPopRatio[stock_id][species][cohort][k] /= (totsum + small_num);
 					} else
-						bm->tempPopRatio[stock_id][species][cohort][k] /= (this_totsum + small_num);
+						bm->tempPopRatio[stock_id][species][cohort][k] /= (totsum + small_num);
 
 					if (bm->tempPopRatio[stock_id][species][cohort][k] > maxvalue)
 						maxvalue = bm->tempPopRatio[stock_id][species][cohort][k];

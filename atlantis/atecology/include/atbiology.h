@@ -103,7 +103,7 @@ extern double Susp_Sed, tot_dyn_sea_area,
 	DRdepth, O2depth, newO2depth, Enviro_turb, current_layer_sed, eddy_strength,
 	BioirrigEnh, BioturbEnh, Turbatn_contribs, Irrig_contribs, cell_depth,
 	H2Otemp, current_SALT, current_PH, init_PH, Bact_stim, current_depth, area_reef, area_flat, LocalRugosity,
-	area_canyon, area_box, area_soft, current_SALT, current_ARAG, current_WIND;
+	area_canyon, area_box, area_soft, current_SALT, current_ARAG;
 
 extern int numwcvar, numepivar, numlandvar, numdiagvar, numfstatvar, numicevar, first_year, idum;
 
@@ -156,9 +156,7 @@ Local Modelling variables
 */
 
 
-extern int **recover_help, **starve_vert, **nSTOCK, **shiftVERTON, **prey_counted, *mig_returners, *active_den, *not_finished, *ngene_done, *stock_done;
-//extern *mig_status;
-
+extern int **recover_help, **starve_vert, **nSTOCK, **counted, **shiftVERTON;
 
 extern double ***AGE_stock_struct_prop, // Also updated in Prepare_Age_Distrib - used to store the normalised distribution of the cohort species across each stock
 	****newden, ***init_stock_struct_prop, ****recVERTpopratio,
@@ -166,18 +164,13 @@ extern double ***AGE_stock_struct_prop, // Also updated in Prepare_Age_Distrib -
 	***BEDchange, ***Vchange, ***pSTOCK, ***totrecruit,
 	**VERTabund_check, **sumSTOCK, **Tchange, **roc,
 	**spSTOCKprop, **recSTOCK, **tot_yoy, ***VERTinfo,
-	**stock_prop, **totden, **recruit_vdistrib, **totden_check,
-	**tempdistrib, **PHchange, **Schange, *adults_spawning,
-	*sizeMinMax, **SUPPdistrib, *recover_help_set, *BED_scale,
-	***PREYinfo, ***GRAZEinfo, ***EATINGinfo, **KDENR, *yoy,
+	**stock_prop, **totden, **recruit_vdistrib,
+	**tempdistrib, **PHchange, **Schange,
+	*sizeMinMax, *adults_spawning, **SUPPdistrib,
+	*recover_help_set, *BED_scale, **KDENR,
+	***PREYinfo, ***GRAZEinfo, ***EATINGinfo,
 	***FEEDinfo, **step1distrib, **CATCHEATINGinfo,
-	**CATCHGRAZEinfo, **boxden, ****currentden, **leftden, *newden_sum,
-    ***preyamt, *totad, *totboxden, *totroc, *lostden_zero, *totsum,
-    *totksum, *tot_new_mat, *coming_SPden, *numbers_entering,
-    *numbers_already_present, **totdenCheck;
-
-extern double *initialIceBiomass, *initialLandBiomass, *initialBiomass,
-    *initialSedBiomass, *initialEpiBiomass, *initialWaterBiomass;
+	**CATCHGRAZEinfo;
 
 extern double ****readinpopratio;
 

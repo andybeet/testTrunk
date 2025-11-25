@@ -139,82 +139,6 @@ void RegionalTACXML(MSEBoxModel *bm, char *fileName, xmlNodePtr parent, char *st
 	Util_XML_Set_Node_Value(ATLANTIS_GROUP_ATTRIBUTE, parent, FunctGroupArray[speciesIndex].groupCode, valueStr);
 }
 
-/**
- *    \brief Create the XML structure to hold the co_sp_catch data.
- *
- *
- *    <co_sp_catch>
- *        <FPL>
- *            <companion1>
- *            </companion1>
- *            <companion2>
- *            </companion2>
- *        </FPL>
- *
- *    </co_sp_catch>
- *
- */
-void Init_Co_Sp_CatchXML(MSEBoxModel *bm, xmlNodePtr parent) {
-
-    xmlNodePtr groupNode;
-    int guild, co_sp;
-    char str[50];
-
-    /* Create a node for each functional group*/
-    for (guild = 0; guild < bm->K_num_tot_sp; guild++) {
-        if (FunctGroupArray[guild].isFished == TRUE) {
-            groupNode = Util_XML_Create_Node(ATLANTIS_GROUP_ATTRIBUTE, parent, FunctGroupArray[guild].groupCode, "", "", "");
-
-            for (co_sp = 0; co_sp < bm->K_max_co_sp; co_sp++) {
-                sprintf(str, "companion%d", co_sp + 1);
-                Util_XML_Create_Node(ATLANTIS_COMPANION_ATTRIBUTE, groupNode, str, "", "", "");
-            }
-        }
-    }
-}
-
-void Co_Sp_CatchXMLFunction(MSEBoxModel *bm, char *fileName, xmlNodePtr parent, char *str, char *valueStr) {
-
-    int cospIndex;
-    char *lastLetter;
-    char *secondlastLetter;
-    char speciesStr[50];
-    int i;
-    char step1Str[50];
-    char tempStr[50];
-    char attributeName[100];
-    int speciesIndex;
-    xmlNodePtr speciesNode;
-
-    // Find stock index
-    strcpy(tempStr, str);
-    strcpy(step1Str, str);
-    lastLetter = step1Str + strlen(step1Str) - 1;
-    secondlastLetter = step1Str + strlen(step1Str) - 2;
-
-    if(isdigit(secondlastLetter[0])) {  // Is the first digit a number if yes then a two digit case
-        cospIndex = atoi(secondlastLetter);
-        tempStr[strlen(secondlastLetter) - strlen("_co_sp_catch") - 2] = '\0';        
-    } else {  // No make it a single string case
-        cospIndex = atoi(lastLetter);
-        tempStr[strlen(tempStr) - strlen("_co_sp_catch") - 1] = '\0';
-    }
-
-    printf("Checking string %s\n", tempStr);
-    
-    // Get the species string section of the string.
-    for (i = 0; isalpha(tempStr[i]); i++) {
-        speciesStr[i] = tempStr[i];
-    }
-    speciesStr[i] = '\0';
-    speciesIndex = Util_Get_FG_Index_From_Token(bm, speciesStr, fileName, str, TRUE);
-    speciesNode = Util_XML_Get_Or_Create_Node(ATLANTIS_GROUP_ATTRIBUTE, parent, FunctGroupArray[speciesIndex].groupCode);
-
-    sprintf(attributeName, "companion%d", cospIndex);
-    Util_XML_Set_Node_Value(ATLANTIS_COMPANION_ATTRIBUTE, speciesNode, attributeName, valueStr);
-
-}
-
 void MakeBasketTACXML(MSEBoxModel *bm, char *fileName, xmlNodePtr parent, char *str, char *valueStr) {
 
     char *groupStr;
@@ -311,7 +235,7 @@ void createImpactedSpeciesParam(MSEBoxModel *bm, char *fileName, xmlNodePtr pare
 		if (FunctGroupArray[speciesIndex].isImpacted == TRUE) {
 
 			if (varstr == NULL) {
-				quit("ERROR: createImpactedSpeciesParam - Parameter %s is not the required length in file %s. A value is required for each impacted group.\n", str, fileName);
+				quit("ERROR: Parameter %s is not the required length in file %s. A value is required for each impacted group.\n", str, fileName);
 			}
 
 			/* get the species node */
@@ -337,7 +261,7 @@ void createFishedSpeciesParam(MSEBoxModel *bm, char *fileName, xmlNodePtr parent
 		if (FunctGroupArray[speciesIndex].isFished == TRUE) {
 
 			if (varstr == NULL) {
-				quit("ERROR: createFishedSpeciesParam - Parameter %s is not the required length in file %s. A value is required for each fished group.\n", str, fileName);
+				quit("ERROR: Parameter %s is not the required length in file %s. A value is required for each fished group.\n", str, fileName);
 			}
 
 			/* get the species node */
@@ -361,7 +285,7 @@ void createSpeciesParam(MSEBoxModel *bm, char *fileName, xmlNodePtr parent, char
 			varstr = strtok(NULL, seps);
 
 		if (varstr == NULL) {
-			quit("ERROR: createSpeciesParam - Parameter %s is not the required length in file %s. A value is required for each functional group.\n", str, fileName);
+			quit("ERROR: Parameter %s is not the required length in file %s. A value is required for each functional group.\n", str, fileName);
 		}
 
 		/* get the species node */
@@ -440,7 +364,6 @@ void ManamentFlagTimeXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr do
 
     Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flagkeepZeroCatchTS", "", "", XML_TYPE_BOOLEAN,"0");
     
-	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flagSSBforHCR", "1=use SBB for HCR, 0=use total B for HCR", "", XML_TYPE_BOOLEAN,"0");
 	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flagendangered", "1=endangered group status effect effort allocation, 0=off", "", XML_TYPE_BOOLEAN,"0");
 	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flagmpa", " 0=no mpa for any group, 1=mpas for at least one group", "", XML_TYPE_BOOLEAN,"0");
 	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flaginfringe", "0=no infringement, 1=infringement of mpas", "", XML_TYPE_BOOLEAN,"0");
@@ -453,27 +376,12 @@ void ManamentFlagTimeXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr do
 
 	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_sel_with_mFC", "Flag indicating whether use selectivity to indicate ages where fishing mortality applied", "", XML_TYPE_BOOLEAN,"0");
 	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_stop_F_tac", "Flag indicating whether use TAC to limit fishing where fishing mortality applied", "", XML_TYPE_BOOLEAN,"0");
-
-    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "maxF_aggregate", "Flag to do with system cap calculations - indicagging whether want maxF as sum over mFC or max of mFC", "", XML_TYPE_BOOLEAN,"0");
-    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "use_time_avg_biom", "Flag to do with system cap calculations -  if using B not N in calculating expected catch, is whether use avg min,max B stored over the year or rolling_B", "", XML_TYPE_BOOLEAN,"0");
-    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "use_time_avg_wgt", "Flag to do with system cap calculations -  if using N not B in calculating expected catch, is whether use avg min,max wgt stored over the year or rolling_wgt ", "", XML_TYPE_BOOLEAN,"0");
-    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "syst_cap_calc_method", "Flag to do with system cap calculations  - whether use numbers based application of the catch equation or just average B", "", XML_TYPE_INTEGER,"0");
-    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "M_est_method", "Flag to do with system cap calculations - which option for calculating M", "", XML_TYPE_INTEGER,"0");
-    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "Ecosystm_Cap_tonnes", "Value of ecosystem catch cap in tonnes", "", XML_TYPE_FLOAT,"0");
-    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "K_cap_rolling_period", "Period in years of the period used in calculating rollign average weight and biomass", "", XML_TYPE_FLOAT,"0");
-
-    // Needed in defining arrays so read in immediately - use K_rolling_cap_num to define size of the array assumign monthly updates
-    bm->K_cap_rolling_period = (Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, groupingNode, no_checking, "K_cap_rolling_period"));
-    bm->K_rolling_cap_num = (int)(ceil(bm->K_cap_rolling_period * 12.0));
-    if(!bm->K_rolling_cap_num) {
-        bm->K_rolling_cap_num = 1;
-    }
-
+    
 	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "dynDAS", "Dynamic Days at Sea flag.", "", XML_TYPE_BOOLEAN,"0");
 
 	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flagreinitpop", "0=virgin biomass calc day 0, 1=calc on user specified day", "", XML_TYPE_BOOLEAN,"0");
 	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "pseudo_assess", "1=use pseudo assessment not assessment library code", "", XML_TYPE_BOOLEAN,"0");
-    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "do_sumB_HCR", "0 = at species level individual, 1=sum species in co_sp and apply any F responses to entire guild they define, 2=Alaska style system cap", "", XML_TYPE_INTEGER,"0");
+    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "do_sumB_HCR", "1=sum species in co_sp and apply any F responses to entire guild they define", "", XML_TYPE_BOOLEAN,"0");
 
 	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flagTACincludeDiscard", "Flag indicating whether or not TAC includes discards or just landed catch (1=yes, 0=no)",
 			"", XML_TYPE_BOOLEAN,"1");
@@ -744,14 +652,12 @@ void TACXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr doc, xmlNodePtr
 	Util_XML_Parse_Create_Node(fp, fileName, childGroupingNode, "targ_refB", "Target reference point - tier2", "", XML_TYPE_FLOAT, "");
 	Util_XML_Parse_Create_Node(fp, fileName, childGroupingNode, "targ_refC", "Target reference point - tier3", "", XML_TYPE_FLOAT, "");
 	Util_XML_Parse_Create_Node(fp, fileName, childGroupingNode, "targ_refD", "Target reference point - tier4", "", XML_TYPE_FLOAT, "");
-    Util_XML_Parse_Create_Node(fp, fileName, childGroupingNode, "targ_refE", "Target reference point - tier4", "", XML_TYPE_FLOAT, "");
 	Util_XML_Parse_Create_Node(fp, fileName, childGroupingNode, "lim_ref", "Limit reference point", "", XML_TYPE_FLOAT, "");
 
 	Util_XML_Parse_Create_Node(fp, fileName, childGroupingNode, "forage_refA", "Forage target reference point - tier1", "", XML_TYPE_FLOAT, "");
 	Util_XML_Parse_Create_Node(fp, fileName, childGroupingNode, "forage_refB", "Forage target reference point - tier2", "", XML_TYPE_FLOAT, "");
 	Util_XML_Parse_Create_Node(fp, fileName, childGroupingNode, "forage_refC", "Forage target reference point - tier3", "", XML_TYPE_FLOAT, "");
 	Util_XML_Parse_Create_Node(fp, fileName, childGroupingNode, "forage_refD", "Forage target reference point - tier4", "", XML_TYPE_FLOAT, "");
-    Util_XML_Parse_Create_Node(fp, fileName, childGroupingNode, "forage_refE", "Forage target reference point - tier4", "", XML_TYPE_FLOAT, "");
 	Util_XML_Parse_Create_Node(fp, fileName, childGroupingNode, "forage_lim_ref", "Forage limit reference point", "", XML_TYPE_FLOAT, "");
 
     Util_XML_Parse_Create_Node(fp, fileName, childGroupingNode, "byproduct_refA", "Byproduct target reference point - tier1", "", XML_TYPE_FLOAT, "");
@@ -792,21 +698,8 @@ void TACXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr doc, xmlNodePtr
 
     Util_XML_Create_Node_Next_Line(fp, fileName, childGroupingNode, "Fref_High", "Fishing rate (F) that equates with BrefA (i.e.F to apply if B > Bref)", "", XML_TYPE_FLOAT);
     
-    Util_XML_Create_Node_Next_Line(fp, fileName, childGroupingNode, "FrefLim", "Fishing rate (F) that is the F once the stocks statis is below Blim", "", XML_TYPE_FLOAT);
-    
     Util_XML_Create_Node_Next_Line(fp, fileName, childGroupingNode, "Frestart_scalar", "Scalar on original mFC that becomes the new F after fishery reopened", "", XML_TYPE_FLOAT);
     
-    childGroupingNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, rootnode, "SystemCap_Parameters",
-            "Settingd for system cap related management", "", "");
-
-    Util_XML_Create_Node_Next_Line(fp, fileName, childGroupingNode, "FlagSystCapSP", "Flag for whether included in system cap or not", "", XML_TYPE_FLOAT);
-    
-    Util_XML_Create_Node_Next_Line(fp, fileName, childGroupingNode, "SystCapSPpref", "Weighting on species to consider in reallocaiton and ductions in response to exceeding the cap - 1 is low prioroity, number greater than 1 is a higher priority", "", XML_TYPE_FLOAT);
-    
-    if(!do_assess) {
-        Util_XML_Create_Node_Next_Line(fp, fileName, childGroupingNode, "FixedAssessMort", "Fixed assessment M assumed for use in calculating the System Cap associated expected catches - overwritten with the assess_nat_mort vector values if assess.prm included in the run command", "", XML_TYPE_FLOAT);
-    }
- 
 	node = Create_Species_ParamXML(bm, fileName, fp, groupingNode, tier_id,
 				"Harvest strategy tier for RBC setting (only >0 if dynamically setting TACs). \n0 = whinging harvest strategy, 1-4 = tier 1-4, tier 5 = ecological indicator based",
 				"", XML_TYPE_LOOKUP, "0");
@@ -861,11 +754,44 @@ void TACXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr doc, xmlNodePtr
 
 	Create_Species_ParamXML(bm, fileName, fp, groupingNode, basketSP_id, "Basket quotas flag", "", XML_TYPE_BOOLEAN,"0");
 	Create_Species_ParamXML(bm, fileName, fp, groupingNode, basket_size_id, "Number of each groups in the quota", "", XML_TYPE_INTEGER, "1");
-    
+
+	Parse_File(
+			bm,
+			fp,
+			fileName,
+			groupingNode,
+			"BasketTAC",
+			"^basketTAC_",
+			"Basket quota membership (entries should be the guild id numbers (see top of file for values) for each species in the basket other than the basket_TACFxx group (i.e. in basketTAC_FPS do not put the code for FPS, only the species other than FPS in the basket with FPS). For an entry of 'no other species' (i.e. single species quota) put in a single entry with value -1. Array length should be BasketSize for each species.",
+			"", XML_TYPE_FLOATARRAY, bm->K_num_basket, TRUE, Create_Fished_Species_XMLNodes, MakeBasketTACXML);
+
+	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "max_co_sp", "Maximum number of companions in a companion TAC", "", XML_TYPE_INTEGER, "2");
+	bm->K_max_co_sp = (int)Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, groupingNode, integer_check, "max_co_sp");
+
+	Parse_File(
+			bm,
+			fp,
+			fileName,
+			groupingNode,
+			"CompanionSpecies",
+			"^co_sp_[A-Z]{2,3}",
+			"Identity of companions in companion TAC - for all entries must have as many entries as for max_co_sp. \nIf there are not enough (or any) companions then for all extra entries enter companion as -1. For those WITH companions entries to the ID numbers of the companion then enter -1 to fill up the rest of the array. \nFor example if max_co_sp = 2 and the companions for FXX were FPS and FVV \nco_sp_FXX    2\n2 4",
+			"", XML_TYPE_INTEGERARRAY, -1, TRUE, Create_Fished_Species_XMLNodes, Fix_Not_Fished_Species_Last_XMLFunction);
+
+
+	Create_Species_ParamXML(bm, fileName, fp, groupingNode, coType_id, "Type of companion TAC (0 = weakest link dictates quota, 1 = strongest link dictates quota)", "", XML_TYPE_BOOLEAN,"1");
+
 	Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "bulkTAC", "Whether multi-year TACs are one total for the entire period or if it is annual quota to track just not doing an assessment for x years", "", XML_TYPE_BOOLEAN, "");
 
 	Create_Species_ParamXML(bm, fileName, fp, groupingNode, tac_resetperiod_id, "Multi-year TAC - time (in years between resets)", "", XML_TYPE_FLOAT,"1");
 
+//	createHarvestGroupParamXML(bm, fileName, fp, groupingNode, coType_id, "CompanionTACType", "^coType_",
+//			"Type of companion TAC (0 = weakest link dictates quota, 1 = strongest link dictates quota)", "", XML_TYPE_BOOLEAN,"1");
+
+	Create_Harvest_Fishery_Group_ParamXML(bm, fp, fileName, groupingNode, co_sp_catch_id,
+			"Vectors indicating ratio of catch of companion group identified above with each group in each fishery", "", XML_TYPE_FLOATARRAY);
+	Create_Harvest_Fishery_Group_ParamXML(bm, fp, fileName, groupingNode, co_sp_catch2_id,
+			"Vectors indicating ratio of catch of second companion group identified above with each group in each fishery", "", XML_TYPE_FLOATARRAY);
 	Create_Harvest_Fishery_Group_ParamXML(
 			bm,
 			fp,
@@ -886,37 +812,6 @@ void TACXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr doc, xmlNodePtr
 			"SP_Concern",
 			"Identification of groups of concern - those groups regarded as threatened. If the stock of these groups falls too low then fisheries may be closed. A 1=threatened, 0=ignore",
 			"", XML_TYPE_BOOLEANARRAY, bm->K_num_tot_sp, TRUE, Create_Impacted_Species_XMLNodes, createImpactedSpeciesParam);
-    
-    
-    Parse_File(
-            bm,
-            fp,
-            fileName,
-            groupingNode,
-            "BasketTAC",
-            "^basketTAC_",
-            "Basket quota membership (entries should be the guild id numbers (see top of file for values) for each species in the basket other than the basket_TACFxx group (i.e. in basketTAC_FPS do not put the code for FPS, only the species other than FPS in the basket with FPS). For an entry of 'no other species' (i.e. single species quota) put in a single entry with value -1. Array length should be BasketSize for each species.",
-            "", XML_TYPE_FLOATARRAY, bm->K_num_basket, TRUE, Create_Fished_Species_XMLNodes, MakeBasketTACXML);
-
-    groupingNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, rootnode, "Companion_Parameters", "Companion Catch Parameters", "", "");
-
-    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "K_max_co_sp", "Maximum number of companions in a companion TAC", "", XML_TYPE_INTEGER, "2");
-    bm->K_max_co_sp = (int)Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE,  bm->ecotest, 1, groupingNode, integer_check, "K_max_co_sp");
-    
-    if (bm->K_max_co_sp > 0) {
-        Create_Species_ParamXML(bm, fileName, fp, groupingNode, max_co_sp_id, "Number of companion species for this fished species", "", XML_TYPE_INTEGER,"1");        
-
-        // Old verion when had fixed limit to the number of fishable spp
-        // Parse_File( bm, fp, fileName, groupingNode, "CompanionSpecies", "^co_sp_[A-Z]{2,3}", "Identity of companions in companion TAC - for all entries must have as many entries as for max_co_sp. \nIf there are not enough (or any) companions then for all extra entries enter companion as -1. For those WITH companions entries to the ID numbers of the companion then enter -1 to fill up the rest of the array. \nFor example if max_co_sp = 2 and the companions for FXX were FPS and FVV \nco_sp_FXX    2\n2 4", "", XML_TYPE_INTEGERARRAY, -1, TRUE, Create_Fished_Species_XMLNodes, Fix_Not_Fished_Species_Last_XMLFunction);
-        Parse_File( bm, fp, fileName, groupingNode, "CompanionSpecies", "^co_sp_[A-Z]{2,3}", "Identity of companions in companion TAC - for all entries must have as many entries as for max_co_sp. \nIf there are not enough (or any) companions then for all extra entries enter companion as -1. For those WITH companions entries to the ID numbers of the companion then enter -1 to fill up the rest of the array. \nFor example if max_co_sp = 2 and the companions for FXX were FPS and FVV \nco_sp_FXX    2\n2 4", "", XML_TYPE_INTEGERARRAY, -1, TRUE, Create_Fished_Species_XMLNodes, Species_Last_XMLFunction);
-
-
-        Create_Species_ParamXML(bm, fileName, fp, groupingNode, coType_id, "Type of companion TAC (0 = weakest link dictates quota, 1 = strongest link dictates quota)", "", XML_TYPE_BOOLEAN,"1");
-        
-        Parse_File(bm, fp, fileName, groupingNode, "co_sp_catch", "^[A-Z]{2,3}_co_sp_catch[1-9]{1,2}","Ratio of catch of companions in companion TAC - for all entries must have as many entries as there are fisheries. \nOne vctor is required per companion species.", "", XML_TYPE_FLOATARRAY, bm->K_num_fisheries, TRUE, Init_Co_Sp_CatchXML, Co_Sp_CatchXMLFunction);
-
-    }
-
 
 }
 
@@ -1141,38 +1036,6 @@ void SpatialManagementXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr d
 
 }
 
-/* Fisheries contaminant management */
-void ContaminantFisheryXML(MSEBoxModel *bm, FILE *fp, char *fileName, xmlDocPtr doc, xmlNodePtr rootnode) {
-    int cIndex;
-    char varStr[STRLEN*2];
-    char longStr[2*STRLEN];
-
-    xmlNodePtr groupingNode;
-    groupingNode = Util_XML_Create_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, rootnode, "Fishery_Contaminant_Parameters", "Parameters for contaminant closures", "", "");
-
-    /* not sure this is going to give the correct array length */
-    Util_XML_Create_Node_Next_Line(
-            fp,
-            fileName,
-            groupingNode,
-            "ContamClosed",
-            "Sites closed due to a contaminant spill",
-            "", XML_TYPE_BOOLEANARRAY);
-
-    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "flag_contam_fisheries_mgmt", "FLag indicating which kind of closure management to use with contaminant spills", "", XML_TYPE_INTEGER, "1");
-    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "contam_fishery_closure_day", "Day closure due to spill begins", "", XML_TYPE_INTEGER, "1");
-    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "contam_fishery_closure_period", "Length of fishery closure due to spill", "", XML_TYPE_INTEGER, "1");
-    Util_XML_Parse_Create_Node(fp, fileName, groupingNode, "contam_fishery_closure_option", "Option that defines how the fishery is closed due to a spill", "", XML_TYPE_INTEGER, "1");
-
-    for(cIndex = 0; cIndex < bm->num_contaminants; cIndex++){
-        sprintf(varStr, "%s_fishery_thresh_level", bm->contaminantStructure[cIndex]->contaminant_name);
-        sprintf(longStr, "Concentration of contaminant %s where fishery closed", bm->contaminantStructure[cIndex]->contaminant_name);
-        Util_XML_Parse_Create_Node(fp, fileName, groupingNode, varStr, longStr, "", XML_TYPE_FLOAT, "");
-    }
-
-}
-
-
 
 void Convert_Management_To_XML(MSEBoxModel *bm, char *fileName, char *outputFileName) {
 	xmlDocPtr doc;
@@ -1211,9 +1074,6 @@ void Convert_Management_To_XML(MSEBoxModel *bm, char *fileName, char *outputFile
 	ManagementPerformanceIndicatorsXML(bm, fp, fileName, doc, rootnode);
 	SpatialManagementXML(bm, fp, fileName, doc, rootnode);
 	GearConflictXML(bm, fp, fileName, doc, rootnode);
-    if(bm->track_contaminants) {
-        ContaminantFisheryXML(bm, fp, fileName, doc, rootnode);
-    }
 
 	// Moved TierAssessmentXML creation from here to assessment file part
 

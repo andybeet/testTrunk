@@ -151,8 +151,7 @@ void Parameter_Q10(MSEBoxModel *bm, Box *pBox, double dayt, int numwclayer, doub
 	/* Calculate the TCorr value for each group */
 	for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
 		FunctGroupArray[sp].Tcorr = Get_Tcorr(bm, sp, H2Otemp, &bm->current_corr);
-        FunctGroupArray[sp].TcorrEff = FunctGroupArray[sp].Tcorr;
-        
+
 		/** Include pH and salinity modifiers if desired **/
 		FunctGroupArray[sp].Scorr = Get_Scorr(bm, sp, current_SALT);
 		FunctGroupArray[sp].pHcorr = Get_pHcorr(bm, sp, current_PH, pBox->n, clayer);
@@ -184,84 +183,32 @@ void Parameter_Q10(MSEBoxModel *bm, Box *pBox, double dayt, int numwclayer, doub
  */
 double Get_Tcorr(MSEBoxModel *bm, int sp, double current_temp, double *current_corr) {
 	double ans = 1.0;
-	double step1, step2, step3, step4, stepA, stepB, stepC;
+	double step1, step2;
 	double opt_temp;
-	double temp_const_A = 0.0, temp_const_B = 0.0;
-    int q10flag = (int)(FunctGroupArray[sp].speciesParams[q10_method_id]);
+	double temp_const_A = 0.0;
 
 	if (bm->flagq10) {
 		/* Now check the type of q10 correction that we are doing for this group */
-		switch (q10flag) {
-            case base_q10_id: /* Basic q10 relationship */
-                ans = (double)pow(FunctGroupArray[sp].speciesParams[q10_id], (*current_corr));
-                break;
-            case humped_griffith_q10_id: /* Humped shape from Hary Griffith */
-                // Equation from Gary G - Tdep_di=log(2)*0.851*(1.066.^T_i).*exp(-((abs(T_i-T_opt_nitzschia)).^3)./1000);
-                temp_const_A = (double) FunctGroupArray[sp].speciesParams[temp_coefftA_id];
-                opt_temp = (double) FunctGroupArray[sp].speciesParams[q10_optimal_temp_id];
-                step1 = log(2) * temp_const_A * pow(bm->temp_const_B,current_temp);
-                step2 = exp(-bm->temp_const_C * (pow(fabs(current_temp - opt_temp), bm->temp_const_D) / FunctGroupArray[sp].speciesParams[q10_correction_id]));
-                *current_corr = current_temp - opt_temp;
+		if (FunctGroupArray[sp].speciesParams[q10_method_id] > 0) {
 
-                ans = step1 * step2;
-                
-                //                fprintf(bm->logFile, "FunctGroupArray[sp].speciesParams[q10_correction_id] = %e, opt_temp = %e\n",FunctGroupArray[sp].speciesParams[q10_correction_id], opt_temp);
-                //                fprintf(llogfp, "ParameterQ10 - opt_temp = %e, current_temp, = %e, FunctGroupArray[%d].Tcorr  = %e, step1 = %e, step2 = %e\n",opt_temp, current_temp, sp, FunctGroupArray[sp].Tcorr, step1, step2);
-                break;
-            case Heinichen_q10_id:
-                /* Equation 4 from Heinichen et al. referencing Blanchard et al. 2012 referencing Gillooly et al. 2001; & Brown et al. 2004 */
-                // Tau = 2.71^(25.55-(0.63/((0.0000863*TinK[i]))))
-                step1 = 0.0000863 * (current_temp + 273.15); // Caren added: These constants are: Boltzman constant (0.0000863) & temperature conversion from Celsius to Kelvin (+273.15)
-                step2 = 25.55 - (0.63 / step1); // Caren added: These are values for activation energy constant (0.63) and a constant: c1=25.55
-                      
-                step3 = exp(step2);
+			// Equation from Gary G - Tdep_di=log(2)*0.851*(1.066.^T_i).*exp(-((abs(T_i-T_opt_nitzschia)).^3)./1000);
+			temp_const_A = (double) FunctGroupArray[sp].speciesParams[temp_coefftA_id];
+			opt_temp = (double) FunctGroupArray[sp].speciesParams[q10_optimal_temp_id];
+			step1 = log(2) * temp_const_A * pow(bm->temp_const_B,current_temp);
+			step2 = exp(-bm->temp_const_C * (pow(fabs(current_temp - opt_temp), bm->temp_const_D) / FunctGroupArray[sp].speciesParams[q10_correction_id]));
+			*current_corr = current_temp - opt_temp;
 
-                /*
-                if(sp == 45) {
-                  fprintf(bm->logFile, "Tau check: Day: %e, Species: %s, current_temp: %e, step1: %e, step2: %e, step3: %e, ans: %e", bm->dayt, FunctGroupArray[sp].groupCode, current_temp, step1, step2, step3);
-                }
-                 */
-               
-                opt_temp = FunctGroupArray[sp].speciesParams[q10_optimal_temp_id];
-               
-                // Equation #5 from Heinichen et al. 2022
-                stepA = 0.0000863 * (opt_temp + 273.15);
-                stepB = 25.55 - (0.63 / stepA);
-                stepC = exp(stepB);
-               
-                ans = 1.0 / (step3 / stepC); //scaled Tau
-                
-                /*
-                if(sp == 45) {
-                  fprintf(bm->logFile, "Scaled Tau check: Day: %e, Species: %s, opt_temp: %e, stepA: %e, stepB: %e, stepC: %e, ans: %e", bm->dayt, FunctGroupArray[sp].groupCode, opt_temp, stepA, stepB, stepC, ans);
-                }
-                */
+			ans = step1 * step2;
 
-                break;
-            case CEATTLE_q10_id:
-                // Equation from Wisconsin model used in CEATTLE
-                temp_const_A = (double) FunctGroupArray[sp].speciesParams[temp_coefftA_id];
-                opt_temp = (double) FunctGroupArray[sp].speciesParams[q10_optimal_temp_id];
-                temp_const_B = (double) FunctGroupArray[sp].speciesParams[q10_correction_id];
-                
-                step1 = log(temp_const_A)*(temp_const_B - opt_temp + 2);
-                step2 = log(temp_const_A)*(temp_const_B - opt_temp);
-                step3 = (pow(step2, 2) * pow((1 + pow((1 + 40/step1), 0.5)), 2)) / 400;
-                step4 = (temp_const_B - current_temp)/(temp_const_B - opt_temp);
-                
-                ans = pow(step4, step3) * exp(step3 * (1 - step4));
+//				fprintf(bm->logFile, "FunctGroupArray[sp].speciesParams[q10_correction_id] = %e, opt_temp = %e\n",FunctGroupArray[sp].speciesParams[q10_correction_id], opt_temp);
+//				fprintf(llogfp, "ParameterQ10 - opt_temp = %e, current_temp, = %e, FunctGroupArray[%d].Tcorr  = %e, step1 = %e, step2 = %e\n",opt_temp, current_temp, sp, FunctGroupArray[sp].Tcorr, step1, step2);
 
-                break;
-            default:
-                quit("How got here as code option not possible - q10 effect method can only be 0-2 and you have %d\n", (int)(FunctGroupArray[sp].speciesParams[q10_method_id]));
+		} else {
+			ans = (double)pow(FunctGroupArray[sp].speciesParams[q10_id], (*current_corr));
 		}
 	} else {
 		ans = 1.0;
 	}
-
-    // Always has to be non-negative, but don't make it zero as have to divide by it
-    if((ans < 0.0) || (!ans) || isnan(ans))
-      ans = small_num;
 
 	return ans;
 }
@@ -442,7 +389,6 @@ double Get_Pollutant_Corrections(MSEBoxModel *bm, int sp, int b, int clayer) {
 void Apply_Q10_Corrections(MSEBoxModel *bm) {
 	int sp, cohort, sp_q10eff;
 	double Tscalar = 1.0;
-    double TscalarEff = 1.0;
 	int sensitive_sp = 0;
 	int pHsensitive_sp = 0;
 	int stage = 0;
@@ -513,30 +459,23 @@ void Apply_Q10_Corrections(MSEBoxModel *bm) {
 				FunctGroupArray[sp].speciesParams[vla_id] = FunctGroupArray[sp].speciesParams[vla_T15_id] * FunctGroupArray[sp].Tcorr * FunctGroupArray[sp].Scorr * pHscalar * contamScalar * FunctGroupArray[sp].PolluteCorr;
 
 				sp_q10eff = (int) FunctGroupArray[sp].speciesParams[flagq10eff_id];
-                if((FunctGroupArray[sp].Tcorr * pHscalar) < 1.0) {
-                    Tscalar = FunctGroupArray[sp].Tcorr * pHscalar;
-                } else {
-                    Tscalar = 1.0 / (FunctGroupArray[sp].Tcorr * pHscalar);
-                }
-                
-                TscalarEff = 1.0 / (FunctGroupArray[sp].TcorrEff); // added Caren & Albi -- it will only be applied for temps warmer than the baseline so when TcorrEff is positive
+				if((FunctGroupArray[sp].Tcorr * pHscalar) < 1.0)
+					Tscalar = FunctGroupArray[sp].Tcorr * pHscalar;
+				else
+					Tscalar = 1.0 / (FunctGroupArray[sp].Tcorr * pHscalar);
 
-				if ((sp_q10eff == poorer_when_cool) && (bm->current_corr < 0.0)) {
+				if ((sp_q10eff == 1) && (bm->current_corr < 0.0)) {
 					FunctGroupArray[sp].speciesParams[E1_id] = FunctGroupArray[sp].speciesParams[E1orig_id] * Tscalar * FunctGroupArray[sp].Scorr * contamScalar;
 					FunctGroupArray[sp].speciesParams[E2_id] = FunctGroupArray[sp].speciesParams[E2orig_id] * Tscalar * FunctGroupArray[sp].Scorr * contamScalar;
 					FunctGroupArray[sp].speciesParams[E3_id] = FunctGroupArray[sp].speciesParams[E3orig_id] * Tscalar * FunctGroupArray[sp].Scorr * contamScalar;
 					FunctGroupArray[sp].speciesParams[E4_id] = FunctGroupArray[sp].speciesParams[E4orig_id] * Tscalar * FunctGroupArray[sp].Scorr * contamScalar;
-				} else if ((sp_q10eff == poorer_when_warm) && (bm->current_corr > 0.0)) {
+				} else if ((sp_q10eff == 2) && (bm->current_corr > 0.0)) {
 					FunctGroupArray[sp].speciesParams[E1_id] = FunctGroupArray[sp].speciesParams[E1orig_id] * Tscalar * FunctGroupArray[sp].Scorr * contamScalar;
 					FunctGroupArray[sp].speciesParams[E2_id] = FunctGroupArray[sp].speciesParams[E2orig_id] * Tscalar * FunctGroupArray[sp].Scorr * contamScalar;
 					FunctGroupArray[sp].speciesParams[E3_id] = FunctGroupArray[sp].speciesParams[E3orig_id] * Tscalar * FunctGroupArray[sp].Scorr * contamScalar;
 					FunctGroupArray[sp].speciesParams[E4_id] = FunctGroupArray[sp].speciesParams[E4orig_id] * Tscalar * FunctGroupArray[sp].Scorr * contamScalar;
-				} else if ((sp_q10eff == versus_baseline) && (bm->current_corr > 0.0)) { // added by Albi
-                    FunctGroupArray[sp].speciesParams[E1_id] = FunctGroupArray[sp].speciesParams[E1orig_id] * TscalarEff * FunctGroupArray[sp].Scorr * contamScalar;
-                    FunctGroupArray[sp].speciesParams[E2_id] = FunctGroupArray[sp].speciesParams[E2orig_id] * TscalarEff * FunctGroupArray[sp].Scorr * contamScalar;
-                    FunctGroupArray[sp].speciesParams[E3_id] = FunctGroupArray[sp].speciesParams[E3orig_id] * TscalarEff * FunctGroupArray[sp].Scorr * contamScalar;
-                    FunctGroupArray[sp].speciesParams[E4_id] = FunctGroupArray[sp].speciesParams[E4orig_id] * TscalarEff * FunctGroupArray[sp].Scorr * contamScalar;
-                }
+				}
+
 
 
 				//sensitive_sp = (int) (FunctGroupArray[sp].speciesParams[flagtempsensitive_id]);

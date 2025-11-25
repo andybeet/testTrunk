@@ -50,8 +50,8 @@ void Init_Migration(MSEBoxModel *bm, FILE *llogfp, int do_debug, int sp) {
     int endyr = (int) (ceil((bm->tstop - bm->tstart) / (365.0 * 86400.0)));
     double temp3, temp4, real_mig_length;
     int yr, migrationID, currentID, stage, sp_migrate, sp_Migrate_Time, sp_Migrate_Return, sp_Migrate_Time_orig, start_with_return, sp_Migrate_Years, this_YearsAway, mig_window, counter, this_currentID =0, potential_end_time, time_return, VarTime3, VarTime4, max_Return_Now, cohort, flagmother, motherstage, sp_Migrate_Time_chk, sp_Migrate_Return_chk, migID, b, ij, last_currentID;
-    //int matage;
-    //int last_return = -1;
+    int matage;
+    int last_return = -1;
     int nagemat = (int)(FunctGroupArray[sp].speciesParams[age_mat_id]);
     int dummmy_return = (int)(bm->tstop / 86400.0);
     int Highest_date;
@@ -79,7 +79,7 @@ void Init_Migration(MSEBoxModel *bm, FILE *llogfp, int do_debug, int sp) {
     for (stage = 0; stage < FunctGroupArray[sp].numStages; stage++) {
         for(migrationID = 0; migrationID < FunctGroupArray[sp].num_migrate; migrationID++){
             sp_Migrate_Years = (int) (MIGRATION[sp].MinYearsAway_Prm[stage][migrationID]);
-            //matage = (int) (FunctGroupArray[sp].speciesParams[age_mat_id] * FunctGroupArray[sp].ageClassSize);
+            matage = (int) (FunctGroupArray[sp].speciesParams[age_mat_id] * FunctGroupArray[sp].ageClassSize);
             
             sp_Migrate_Time = (int) (MIGRATION[sp].StartDay_Prm[stage][migrationID]);
             sp_Migrate_Return = (int) (MIGRATION[sp].EndDay_Prm[stage][migrationID]);
@@ -187,12 +187,11 @@ void Init_Migration(MSEBoxModel *bm, FILE *llogfp, int do_debug, int sp) {
                 MIGRATION[sp].IsPartialMigration[currentID] = MIGRATION[sp].IsPartialMigration_Prm[stage][migrationID];
                 MIGRATION[sp].PartialMinAge[currentID] = MIGRATION[sp].PartialMigration_MinPrm[stage][migrationID];
                 MIGRATION[sp].PartialMaxAge[currentID] = MIGRATION[sp].PartialMigration_MaxPrm[stage][migrationID];
-                
+
                 if(!stage) {
                     MIGRATION[sp].start_cohort[currentID] = 0;
                     for(cohort = 0; cohort < nagemat; cohort++) {
                         MIGRATION[sp].cohort_migrating[cohort][currentID] = 1; // Really only used in Leave_Now so ok if don't set to 1 for age classes might age into while away
-                        MIGRATION[sp].ReprodAllowed[cohort][currentID] = MIGRATION[sp].ReprodAllowedPrm[stage][migrationID];
                     }
                 } else {
                     MIGRATION[sp].start_cohort[currentID] = nagemat;
@@ -203,7 +202,6 @@ void Init_Migration(MSEBoxModel *bm, FILE *llogfp, int do_debug, int sp) {
                 
                 for(cohort = 0; cohort < FunctGroupArray[sp].numCohortsXnumGenes; cohort++){
                     MIGRATION[sp].all_go[cohort][currentID] = MIGRATION[sp].all_go[cohort][migrationID];
-                    MIGRATION[sp].ReprodAllowed[cohort][currentID] = MIGRATION[sp].ReprodAllowedPrm[stage][migrationID];
                 }
                 
                 for(ij=0; ij<bm->nbox; ij++) {
@@ -421,7 +419,7 @@ void Init_Migration(MSEBoxModel *bm, FILE *llogfp, int do_debug, int sp) {
         }
 
         /* Reinitialise */
-        //last_return = -1;
+        last_return = -1;
     }
     
     /* Set up the proportion aging - defalt values (can be updated as model runs) */
@@ -451,13 +449,13 @@ void Init_Migration(MSEBoxModel *bm, FILE *llogfp, int do_debug, int sp) {
         }
         **/
        
-        /** Error check printout **
-        if ((sp == 33) || ((sp > 8) && (sp < 12))) {
+        /** Error check printout **/
+        //if ((sp == 33) || ((sp > 8) && (sp < 12))) {
             for(cohort = 0; cohort < FunctGroupArray[sp].numCohortsXnumGenes; cohort++){
                 fprintf(llogfp, "Counter: %d, sp: %s-%d MigrateAway: %d, MigrateBack: %d num_migrate: %d multiyr_mig: %d MinYearsAway: %d cohort_migrating: %d leave_period: %d return_period: %d\n", counter,  FunctGroupArray[sp].groupCode, cohort, MIGRATION[sp].Leave_Now[counter], MIGRATION[sp].Return_Now[counter], FunctGroupArray[sp].num_migrate, FunctGroupArray[sp].multiyr_mig, MIGRATION[sp].MinYearsAway[counter], MIGRATION[sp].cohort_migrating[cohort][counter], MIGRATION[sp].Leave_Period[counter], MIGRATION[sp].Return_Period[counter]);
             }
-        }
-        **/
+        //}
+        /**/
     }
     
     /** FInal sanity check **/
@@ -489,7 +487,7 @@ void Update_Migration_Index(MSEBoxModel *bm, FILE *llogfp){
         for (counter = MIGRATION[species].num_in_queue_done; counter < MIGRATION[species].num_in_queue; counter++) {
             last_mig_done = migdone;
             migdone = 0;
-            if (check_day > (MIGRATION[species].Return_Now[counter] +  MIGRATION[species].Return_Period[counter] + 2)) { // +2 so have time for stagger to happen
+            if (check_day > (MIGRATION[species].Return_Now[counter] +  MIGRATION[species].Return_Period[counter] + 2)) { // +2 so have time dor stagger to happen
                 migdone++;
                 
                     
@@ -628,8 +626,7 @@ void Check_Migration(MSEBoxModel *bm){
                     MIGRATION[sp].DEN[b][counter] = MIGRATION[sp].InitDEN[b][0] / ngenes;
 
                     /**
-                    //if (bm->debug && (bm->which_check == sp)) {
-                    if (sp == 33) {
+                    if (bm->debug && (bm->which_check == sp)) {
                         fprintf(bm->logFile, "%s-%d Migration array [counter %d] num set to %e (SN: %e RN: %e) as ngenes: %e\n", FunctGroupArray[sp].groupCode, b, counter,
                             MIGRATION[sp].DEN[b][counter], MIGRATION[sp].SN[b][counter], MIGRATION[sp].RN[b][counter], ngenes);
                     }
@@ -697,12 +694,8 @@ void Init_Migration_Age_Check(MSEBoxModel *bm, FILE *llogfp, int do_debug, int s
                     age_away++;
             }
         }
-        
-        /**
-        if (sp == 33) {
-            fprintf(llogfp,"%s-%d age_away: %d vs num_aging_event: %f\n", FunctGroupArray[sp].groupCode, cohort, age_away, MIGRATION[sp].num_aging_event[qid]);
-        }
-        **/
+            
+        //fprintf(llogfp,"%s-%d age_away: %d vs num_aging_event: %f\n", FunctGroupArray[sp].groupCode, cohort, age_away, MIGRATION[sp].num_aging_event[qid]);
 
         if (age_away > MIGRATION[sp].num_aging_event[qid])
             MIGRATION[sp].num_aging_event[qid] = age_away;
@@ -766,15 +759,14 @@ void Init_Migration_Age_Check(MSEBoxModel *bm, FILE *llogfp, int do_debug, int s
                 MIGRATION[sp].DEN[nextcid][qid] += (p_ageup * MIGRATION[sp].DEN[cohort][qid]);
                 MIGRATION[sp].DEN[cohort][qid] -= (p_ageup * MIGRATION[sp].DEN[cohort][qid]);
                 
-                /**
-                //if ((sp == 48) || (sp == 63) || (sp == 64)) {
-                if (sp == 33) {
-                    fprintf(bm->logFile, "Init_Migration_Age_Check: %s-%d qid %d now has MIGden: %e MIGsn: %e, MIGrn: %e\n", FunctGroupArray[sp].groupCode, nextcid, qid, MIGRATION[sp].DEN[nextcid][qid], MIGRATION[sp].SN[nextcid][qid], MIGRATION[sp].RN[nextcid][qid]);
+                /*
+                if ((sp == 48) || (sp == 63) || (sp == 64)) {
+                    fprintf(bm->logFile, "Init_Migration_Age_Check Error: %s-%d qid %d now has MIGden: %e MIGsn: %e, MIGrn: %e please supply size values in KMIG arrays for sn and rn due to aging of migrants that occirs prior to the model start\n", FunctGroupArray[sp].groupCode, nextcid, qid, MIGRATION[sp].DEN[nextcid][qid], MIGRATION[sp].SN[nextcid][qid], MIGRATION[sp].RN[nextcid][qid]);
                 }
-                **/
+                */
 
                 if((MIGRATION[sp].DEN[nextcid][qid] > 0) && (isnan(MIGRATION[sp].SN[nextcid][qid]) || isnan(MIGRATION[sp].RN[nextcid][qid]))) {
-                    fprintf(bm->logFile, "Init_Migration_Age_Check Error: %s-%d qid %d now has MIGden: %e MIGsn: %e, MIGrn: %e please supply size values in KMIG arrays for sn and rn due to aging of migrants that occurs prior to the model start\n", FunctGroupArray[sp].groupCode, nextcid, qid, MIGRATION[sp].DEN[nextcid][qid], MIGRATION[sp].SN[nextcid][qid], MIGRATION[sp].RN[nextcid][qid]);
+                    fprintf(bm->logFile, "Init_Migration_Age_Check Error: %s-%d qid %d now has MIGden: %e MIGsn: %e, MIGrn: %e please supply size values in KMIG arrays for sn and rn due to aging of migrants that occirs prior to the model start\n", FunctGroupArray[sp].groupCode, nextcid, qid, MIGRATION[sp].DEN[nextcid][qid], MIGRATION[sp].SN[nextcid][qid], MIGRATION[sp].RN[nextcid][qid]);
                     quit("Init_Migration_Age_Check Error: %s-%d qid %d now has NAN for SN ro RN after pre-model aging\n", FunctGroupArray[sp].groupCode, nextcid, qid);
                 }
                 

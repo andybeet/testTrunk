@@ -46,21 +46,15 @@ int Tier_Assessment_Allocate(MSEBoxModel *bm) {
     bm->RBCestimation.nFuture = (int)(4 + (bm->tstop / 86400) / 365);  // As can't project beyond end of run but buffer for year+2 etc
     nFuture = bm->RBCestimation.nFuture;
     
-    nPast = (int)bm->RBCestimation.HistYrMax - (int)bm->RBCestimation.HistYrMin + 1;
-    nYears = nFuture + nPast;
-    
     bm->RBCestimation.speciesMetierToRPFleet = Util_Alloc_Init_2D_Int(bm->K_num_fisheries, bm->K_num_tot_sp, 0);
     bm->RBCestimation.speciesRPFleetToMetier = Util_Alloc_Init_2D_Int(bm->K_num_tot_sp, bm->K_num_fisheries, 0);
     bm->RBCestimation.metierArray = (METarrays *) malloc(sizeof(METarrays) * (unsigned long int)bm->K_num_fisheries);
-    
-    bm->RBCestimation.F_actFleet = Util_Alloc_Init_2D_Double(bm->K_num_fisheries, bm->K_num_tot_sp, 0.0);
-    bm->RBCestimation.FratioFleet = Util_Alloc_Init_2D_Double(bm->K_num_fisheries, bm->K_num_tot_sp, 0.0);
     
 	for (groupIndex = 0; groupIndex < bm->K_num_tot_sp; groupIndex++) {
         
         printf("Doing Tier_Assessment_Allocate for %s\n", FunctGroupArray[groupIndex].groupCode);
         
-        if ((FunctGroupArray[groupIndex].speciesParams[assess_flag_id] == FALSE) && (FunctGroupArray[groupIndex].isImpacted == FALSE))
+        if ((FunctGroupArray[groupIndex].speciesParams[assess_flag_id] == FALSE) && (FunctGroupArray[groupIndex].isFished == FALSE))
             continue;
                 
         bm->RBCestimation.RBCspeciesArray[groupIndex].regID = Util_Alloc_Init_1D_Int(bm->nbox, 0);     /* Mapping of boxes to assessment region */
@@ -115,7 +109,7 @@ int Tier_Assessment_Allocate(MSEBoxModel *bm) {
         bm->RBCestimation.RBCspeciesArray[groupIndex].CatchData = Util_Alloc_Init_3D_Double(nYears, bm->K_num_reg+1, bm->K_num_fisheries, 0.0);  // +1 so have sum over all regions
         
         fprintf(bm->logFile,"%s using nYears: %d regions: %d fisheries: %d\n", FunctGroupArray[groupIndex].groupCode, nYears, bm->K_num_reg+1, bm->K_num_fisheries);
-                
+        
         bm->RBCestimation.RBCspeciesArray[groupIndex].EffortCV = Util_Alloc_Init_1D_Double(bm->K_num_fisheries, 0.0);
         bm->RBCestimation.RBCspeciesArray[groupIndex].EffortData = Util_Alloc_Init_3D_Double(nYears, bm->K_num_reg+1, bm->K_num_fisheries, 0.0);  // +1 so have sum over all regions
         bm->RBCestimation.RBCspeciesArray[groupIndex].EnviroData = Util_Alloc_Init_2D_Double(nYears, bm->K_num_reg+1, 0.0);  // +1 so have sum over all regions
@@ -137,13 +131,7 @@ int Tier_Assessment_Allocate(MSEBoxModel *bm) {
 		bm->RBCestimation.RBCspeciesArray[groupIndex].AgeFltYr = Util_Alloc_Init_3D_Int(nYears, bm->K_num_fisheries, 3, 0);         /* Flags AF years, fleets in past (r,w,d) */
 		bm->RBCestimation.RBCspeciesArray[groupIndex].AgeComp = Util_Alloc_Init_5D_Int(bm->RBCestimation.OverallMaxAge, 4, nYears, bm->K_num_sexes, bm->K_num_fisheries, 0);        /* Generated age composition data */
 		bm->RBCestimation.RBCspeciesArray[groupIndex].AFss = Util_Alloc_Init_4D_Int(4, nYears, bm->K_num_sexes, bm->K_num_fisheries, 0);
-        
-        bm->RBCestimation.RBCspeciesArray[groupIndex].PGMSY_q = Util_Alloc_Init_1D_Double(bm->K_num_fisheries, 0);
-        bm->RBCestimation.RBCspeciesArray[groupIndex].PGMSY_selcurve = Util_Alloc_Init_1D_Double(bm->K_num_fisheries, 0);
-        bm->RBCestimation.RBCspeciesArray[groupIndex].PGMSY_sel_lsm = Util_Alloc_Init_1D_Double(bm->K_num_fisheries, 0);
-        bm->RBCestimation.RBCspeciesArray[groupIndex].PGMSY_sel_sigma = Util_Alloc_Init_1D_Double(bm->K_num_fisheries, 0);
-        bm->RBCestimation.RBCspeciesArray[groupIndex].Fhist = Util_Alloc_Init_2D_Double(nYears, bm->K_num_fisheries, 0.0);
-        
+
         bm->RBCestimation.RBCspeciesArray[groupIndex].CPUEfuture = Util_Alloc_Init_1D_Int(bm->K_num_fisheries, 0);         /* Flag for future CPUE by fleet */
         
         bm->RBCestimation.RBCspeciesArray[groupIndex].CPUEyears = Util_Alloc_Init_3D_Int(nYears, bm->K_num_reg, bm->K_num_fisheries, 0);    /* Flags which years (by fleet, region) for which to generate cpue */
@@ -294,17 +282,9 @@ int Tier_Assessment_Allocate(MSEBoxModel *bm) {
         bm->RBCestimation.RBCspeciesArray[groupIndex].Start_Sel = Util_Alloc_Init_2D_Double(bm->K_num_tot_sp, bm->K_num_fisheries, 0.0);
         bm->RBCestimation.RBCspeciesArray[groupIndex].SelBlock = Util_Alloc_Init_2D_Double(bm->K_num_tot_sp, bm->K_num_fisheries, 0.0);
         bm->RBCestimation.RBCspeciesArray[groupIndex].Sel_Phase = Util_Alloc_Init_2D_Double(bm->K_num_tot_sp, bm->K_num_fisheries, 0.0);
-        bm->RBCestimation.RBCspeciesArray[groupIndex].RBC_by_year = Util_Alloc_Init_1D_Double(nYears, 0.0);
+        bm->RBCestimation.RBCspeciesArray[groupIndex].RBC_by_year = Util_Alloc_Init_2D_Double(nYears, nYears, 0.0);
         
         bm->RBCestimation.RBCspeciesArray[groupIndex].Mortality = Util_Alloc_Init_1D_Double(2, 0.0);
-                
-        bm->RBCestimation.RBCspeciesArray[groupIndex].Fupdated = Util_Alloc_Init_2D_Double(nYears, bm->K_num_fisheries, 0.0);
-        bm->RBCestimation.RBCspeciesArray[groupIndex].RBCupdated = Util_Alloc_Init_2D_Double(nYears, bm->K_num_fisheries, 0.0);
-        bm->RBCestimation.RBCspeciesArray[groupIndex].AvgCatFleet = Util_Alloc_Init_2D_Double(nYears, bm->K_num_fisheries, 0.0);
-
-        bm->RBCestimation.RBCspeciesArray[groupIndex].CatchStore = Util_Alloc_Init_2D_Double(nYears, bm->K_num_fisheries, 0.0);
-        bm->RBCestimation.RBCspeciesArray[groupIndex].CscalarMetier = Util_Alloc_Init_1D_Double(bm->K_num_fisheries, 0.0);
-        bm->RBCestimation.RBCspeciesArray[groupIndex].FFs = Util_Alloc_Init_1D_Double(bm->RBCestimation.ProjYr, 0.0);
         
 	}
     
@@ -441,8 +421,6 @@ int Tier_Assessment_PostLoad_Allocate(MSEBoxModel *bm) {
         bm->RBCestimation.RBCspeciesArray[groupIndex].avprop = Util_Alloc_Init_1D_Double(Nfleets, 0.0);
         bm->RBCestimation.RBCspeciesArray[groupIndex].avprop_reg = Util_Alloc_Init_2D_Double(Nregions, Nfleets, 0.0);
         
-        fprintf(bm->logFile, "Initiaised propcatch, propcatch_reg, avprop and avprop_reg for %s with nYears: %d Nregions: %d Nfleets: %d\n", FunctGroupArray[groupIndex].groupCode, nYears, Nregions, Nfleets);
-        
         bm->RBCestimation.RBCspeciesArray[groupIndex].discrate = Util_Alloc_Init_1D_Double(nYears, 0.0);
         
         bm->RBCestimation.RBCspeciesArray[groupIndex].agesel_bysex = Util_Alloc_Init_2D_Double(bm->K_num_sexes, FunctGroupArray[groupIndex].numCohorts, 0.0);
@@ -520,37 +498,6 @@ int Tier_Assessment_PostLoad_Allocate(MSEBoxModel *bm) {
          */
                 
 	}
-    
-    /* Deal wit close kin related arrays - leave in atCloseKin.c for now, may move here later
-    if (bm->CloseKinEst->UseCloseKin) {
-        nsamps_y = Util_Alloc_Init_1D_Double(nsampy, 0.0);
-        nsamps_sya = Util_Alloc_Init_3D_Double(bm->RBCestimation.RBCspeciesParam[sp][Nsexes_id], nsampy, bm->RBCestimation.RBCspeciesParam[sp][MaxAge_id], 0.0);
-
-        x = Util_Alloc_Init_1D_Double(bm->RBCestimation.RBCspeciesParam[sp][MaxAge_id], 0.0);
-        sx = Util_Alloc_Init_1D_Double(bm->RBCestimation.RBCspeciesParam[sp][Nsexes_id], 0.0);
-        inv_totfec_sy = Util_Alloc_Init_2D_Double(bm->RBCestimation.RBCspeciesParam[sp][Nsexes_id], last_dy, 0.0);
-
-        n_sya = Util_Alloc_Init_3D_Double(bm->RBCestimation.RBCspeciesParam[sp][Nsexes_id], last_dy, bm->RBCestimation.RBCspeciesParam[sp][MaxAge_id], 0.0);
-        psurv_syay = Util_Alloc_Init_4D_Double(bm->RBCestimation.RBCspeciesParam[sp][Nsexes_id], last_dy, bm->RBCestimation.RBCspeciesParam[sp][MaxAge_id], last_dy, 0.0);
-        
-        Pr_PO_syaya = Util_Alloc_Init_5D_Double(bm->RBCestimation.RBCspeciesParam[sp][Nsexes_id], bm->CloseKinEst[sp].last_sy, bm->RBCestimation.RBCspeciesParam[sp][MaxAge_id], bm->CloseKinEst[sp].last_sy, bm->RBCestimation.RBCspeciesParam[sp][MaxAge_id], 0.0);
-        Pr_HS_syaya = Util_Alloc_Init_5D_Double(bm->RBCestimation.RBCspeciesParam[sp][Nsexes_id], bm->CloseKinEst[sp].last_sy, bm->RBCestimation.RBCspeciesParam[sp][MaxAge_id], bm->CloseKinEst[sp].last_sy, bm->RBCestimation.RBCspeciesParam[sp][MaxAge_id], 0.0);
-
-        Pr_GG_yaya = Util_Alloc_Init_4D_Double(bm->CloseKinEst[sp].last_sy, bm->RBCestimation.RBCspeciesParam[sp][MaxAge_id], bm->CloseKinEst[sp].last_sy, bm->RBCestimation.RBCspeciesParam[sp][MaxAge_id], 0.0);
-        Pr_HS_yaya = Util_Alloc_Init_4D_Double(bm->CloseKinEst[sp].last_sy, bm->RBCestimation.RBCspeciesParam[sp][MaxAge_id], bm->CloseKinEst[sp].last_sy, bm->RBCestimation.RBCspeciesParam[sp][MaxAge_id], 0.0);
-
-        ncomps_PO_syaya = Util_Alloc_Init_5D_Double(bm->RBCestimation.RBCspeciesParam[sp][Nsexes_id], bm->CloseKinEst[sp].last_sy, bm->RBCestimation.RBCspeciesParam[sp][MaxAge_id], bm->CloseKinEst[sp].last_sy, bm->RBCestimation.RBCspeciesParam[sp][MaxAge_id], 0.0);
-        ncomps_HS_yaya = Util_Alloc_Init_4D_Double(bm->CloseKinEst[sp].last_sy, bm->RBCestimation.RBCspeciesParam[sp][MaxAge_id], bm->CloseKinEst[sp].last_sy, bm->RBCestimation.RBCspeciesParam[sp][MaxAge_id], 0.0);
-        
-        Ekin_HS_syaya = Util_Alloc_Init_5D_Double(bm->RBCestimation.RBCspeciesParam[sp][Nsexes_id], bm->CloseKinEst[sp].last_sy, bm->RBCestimation.RBCspeciesParam[sp][MaxAge_id], bm->CloseKinEst[sp].last_sy, bm->RBCestimation.RBCspeciesParam[sp][MaxAge_id], 0.0);
-        Ekin_PO_syaya = Util_Alloc_Init_5D_Double(bm->RBCestimation.RBCspeciesParam[sp][Nsexes_id], bm->CloseKinEst[sp].last_sy, bm->RBCestimation.RBCspeciesParam[sp][MaxAge_id], bm->CloseKinEst[sp].last_sy, bm->RBCestimation.RBCspeciesParam[sp][MaxAge_id], 0.0);
-        
-        sim_nkin_PO = Util_Alloc_Init_5D_Double(bm->RBCestimation.RBCspeciesParam[sp][Nsexes_id], bm->CloseKinEst[sp].last_sy, bm->RBCestimation.RBCspeciesParam[sp][MaxAge_id], bm->CloseKinEst[sp].last_sy, bm->RBCestimation.RBCspeciesParam[sp][MaxAge_id], 0.0);
-        sim_nkin_HS = Util_Alloc_Init_5D_Double(bm->RBCestimation.RBCspeciesParam[sp][Nsexes_id], bm->CloseKinEst[sp].last_sy, bm->RBCestimation.RBCspeciesParam[sp][MaxAge_id], bm->CloseKinEst[sp].last_sy, bm->RBCestimation.RBCspeciesParam[sp][MaxAge_id], 0.0);
-    }
-     
-     */
-
         
 	return 0;
 }
@@ -608,6 +555,8 @@ int Tier_Assessment_Free(MSEBoxModel *bm) {
         free2d(bm->RBCestimation.RBCspeciesArray[groupIndex].VBk);
         free2d(bm->RBCestimation.RBCspeciesArray[groupIndex].VBt0);
         
+        printf("%s free got to here A\n", FunctGroupArray[groupIndex].groupCode);
+
         free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].CatchCV);
         free3d(bm->RBCestimation.RBCspeciesArray[groupIndex].CatchData);
         free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].EffortCV);
@@ -625,14 +574,7 @@ int Tier_Assessment_Free(MSEBoxModel *bm) {
         i_free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].AgeN);
         i_free2d(bm->RBCestimation.RBCspeciesArray[groupIndex].AgeYears);
         i_free3d(bm->RBCestimation.RBCspeciesArray[groupIndex].AgeFltYr);
-        
-        free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].PGMSY_q);
-        free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].PGMSY_selcurve);
-        free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].PGMSY_sel_lsm);
-        free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].PGMSY_sel_sigma);
 
-        free2d(bm->RBCestimation.RBCspeciesArray[groupIndex].Fhist);
-        
         i_free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].CPUEfuture);
         i_free3d(bm->RBCestimation.RBCspeciesArray[groupIndex].CPUEyears);
         free3d(bm->RBCestimation.RBCspeciesArray[groupIndex].CPUEdevs);
@@ -651,6 +593,8 @@ int Tier_Assessment_Free(MSEBoxModel *bm) {
         free3d(bm->RBCestimation.RBCspeciesArray[groupIndex].DiscData);
         free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].DiscCV);
         i_free2d(bm->RBCestimation.RBCspeciesArray[groupIndex].DiscYears);
+        
+        printf("%s free got to here B\n", FunctGroupArray[groupIndex].groupCode);
         
         i_free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].LengthFuture);
         i_free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].LengthN);
@@ -685,6 +629,8 @@ int Tier_Assessment_Free(MSEBoxModel *bm) {
         i_free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].TriggerReached);
         free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].AnnCPUE);
         
+        printf("%s free got to here C\n", FunctGroupArray[groupIndex].groupCode);
+
         //if (bm->RBCestimation.RBCspeciesArray[groupIndex].SelLen)
         //    free3d(bm->RBCestimation.RBCspeciesArray[groupIndex].SelLen);
         
@@ -714,19 +660,29 @@ int Tier_Assessment_Free(MSEBoxModel *bm) {
             free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].wt);
             free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].fvalA);
         
+            printf("%s free got to here C1\n", FunctGroupArray[groupIndex].groupCode);
+        
             free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].ageref);
             free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].len);
             free2d(bm->RBCestimation.RBCspeciesArray[groupIndex].p_al);
+        
+            printf("%s free got to here C2\n", FunctGroupArray[groupIndex].groupCode);
         
             free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].yield);
             free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].yield_mid);
             free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].num);
         
+            printf("%s free got to here C3\n", FunctGroupArray[groupIndex].groupCode);
+        
             free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].z);
             free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].sumcatch);
         
+            printf("%s free got to here C4\n", FunctGroupArray[groupIndex].groupCode);
+        
             free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].T5_Fval);
             free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].T5_Avlen_atF);
+        
+            printf("%s free got to here D\n", FunctGroupArray[groupIndex].groupCode);
         }
         
         if ((FunctGroupArray[groupIndex].speciesParams[tier_id] == 0) || (FunctGroupArray[groupIndex].speciesParams[assess_flag_id] == FALSE)) // Not needed as not assessed
@@ -747,11 +703,15 @@ int Tier_Assessment_Free(MSEBoxModel *bm) {
         free5d(bm->RBCestimation.RBCspeciesArray[groupIndex].rawnumdata);
         free4d(bm->RBCestimation.RBCspeciesArray[groupIndex].ndata);
         
+        printf("%s free got to here E\n", FunctGroupArray[groupIndex].groupCode);
+
         free2d(bm->RBCestimation.RBCspeciesArray[groupIndex].lenprops);
         free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].lencomp);
         free2d(bm->RBCestimation.RBCspeciesArray[groupIndex].ageprops);
         free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].agecomp);
         
+        printf("%s free got to here F\n", FunctGroupArray[groupIndex].groupCode);
+                
         if (bm->useGenMnomial) {
             free2d(bm->RBCestimation.RBCspeciesArray[groupIndex].propvec);
             free3d(bm->RBCestimation.RBCspeciesArray[groupIndex].newvec);
@@ -773,6 +733,8 @@ int Tier_Assessment_Free(MSEBoxModel *bm) {
             free2d(bm->RBCestimation.RBCspeciesArray[groupIndex].fval);
         }
         
+        printf("%s free got to here G\n", FunctGroupArray[groupIndex].groupCode);
+        
         if (tier == tier3) {  // As only used in tier3 routines
             free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].numatage);
             free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].ages);
@@ -790,6 +752,8 @@ int Tier_Assessment_Free(MSEBoxModel *bm) {
             free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].func);
         }
 
+        printf("%s free got to here H\n", FunctGroupArray[groupIndex].groupCode);
+        
         if ((tier == tier1) || (tier == tier3)) { // As only used in tier1 and tier3 routines
             free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].exp_prop);
             free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].Funkz);
@@ -800,6 +764,8 @@ int Tier_Assessment_Free(MSEBoxModel *bm) {
             free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].ycpue);
         }
         
+        printf("%s free got to here I\n", FunctGroupArray[groupIndex].groupCode);
+
         if (tier == tier5) {  // As only used in tier5 routines
             free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].expectB);
             free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].expectq);
@@ -830,6 +796,8 @@ int Tier_Assessment_Free(MSEBoxModel *bm) {
             free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].TSbiomass);
         }
         
+        printf("%s free got to here J\n", FunctGroupArray[groupIndex].groupCode);
+ 
         if(bm->RBCestimation.RBCspeciesArray[groupIndex].SlopeMat)
             free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].SlopeMat);
         if(bm->RBCestimation.RBCspeciesArray[groupIndex].Mat50)
@@ -851,6 +819,8 @@ int Tier_Assessment_Free(MSEBoxModel *bm) {
         if(bm->RBCestimation.RBCspeciesArray[groupIndex].discfleet)
             i_free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].discfleet);
 
+        if(bm->RBCestimation.Catch_by_Metier)
+            free4d(bm->RBCestimation.Catch_by_Metier);
         if(bm->RBCestimation.RBCspeciesArray[groupIndex].initialEquilCatch)
             free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].initialEquilCatch);
         if(bm->RBCestimation.RBCspeciesArray[groupIndex].R02)
@@ -862,31 +832,10 @@ int Tier_Assessment_Free(MSEBoxModel *bm) {
         if(bm->RBCestimation.RBCspeciesArray[groupIndex].SelBlock)
             free2d(bm->RBCestimation.RBCspeciesArray[groupIndex].SelBlock);
         if(bm->RBCestimation.RBCspeciesArray[groupIndex].Sel_Phase)
-            free2d(bm->RBCestimation.RBCspeciesArray[groupIndex].Sel_Phase);
+        free2d(bm->RBCestimation.RBCspeciesArray[groupIndex].Sel_Phase);
         if(bm->RBCestimation.RBCspeciesArray[groupIndex].RBC_by_year)
-            free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].RBC_by_year);
-        
-        if(bm->RBCestimation.RBCspeciesArray[groupIndex].Mortality)
-            free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].Mortality);
-                
-        if(bm->RBCestimation.RBCspeciesArray[groupIndex].Fupdated)
-            free2d(bm->RBCestimation.RBCspeciesArray[groupIndex].Fupdated);
-        if(bm->RBCestimation.RBCspeciesArray[groupIndex].RBCupdated)
-            free2d(bm->RBCestimation.RBCspeciesArray[groupIndex].RBCupdated);
-        if(bm->RBCestimation.RBCspeciesArray[groupIndex].CatchStore)
-            free2d(bm->RBCestimation.RBCspeciesArray[groupIndex].CatchStore);
-        if(bm->RBCestimation.RBCspeciesArray[groupIndex].CscalarMetier)
-            free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].CscalarMetier);
-        
-        if(bm->RBCestimation.RBCspeciesArray[groupIndex].AvgCatFleet)
-            free2d(bm->RBCestimation.RBCspeciesArray[groupIndex].AvgCatFleet);
-        if(bm->RBCestimation.RBCspeciesArray[groupIndex].FFs)
-            free1d(bm->RBCestimation.RBCspeciesArray[groupIndex].FFs);
-
+            free2d(bm->RBCestimation.RBCspeciesArray[groupIndex].RBC_by_year);
 	}
-
-    if(bm->RBCestimation.Catch_by_Metier)
-        free4d(bm->RBCestimation.Catch_by_Metier);
 
 	if (bm->RBCestimation.RBCspeciesArray)
 		free(bm->RBCestimation.RBCspeciesArray);
@@ -896,12 +845,6 @@ int Tier_Assessment_Free(MSEBoxModel *bm) {
     
     if (bm->RBCestimation.metierArray)
         free(bm->RBCestimation.metierArray);
-    
-    if (bm->RBCestimation.F_actFleet)
-        free2d(bm->RBCestimation.F_actFleet);
-    
-    if (bm->RBCestimation.FratioFleet)
-        free2d(bm->RBCestimation.FratioFleet);
 
 	return 0;
 }
@@ -1366,7 +1309,7 @@ int Tier_Assessment_Setup(MSEBoxModel *bm) {
 	//double ssq, sum;
     double linf, kpar, t0;
 	double Nsexes = (double)(bm->K_num_sexes);
-    int nLen, nt, mid;
+    int nLen, nt;
     int Nregions;
     int Ntriggers;
     int Nfleet;
@@ -1374,31 +1317,32 @@ int Tier_Assessment_Setup(MSEBoxModel *bm) {
     bm->RBCestimation.LastMetier = -1;
     bm->RBCestimation.sim = 0; // In theory could loop over but deterministic so won't bother
 
-    /* Transfer data from Atlantis data structures into RBC data structures */
+    printf("Nmetiers %d\n", bm->RBCestimation.Nmetiers);
+    
+	/* Transfer data from Atlantis data structures into RBC data structures */
 	for (groupIndex = 0; groupIndex < bm->K_num_tot_sp; groupIndex++) {
         
         if (FunctGroupArray[groupIndex].isAssessed == TRUE) {
             bm->RBCestimation.Lastsp = groupIndex;
         }
+        fprintf(bm->logFile,"Lastsp is %s\n", FunctGroupArray[bm->RBCestimation.Lastsp].groupCode);
+        
         printf("Doing tier assessment setup for %s\n", FunctGroupArray[groupIndex].groupCode);
-        fflush(stdout);
-        fflush(stderr);
-
+        
         Ntriggers = bm->RBCestimation.NumTriggers;
         Nregions = (int)(bm->RBCestimation.RBCspeciesParam[groupIndex][NumRegions_id]);
         nLen = (int)(bm->RBCestimation.RBCspeciesParam[groupIndex][Nlen_id]);
-
-        if ((FunctGroupArray[groupIndex].speciesParams[tier_id] == 0) || (FunctGroupArray[groupIndex].speciesParams[assess_flag_id] == 0)) { // Not needed as not assessed
-            
-            printf("%s with tier %f assess_flag: %f so no further RBC set up required\n", FunctGroupArray[groupIndex].groupCode, FunctGroupArray[groupIndex].speciesParams[tier_id], FunctGroupArray[groupIndex].speciesParams[assess_flag_id]);
+        
+        printf("A Nmetiers: %d\n", bm->RBCestimation.Nmetiers);
+        
+        if ((FunctGroupArray[groupIndex].speciesParams[tier_id] == 0) || (FunctGroupArray[groupIndex].speciesParams[assess_flag_id] == FALSE)) // Not needed as not assessed
             continue;
-        }
         
         if ( (FunctGroupArray[groupIndex].speciesParams[tier_id] > 0) && (bm->RBCestimation.RBCspeciesParam[groupIndex][MaxAge_id] > bm->RBCestimation.OverallMaxAge )) {
             quit("MaxAge (%e) for %s is > RBCestimation.OverallMaxAge (%d), please reset RBCestimation.OverallMaxAge to the same value to MaxAge or numcohorts * ageclass size (as listed in the Groups.csv file) which ever is larger",
                  bm->RBCestimation.RBCspeciesParam[groupIndex][MaxAge_id], FunctGroupArray[groupIndex].groupCode, bm->RBCestimation.OverallMaxAge);
         }
-
+        
         for (n = 0; n < nLen; n++) {
 			bm->RBCestimation.RBCspeciesArray[groupIndex].LoLenBin[n] = FunctGroupArray[groupIndex].speciesParams[allometic_bin_start_id]
 					+ FunctGroupArray[groupIndex].speciesParams[allometic_bin_size_id] * n;
@@ -1406,16 +1350,15 @@ int Tier_Assessment_Setup(MSEBoxModel *bm) {
             //fprintf(bm->logFile, "n: %d, LoLenBin: %e bin_start: %e bin_size: %e\n", n, bm->RBCestimation.RBCspeciesArray[groupIndex].LoLenBin[n], FunctGroupArray[groupIndex].speciesParams[allometic_bin_start_id], FunctGroupArray[groupIndex].speciesParams[allometic_bin_size_id]);
 		}
         
-        if (bm->useMultispAssess) {
-            Nfleet = bm->RBCestimation.RBCspeciesParam[groupIndex][NumFisheries_id];
-            for (m = 0; m < Nfleet; m++) {
-                mid = bm->RBCestimation.speciesRPFleetToMetier[m][groupIndex];  // metier for this fishery
-                bm->RBCestimation.speciesMetierToRPFleet[groupIndex][mid] = m;
-                strcpy(bm->RBCestimation.metierArray[mid].metierCode, FisheryArray[m].fisheryCode);
-                bm->RBCestimation.metierArray[mid].PGMSYlinks = PGMSYLinksInputs[mid];
-            }
+        /* TODO: FIX - Filler on metiers to fisheries - read in eventually */
+        Nfleet = bm->RBCestimation.RBCspeciesParam[groupIndex][NumFisheries_id];
+        for (m = 0; m < Nfleet; m++) {
+            bm->RBCestimation.speciesMetierToRPFleet[groupIndex][m] = m;
+            bm->RBCestimation.speciesRPFleetToMetier[m][groupIndex] = m;
+            strcpy(bm->RBCestimation.metierArray[m].metierCode, FisheryArray[m].fisheryCode);
+            bm->RBCestimation.metierArray[m].PGMSYlinks = PGMSYLinksInputs[m];
         }
-        
+                
         for (m = 0; m < Nfleet; m++) {
             nf = bm->RBCestimation.speciesRPFleetToMetier[m][groupIndex];
             if (nf > bm->RBCestimation.LastMetier) {
@@ -1432,12 +1375,9 @@ int Tier_Assessment_Setup(MSEBoxModel *bm) {
 		tot_nf = 0;
 		totTAC = 0.0;
 		for (n = 0; n < bm->K_num_fisheries; n++){
-            if(!FunctGroupArray[groupIndex].isTAC || (bm->TACamt[groupIndex][nf][now_id] < no_quota)) {
-                totTAC += bm->TACamt[groupIndex][n][now_id];
-            }
-            if ((int)(bm->SP_FISHERYprms[groupIndex][n][assess_nf_id]) > tot_nf) {
+			totTAC += bm->TACamt[groupIndex][n][now_id];
+			if ((int)(bm->SP_FISHERYprms[groupIndex][n][assess_nf_id]) > tot_nf)
                 tot_nf = (int)bm->SP_FISHERYprms[groupIndex][n][assess_nf_id];
-            }
 		}
         tot_nf++;
         
@@ -1445,14 +1385,8 @@ int Tier_Assessment_Setup(MSEBoxModel *bm) {
 		bm->RBCestimation.RBCspeciesParam[groupIndex][RBC_old_id] = totTAC;
 		bm->RBCestimation.RBCspeciesParam[groupIndex][EstB0_id] = bm->estBo[groupIndex];
 		bm->RBCestimation.RBCspeciesParam[groupIndex][EstBcurr_id] = bm->RBCestimation.RBCspeciesParam[groupIndex][EstB0_id] * bm->RBCestimation.RBCspeciesParam[groupIndex][EstDepletion_id];
-        
-        if (tot_nf > bm->RBCestimation.RBCspeciesParam[groupIndex][NumFisheries_id]) {
-            quit("max number of fisheries from assess_nf (%d) exceeds defined NumFisheries (%d), please correct in assess.prm\n", tot_nf, bm->RBCestimation.RBCspeciesParam[groupIndex][NumFisheries_id]);
-        } else {
-            bm->RBCestimation.RBCspeciesParam[groupIndex][NumFisheries_id] = tot_nf;
-            // To save iteration space
-        }
-        
+		bm->RBCestimation.RBCspeciesParam[groupIndex][NumFisheries_id] = tot_nf;
+
         // average growth parameters over sexes
 		bm->RBCestimation.RBCspeciesParam[groupIndex][Tier3_S95_id] = bm->RBCestimation.RBCspeciesParam[groupIndex][Tier3_S50_id] - (log(1.0/0.95 - 1.0)/log(3.0)) * (bm->RBCestimation.RBCspeciesParam[groupIndex][Tier3_S50_id] - bm->RBCestimation.RBCspeciesParam[groupIndex][Tier3_S25_id]);
 
@@ -1475,7 +1409,7 @@ int Tier_Assessment_Setup(MSEBoxModel *bm) {
 
 		bm->RBCestimation.RBCspeciesParam[groupIndex][Tier3_a_id] = FunctGroupArray[groupIndex].speciesParams[allometic_li_a_id];
 		bm->RBCestimation.RBCspeciesParam[groupIndex][Tier3_b_id] = FunctGroupArray[groupIndex].speciesParams[allometic_li_b_id];
-        
+
         // do AtLoadArrays() - basically those that don't get dimenional info until after load but needed in setup before post load routines
         AtLoadArrays(bm, groupIndex);
         
@@ -1484,7 +1418,7 @@ int Tier_Assessment_Setup(MSEBoxModel *bm) {
         
         // set flag that need to generate historical data
 		bm->RBCestimation.RBCspeciesParam[groupIndex][HistDataInit_id] = FALSE;
-        
+
 		// identify the ID of the group that is the last one with a tiered assessment
 		if((!FunctGroupArray[groupIndex].speciesParams[flagFonly_id]) && (FunctGroupArray[groupIndex].speciesParams[assess_flag_id] > 0)
 				 && (groupIndex > bm->RBCestimation.lastTierSp))
@@ -1518,7 +1452,6 @@ int Tier_Assessment_Setup(MSEBoxModel *bm) {
                 bm->RBCestimation.RBCspeciesArray[groupIndex].TriggerPoints[nt][nreg] = bm->RBCestimation.RBCspeciesArray[groupIndex].TriggerPoints[nt][Nregions] * regscale;
             }
         }
-        
 	}
     
     if (bm->RBCestimation.Lastsp > 0) {
@@ -1530,12 +1463,8 @@ int Tier_Assessment_Setup(MSEBoxModel *bm) {
     }
     
     /* Clean up unneeded readin vectors */
-    if(TrigPts) {
-        free1d(TrigPts);
-    }
-    if(PGMSYLinksInputs) {
-        i_free1d(PGMSYLinksInputs);
-    }
+    free1d(TrigPts);
+    i_free1d(PGMSYLinksInputs);
     
 	return 0;
 }

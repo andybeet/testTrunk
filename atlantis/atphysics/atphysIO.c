@@ -702,7 +702,7 @@ void writeBMphysData(int fid, int dump, MSEBoxModel *bm, int dtype) {
 	doubleINPUT value;
 
 	if (verbose > 0)
-		printf("Entering writeBMphysData\n");
+		fprintf(stderr, "Entering writeBMphysData\n");
 
 	/* Allocate temporary arrays */
 	fptmp = (doubleINPUT *) alloc1dInput(bm->nbox);

@@ -9,12 +9,8 @@ INCLUDES = $(shell pkg-config --cflags libxml-2.0) \
 # -I$(top_srcdir)/atlink/include  -I$(top_srcdir)/atCLAMLink/include
 
 # Comment out first option and uncomment second option for for OPT if on Apple M1 chips 
-#OPT = -msse2 -mfpmath=sse
+OPT = -msse2 -mfpmath=sse
 #OPT = -mcpu=apple-m1
-OPT = -mtune=native
-
-# Uncomment this if want to use mac valgrin equivalent
-#OPT = -mtune=native -fsanitize=address -fno-omit-frame-pointer
 
 DBG = -g
 #-pg
@@ -38,11 +34,13 @@ WARN += -Warray-bounds
 #WARN += -Werror
 
 # Comment out for Mac
-#WARN += -Wformat-overflow
+WARN += -Wunused-but-set-variable
+WARN += -Wno-error=unused-but-set-variable
+WARN += -Wformat-overflow
 
 # Needed for Docker (uncomment if commented out)
-WARN += -Wno-error=unused-but-set-variable
 WARN += -Wno-error=misleading-indentation
+WARN += -Wno-error=unused-but-set-variable
 WARN += -Wno-error=implicit-function-declaration
 
 # Comment out to run Docker - needed on Mac

@@ -907,9 +907,7 @@ void Holland_Effort_Final_Allocation(MSEBoxModel *bm, FILE *llogfp) {
 						 */
 					}
 					/* Get total current TAC - leave in kg as tot_cumcatch is in kg here */
-                    if(!FunctGroupArray[sp].isTAC || (bm->TACamt[sp][nf][now_id] < no_quota)) {
-                        totTAC += regTAC_scale * bm->TACamt[sp][nf][now_id];
-                    }
+					totTAC += regTAC_scale * bm->TACamt[sp][nf][now_id];
 
 					if (do_debug) {
 						fprintf(llogfp, "Time: %e, reg: %d, %s regTACscale: %e, %s TAC: %e kg\n", bm->dayt, regid, FunctGroupArray[sp].groupCode, regTAC_scale,

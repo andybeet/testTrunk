@@ -63,10 +63,18 @@ int createBMDataFile(char *destFolder, char *name, MSEBoxModel *bm, int dtype) {
 	ncopts = NC_VERBOSE | NC_FATAL;
 
 	/* Create new netCDF file */
-	if (bm->flagreusefile == 2)
+fflush(stdout);
+fflush(stderr);
+printf("flagreusefile = %d\n",bm->flagreusefile);
+printf("NC_CLOBBER = %d, NC_NOCLOBBER = %d\n",NC_CLOBBER,NC_NOCLOBBER);
+	if (bm->flagreusefile == 2) {
 		fid = nccreate(fileName, NC_CLOBBER);
-	else
+	} else {
 		fid = nccreate(fileName, NC_NOCLOBBER);
+	}
+fflush(stdout);
+fflush(stderr);
+printf("past if\n");
 
 	/* Define dimensions */
 	ncdimdef(fid, "t", NC_UNLIMITED);
@@ -82,30 +90,67 @@ int createBMDataFile(char *destFolder, char *name, MSEBoxModel *bm, int dtype) {
 	ncattput(fid, NC_GLOBAL, "parameters", NC_CHAR, (int) strlen(bm->params) + 1, bm->params);
 	ncattput(fid, NC_GLOBAL, "wcnz", NC_LONG, 1, &bm->wcnz);
 	ncattput(fid, NC_GLOBAL, "sednz", NC_LONG, 1, &bm->sednz);
-    
+fflush(stdout);
+fflush(stderr);
+printf("starting .. writeBMphysInfo\n");
+
 	/* Variables and their attributes
 	 Note that dtype streaming will mean appropriate data entered in
 	 each case
 	 */
 	writeBMphysInfo(fid, bm, dtype);
+fflush(stdout);
+fflush(stderr);
+printf("starting .. writeBMTracerInfo\n");
+
 	writeBMTracerInfo(fid, bm, dtype);
+fflush(stdout);
+fflush(stderr);
+printf("starting .. writeBMEpiInfo\n");
+
 	writeBMEpiInfo(fid, bm, dtype);
+fflush(stdout);
+fflush(stderr);
+printf("starting .. writeBMDiagInfo\n");
+
 	writeBMDiagInfo(fid, bm, dtype);
+
+
+
 	if (bm->flag_fisheries_on) {
+fflush(stdout);
+fflush(stderr);
+printf("starting .. writeBMFisheriesInfo\n");
+
 		writeBMFisheriesInfo(fid, bm, dtype);
 	}
 	if (bm->ice_on){
+fflush(stdout);
+fflush(stderr);
+printf("starting .. writeBMIceInfo\n");
+
 		writeBMIceInfo(fid, bm, dtype);
 	}
 	if (bm->terrestrial_on){
+fflush(stdout);
+fflush(stderr);
+printf("starting .. writeBMLandInfo\n");
+
 		writeBMLandInfo(fid, bm, dtype);
 	}
-    
+fflush(stdout);
+fflush(stderr);
+printf("About to exit routine attracerIO.c\n");
+
+
 	/* Exit from netCDF define mode */
 	ncendef(fid);
 	ncsync(fid);
 
 	return (fid);
+fflush(stdout);
+fflush(stderr);
+printf("Last line: routine attracerIO.c\n");
 }
 
 /*******************************************************************//**
@@ -186,7 +231,7 @@ void readBMTracerInfo(int fid, char *fileName, MSEBoxModel *bm) {
 	int      t_len;    /* global attribute length */
 
 	if (verbose > 1)
-        printf( "Entering readBMTracerInfo\n");
+		fprintf(stderr, "Entering readBMTracerInfo\n");
 
 	/* Set netCDF library error handling */
 	ncopts = NC_VERBOSE | NC_FATAL;
@@ -232,9 +277,7 @@ void readBMTracerInfo(int fid, char *fileName, MSEBoxModel *bm) {
 				// just means ice is not active in this model.
 
 	/* Check numbers of layers from attributes against geometry */
-    ncattget(fid, NC_GLOBAL, "icenz", &n);
-    if(n!= 0){
-	//if(ncattinq(fid, NC_GLOBAL, "icenz", &t_type, &t_len) != -1){  //icenz is not a variable its a global dimension
+	if(ncattinq(fid, NC_GLOBAL, "icenz", &t_type, &t_len) != -1){
 		bm->ice_on = TRUE;
 		bm->num_active_habitats = ICE_BASED + 1;
 	} else {
@@ -263,7 +306,7 @@ void readBMTracerInfo(int fid, char *fileName, MSEBoxModel *bm) {
 		quit("readBMTracerInfo: No tracers in file\n");
 
 	if (verbose > 1)
-        printf( "readBMTracerInfo: %ld tracers in file\n", n);
+		fprintf(stderr, "readBMTracerInfo: %ld tracers in file\n", n);
 
 	/* Allocate space for tracer info */
 	if ((bm->tinfo = (TracerInfo *) malloc((size_t)n * sizeof(TracerInfo))) == NULL)
@@ -541,10 +584,10 @@ void writeBMTracerInfo(int fid, MSEBoxModel *bm, int dtype) {
 				}else{
 					vid = ncvardef(fid, bm->tinfo[i].name, dt, 3, dim);
 				}
-			} else{
-				vid = ncvardef(fid, bm->tinfo[i].name, dt, 3, dim);  // This line causing the memory issues
+			}else{
+				vid = ncvardef(fid, bm->tinfo[i].name, dt, 3, dim);
 			}
-            
+
 			/* Set the attributes */
 			ncattput(fid, vid, "bmtype", NC_CHAR, (int) strlen("tracer") + 1, "tracer");
 			ncattput(fid, vid, "units", NC_CHAR, (int) strlen(bm->tinfo[i].units) + 1, bm->tinfo[i].units);
@@ -711,8 +754,6 @@ void readBMTracerData(int fid, int dump, MSEBoxModel *bm) {
 				for (b = 0; b < bm->nbox; b++) {
 					for (k = 0; k < bm->wcnz; k++) {
 						val[b][k] *= bm->init_scalar[this_sp];
-                        
-                        //fprintf(bm->logFile, "readBMTracerData - box: %d, layer: %d %s (%s) scaled by %e\n", b, k, bm->tinfo[i].name, FunctGroupArray[this_sp].groupCode, bm->init_scalar[this_sp]);
 					}
                     for (k = 0; k < bm->sednz; k++) {
                         val[b][k + bm->wcnz] *= bm->init_scalar[this_sp];
@@ -728,10 +769,8 @@ void readBMTracerData(int fid, int dump, MSEBoxModel *bm) {
 			for (k = 0; k < bm->wcnz; k++) {
 				bm->wctr[b][k][i] = (double) val[b][k];
 				if (!(_finite(bm->wctr[b][k][i]))) {
-					quit("readBMTracerData - box: %d, layer: %d %s (%d) localpool set to: %e\n", b, k, bm->tinfo[i].name, i, bm->wctr[b][k][i]);
+					quit("readBMTracerData - box: %d, layer: %d %s (%d) localpool set to: %e.\n", b, k, bm->tinfo[i].name, i, bm->wctr[b][k][i]);
 				}
-                
-                //fprintf(bm->logFile, "readBMTracerData - box: %d, layer: %d %s (%d) localpool set to: %e (val %f)\n", b, k, bm->tinfo[i].name, i, bm->wctr[b][k][i], val[b][k]);
 			}
 		}
 
@@ -773,11 +812,9 @@ void writeBMTracerData(int fid, int dump, MSEBoxModel *bm, int dtype) {
 	long count[3];
 	int n = 0;
 
-    /*
-    int pid = FunctGroupArray[8].contamPropTracers[3][0];
-    fprintf(bm->logFile, "Time: %e at start of writeBMTracerData for box%d-%d - test propContam %s-%d for %s in box%d-%d: %e\n", bm->dayt, bm->current_box, bm->current_layer, FunctGroupArray[8].groupCode, 3, bm->contaminantStructure[0]->contaminant_name, 3, 2, bm->boxes[3].tr[2][pid]);
-     */
-     
+    //int pid = FunctGroupArray[8].contamPropTracers[3][0];
+    //fprintf(bm->logFile, "Time: %e at start of writeBMTracerData for box%d-%d - test propContam %s-%d for %s in box%d-%d: %e\n", bm->dayt, bm->current_box, bm->current_layer, FunctGroupArray[8].groupCode, 3, bm->contaminantStructure[0]->contaminant_name, 3, 2, bm->boxes[3].tr[2][pid]);
+
 	if (verbose > 0)
 		fprintf(stderr, "Entering writeBMTracerData\n");
 

@@ -68,7 +68,7 @@ void Harvest_Read_Time_Series(char *folderPath, char *name, char *tsname, char *
 
 	/* Print a heading on stderr if verbose enough */
 	if (verbose > 1)
-        printf( "Reading %s Time Series\n", tsname);
+		fprintf(stderr, "Reading %s Time Series\n", tsname);
 
 	/* Get the number of time series */
 	sprintf(keyn, "n%sts", tsname);

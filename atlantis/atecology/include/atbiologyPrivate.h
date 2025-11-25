@@ -23,7 +23,7 @@ double Susp_Sed, tot_dyn_sea_area,
 	DRdepth, O2depth, newO2depth, Enviro_turb, current_layer_sed, eddy_strength,
 	BioirrigEnh, BioturbEnh, Turbatn_contribs, Irrig_contribs, cell_depth,
 	H2Otemp, current_SALT, current_PH, init_PH, Bact_stim, current_depth, area_reef, area_flat, LocalRugosity,
-	area_canyon, area_box, area_soft, current_SALT, current_ARAG, current_WIND;
+	area_canyon, area_box, area_soft, current_SALT, current_ARAG;
 
 int numwcvar, numepivar, numlandvar, numdiagvar, numfstatvar, numicevar, first_year, idum;
 
@@ -76,8 +76,7 @@ Local Modelling variables
 */
 
 
-int **recover_help = 0, **starve_vert = 0, **nSTOCK = 0, **shiftVERTON = 0, **prey_counted = 0, *mig_returners = 0, *active_den = 0, *not_finished = 0, *ngene_done = 0, *stock_done = 0;
-//int *mig_status = 0;
+int **recover_help = 0, **starve_vert = 0, **nSTOCK = 0, **counted, **shiftVERTON = 0;
 
 double ***AGE_stock_struct_prop = 0, // Also updated in Prepare_Age_Distrib - used to store the normalised distribution of the cohort species across each stock
 	****newden, ***init_stock_struct_prop = 0, ****recVERTpopratio = 0,
@@ -85,20 +84,13 @@ double ***AGE_stock_struct_prop = 0, // Also updated in Prepare_Age_Distrib - us
 	***BEDchange = 0, ***Vchange = 0, ***pSTOCK = 0, ***totrecruit = 0,
 	**VERTabund_check = 0, **sumSTOCK = 0, **Tchange = 0, **roc = 0,
 	**spSTOCKprop = 0, **recSTOCK = 0, **tot_yoy = 0, ***VERTinfo = 0,
-	**stock_prop = 0, **totden = 0, **recruit_vdistrib = 0, **totden_check = 0,
+	**stock_prop = 0, **totden = 0, **recruit_vdistrib = 0,
 	**tempdistrib = 0, **PHchange = 0, **Schange = 0,
-	*sizeMinMax = 0, **SUPPdistrib = 0, *adults_spawning = 0,
-	*recover_help_set = 0, *BED_scale = 0, **KDENR = 0, *yoy = 0,
-	***PREYinfo = 0, ***GRAZEinfo = 0, ***EATINGinfo = 0, *lostden_zero = 0,
+	*sizeMinMax = 0, *adults_spawning = 0, **SUPPdistrib = 0,
+	*recover_help_set = 0, *BED_scale = 0, **KDENR = 0,
+	***PREYinfo = 0, ***GRAZEinfo = 0, ***EATINGinfo = 0,
 	***FEEDinfo = 0, **step1distrib = 0, **CATCHEATINGinfo = 0,
-	**CATCHGRAZEinfo = 0, **boxden = 0, ****currentden = 0, **leftden = 0,
-    *newden_sum = 0, ***preyamt = 0, *totad = 0, *totboxden = 0, *totroc = 0,
-    *totsum = 0, *totksum = 0, *tot_new_mat = 0, *coming_SPden = 0,
-    *numbers_entering = 0, *numbers_already_present = 0,
-    **totdenCheck = 0;
-
-double *initialIceBiomass = 0, *initialLandBiomass = 0, *initialBiomass = 0,
-    *initialSedBiomass = 0, *initialEpiBiomass = 0, *initialWaterBiomass = 0;
+	**CATCHGRAZEinfo = 0;
 
 double ****readinpopratio = 0;
 
@@ -106,8 +98,6 @@ int   maxMortChange;
 int ***numMortChanges;
 int *bleaching_has_occurred;
 double *****LinearMortChange = 0;
-
-BoxLayerValues *boxLayerInfo;
 
 /**************************************************************************************
 Defining pointers to arrays for preference and fish distribution

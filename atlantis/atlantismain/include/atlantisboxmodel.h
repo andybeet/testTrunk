@@ -391,8 +391,7 @@ typedef enum {
 	SED,
 	EPIFAUNA,
 	LAND_BASED,
-	ICE_BASED,
-    MIXED
+	ICE_BASED
 } HABITAT_TYPES;
 
 #define nlevel_id (ICE_BASED + 1)
@@ -442,7 +441,6 @@ typedef enum {
 //#define small_num (double) 1e-08
 #define small_num (double) 0.0000000000000001
 #define buffer_rounding 0.000001
-#define buffer_ratio 0.0000000000001
 #define mg_2_tonne 0.00000002    /* mg C converted to wet weight in tonnes == 20 / 1000000000 */
 #define mg_2_kg 0.00002 		 /* mg C converted to wet weight in kg == 20 / 1000000 */
 #define mg_2_g 0.02 			 /* mg C converted to wet weight in kg == 20 / 1000 */
@@ -624,18 +622,6 @@ typedef enum {
 #define O2_IGBEM_id 2
 #define O2_quad_id 3
 
-/* Temperature dependence ids */
-#define base_q10_id 0
-#define humped_griffith_q10_id 1
-#define Heinichen_q10_id 2
-#define CEATTLE_q10_id 3
-
-/* Temperature effects on efficiency */
-#define no_effect 0
-#define poorer_when_cool 1
-#define poorer_when_warm 2
-#define versus_baseline 3
-
 /* Functional response ids */
 #define eat_parslow_holling2 0
 #define eat_parslow_holling1 1
@@ -674,7 +660,6 @@ typedef enum {
 #define BevHolt_num_recruit 19
 #define SSB_ricker 20
 #define BevHolt_direct_num_recruit 21
-#define ice_wimd_based 22
 
 #define independent_recruit_distrib 0
 #define at_parent_location 1
@@ -966,12 +951,14 @@ typedef enum {
     catch_allowed,                      /* Catch currently allowed to take (quota - cumulative catch) */
     flagquota_id,
     marketwgt_id,                       /* Market weighting for amount of fish feed to each market */
+    co_sp_catch_id,                     /* ID of companion in companion TAC */
     flagF_id,                           /* flag indicating whether fishing mortalities being used instead of effort model */
     mFC_id,
     mFC_num_changes_id,
     flagFchange_id,
     desired_chrt_id,
     origprice_id,
+    co_sp_catch2_id,                    /* ID of companion in companion TAC */
     incidmort_id,
     TAC_num_changes_id,
     mFC_start_age_id,
@@ -992,7 +979,6 @@ typedef enum {
     taxpaid_id,
     FixedMinTax_id,                     /**< Fixed tax value */
     larger_extant_id,
-    orig_mFC_scale_id,
     mFC_scale_id,
     assess_nf_id,                       /* Mapping of operating model fleets to assessment fleets */
     flagPerShotCPUE_id,                 /* Flag indicating whether per shot cpue results stored */
@@ -1027,7 +1013,6 @@ typedef enum {
 	mEff_max_id,
 	mEff_a_id,
 	flagmpa_id,
-    mpascale_cap_id,
 	max_mpa_sequence_id,
 	infringe_id,
 	FC_restrict_id,
@@ -1195,8 +1180,7 @@ typedef enum {
 #define finalM1_id 4
 #define finalM2_id 5
 #define finalF_id 6
-#define endNum_id 7
-#define K_num_mort_counter 8
+#define K_num_mort_counter 7
 
 /* age specific predation mortality tracking */
 #define ongoing_id 1
@@ -1286,12 +1270,6 @@ typedef enum {
 #define spawn_closure 13
 #define catch_mpa 14
 
-/* M estimate approach for use in psuedo code for assessments */
-#define fixed_input_M 0
-#define Z_and_F_based 1
-#define full_dynamic_M_est 2
-#define assess_M_est 3
-
 /* Management tiers */
 #define tier_orig 0
 #define tier0 0
@@ -1307,8 +1285,6 @@ typedef enum {
 #define dyntier4 10
 #define dyntier1B0 11
 #define sp_rollover 12
-#define tier13 13
-#define tier14 14
 
 #define orig_tier_rule 1
 #define new_tier_rule 2
@@ -1320,11 +1296,6 @@ typedef enum {
 #define ZoneTrigger 2
 #define LaxZoneTrigger 3
 #define TightZoneTrigger 4
-
-/* DO with filtering people to teh correct F based HCR */
-#define per_sp_rescale 0
-#define per_guild_rescale 1
-#define per_system_cap 2
 
 /* Companion TAC ids */
 #define Weakest_Link 0
@@ -1349,17 +1320,11 @@ typedef enum {
 #define use_gear 5
 
 /* Multispecies assessment types */
-#define NoAssess -1
 #define SingleSpOnly 0
 #define PGMSY 1
 #define IndicatorSpPGMSY 2  // PGMSY must be the first two due to way sets PGMSY_on in atassessParamIO.c
 #define IndicatorSp 3
 #define MultiSpProd 4
-
-/* Contaminant fisheries management options */
-#define no_closures 0
-#define set_closures 1
-#define conc_based 2
 
 /******* Economic parameter id numbers ********/
 /* Subfleet types */
@@ -1689,7 +1654,6 @@ typedef enum {
 	//flaglocalrecruit_id,
 	flagbearlive_id,
 	flagmother_id,
-    flag_contam_distrib_id,
 	E1orig_id,
 	E2orig_id,
 	E3orig_id,
@@ -1714,7 +1678,6 @@ typedef enum {
     estCV_id, /* FLag indicating broken stick perfect knowledge bias typew */
     estBias_id, /* FLag indicating broken stick perfect knowledge error level typew */
 	coType_id,
-    max_co_sp_id, // Maximum number of companion species
     done_Co_sp_id,
 	isbiogenhab_id,
 	Age50pcntV_id,
@@ -1727,13 +1690,7 @@ typedef enum {
 	BrefB_id,
 	BrefC_id,
 	BrefD_id,
-	BrefE_id,
 	Blim_id,
-    flag_systcap_sp_id,  /* Ecosystem cap related */
-    sp_fishery_deduction_id,
-    sp_fishery_expected_catch_id,
-    sp_fishery_pref_id,
-    sp_fishery_pref_norm_id,
 	primary_fishery_id, /* Main fishery targeting a group - for use in assessment code */
 	cpue_cdf_poor_r_id, /** number of events for negative binomial cdf for poorer skippers */
     cpue_cdf_poor_p_id, /** probabilty of an event for negative binomial cdf for poorer skippers */
@@ -1779,7 +1736,6 @@ typedef enum {
 	flagFonly_id,
 	FrefA_id,
     FrefH_id,
-    FrefLim_id,
     maxmFC_id,
     tac_resetcount_id,
 	tac_resetperiod_id,
@@ -1940,15 +1896,7 @@ typedef enum {
     SNcost_id,
     RNcost_id,
     RSstarve_id,
-    //flagusingRedusR_HCR_id,  // Using R harvest control rules for this species - just assume using Redus for all or none for now
-    /* Lake fish recruitment parameters */
-    prod_alpha_id,
-    den_depend_beta1_id,
-    den_depend_beta2_id,
-    temp_coefft_id,
-    rate_coefft_id,
-    wind_coefft_id,
-    recruit_var_id,
+    flagusingRedusR_HCR_id,  // Using R harvest control rules for this species
 	tot_prms
 
 } SPECIES_PARAMS;
@@ -2444,10 +2392,7 @@ typedef enum {
     Tier4_Bo_correct_id, // correct scalar based on whether at Bo in reference cpue period or not
 	Tier4_m_id,         // average CPUE over last m years
 	Tier4_alpha_id,     // alpha value for use in Tier 4 calculations
-    Tier4_r_id,         // population growth rate from dynamic tier 4
-    Tier4_Carry_id,     // from dynamic tier 4
-    Tier4_z_id,         // population total mortality rate from dynamic tier 4
-    Tier5_length_id,    // ref. length of full selection  for avlen method
+	Tier5_length_id,    // ref. length of full selection  for avlen method
 	Tier5_S50_id,       // length of knife-edge sel (50% sel) for avlen method
 	Tier5_cv_id,        // cv of length-at-age used in Avlen assessment
 	//Tier5_type_id,      // 1= Surplus production, 2= av length - replaced by tiertype
@@ -2570,13 +2515,6 @@ typedef enum {
     lastRBC_id,        // Last RBC before closure in tier6
     trigq_id,          // catchability marking a species as being targeted so close under tier6
     
-    // For PGMSY
-    F_5yrAvg_id,
-    Catch_5yrAvg_id,
-    AveF_id,
-    PGMSYBHalpha_id,
-    PGMSYBHbeta_id,
-    
     // From ratpack
     LFSSlim_id,
     AFSSlim_id,
@@ -2653,8 +2591,6 @@ typedef struct {
 
 	// Exploitation-related quantities
 	//double ***Calc_catch;   /* Model-derived retained catch using age exploitation rates */
-    double **Fhist;        /* Historical fishing pressure */
-    double **Fupdate;        /* Updated fishing pressure in PGMSY */
     double **EnviroData;   /* Environmental data */
 	double ***EffortData;  /* Effort data for use in calculating CPUEs */
 	double ***CatchData;   /* Catches data feed to/from SS3 - retained catches by fleet, region, and
@@ -2912,18 +2848,7 @@ typedef struct {
     double *R02;
     double *SSHsteep;
     double **RBC_post_PGMSY_by_year;
-    double *RBC_by_year;
-    double *FFs;
-    double *PGMSY_q;
-    double *PGMSY_selcurve;
-    double *PGMSY_sel_lsm;
-    double *PGMSY_sel_sigma;
-    double *CscalarMetier;
-    
-    double **AvgCatFleet;
-    double **Fupdated;
-    double **RBCupdated;
-    double **CatchStore;
+    double **RBC_by_year;
 
     double***** FracLenS;   // fraction of fish in length bins by stock, sex, age and time (start-year)
     //double***** FracLenM;   // fraction of fish in length bins by stock, sex, age and time (mid-year)
@@ -2953,7 +2878,6 @@ typedef struct {
     METarrays *metierArray;
     
     // SS relevant parameters
-    int UseAtlantisPGMSY; /* Flag to indicate whether to use Atlantis version of PGMSY */
     int UseSS;	         /* Flag indicating whether using SS for Tier 1 (1) or if using perfect info + error (0) */
     int UseTierBuffers;  /* Flag indicating whether using tier buffers (used to say US tiers) */
     double myTACbuffer;  /* Buffer used for myTAC multi-year TACs in subsequent years */
@@ -2987,11 +2911,6 @@ typedef struct {
     double GradientBuffer; /* Buffer around scores used in judging whether closest or not for the purposes of pairing up species */
     int UseCategory; /* Whether indicator species approach using a category to track against (1) or only a single species (0) */
     int UseClosest; /* Whether using closest regardless of category (1) or only the same category as you (0) */
-    int UseTriggerMgmt; /* Whether using trigger based management - so basically rolling TAC until trigger conditions met */
-    int ProjYr; /* Length of the projeciton period of assessments */
-    double  ThresholdDepletion; /* Threshold for depletion levels for PGMSY */
-    double ThresholdBound; /* Bound on convergence of depletion levels for PGMSY */
-    int MaxIteration; /* Maximum iterations allowed in PGMSY */
     
 	int initHistFileDone;  /*Flag indicating whether the history file has been initialised or not */
 	//int Tier3_Fcalc;  /* Type of tier3 F calculation to use: 1 = catch-curve, 2 = ASPM, 3 = true F */
@@ -3068,10 +2987,6 @@ typedef struct {
     
     double *catchwghtCPUE;
     double *catchwght;
-    
-    double **F_actFleet;
-    double **FratioFleet;
-    double **Fhist;
 
 } RBCstructure;
 
@@ -3929,9 +3844,6 @@ typedef struct {
     double amount_decayed;
     double dissolv_coefft;
     
-    double fishery_thresh_level;   /** Threshold level of contaminant for fishery closure */
-    
-    double *sp_decay_half_life;
     double **sp_amount_decayed;
     
     //double *lost;
@@ -3956,26 +3868,17 @@ typedef struct {
     double *sp_LDslope;
     double *sp_EC50;
     double *sp_ECslope;
-    double *sp_EC50_r;
-    double *sp_ECslope_r;
     double *sp_maxConcentration;
     
     double *sp_L;  // Parameters for logistic growth effects model
     double *sp_A;
     double *sp_B;
     
-    double *sp_L_r;  // Parameters for logistic reprod effects model
-    double *sp_A_r;
-    double *sp_B_r;
-    
     double *sp_GrowthThresh;  /* Threshold tissue level where get growth effects */
     double *sp_GrowthEffect;  /* Effect size */
     double *sp_MoveEffect;  /* Effect size on movement */
-    double *sp_ReprodThresh;  /* Threshold tissue level where get reprod effects */
     double *sp_ReprodEffect;  /* Effect size on reproduction (on number of settlers) */
     double *sp_ContamScalar;  /* Generic scalar to represent contaminant effects */
-    double *sp_maternal_transfer; /* Maternal transfer rate during conception and recruitment */
-    double *sp_suckling_transfer; /* Maternal transfer rate during suckling */
     
     double ****sp_maxDoseToDate;    /* Max dose to date of each contaminant - per cohort per box and layer */
     double *sp_maxLethalConc;    /* Max concentration for lethal dose of each contaminant */
@@ -4011,12 +3914,6 @@ typedef struct {
 #define NoGrowthEffects 0
 #define InVitro_model 1
 #define Salmon_logistic_model 2
-
-/* List of contaminant reprod options */
-#define NoReprodEffects 0
-#define Lovindeeretal 1
-#define InVitro_model_r 2
-#define Salmon_logistic_model_r 3
 
 /* List of industry model options */
 #define no_industry_model 0
@@ -4260,7 +4157,6 @@ typedef struct {
 
 
 	int flag_replicated_old; /* Flag to allow modellers to replicate the results of the old bec_dev version of the code. We will remove this asap. */
-    int flag_replicated_old_PPmort; /* So can replicate old primary production mortality assumption */
     int flag_old_embryo_init; /* Flag to use the old means of having embryoes carried over from spawning pre-model start */
     int flag_replicate_old_calendar; /* Flag to allow modellers to replicate the results of the old way of doing the aging and spawning calendar dates */
     int flag_sanity_check; /* Flag to trigger sanity checks in the demographics code */
@@ -4482,21 +4378,6 @@ typedef struct {
     double swr_cos_offset;
 	/*@}*/
 
-    /**@name
-     * thermal and rate index
-     */
-    /*@{*/
-    TimeSeries *thermal_index;
-    int tindex_id;
-    int tindex_rewindid;
-    double airtemp_index;
-    
-    TimeSeries *rate_index;
-    int rindex_id;
-    int rindex_rewindid;
-    double airT_rate_index;
-    /*@}*/
-
 	/**@name
 	 * Temperature and salinity model data input structure
 	 */
@@ -4519,7 +4400,6 @@ typedef struct {
 	PhyPropertyData tempinput;
 	PhyPropertyData saltinput;
 	PhyPropertyData pHinput;
-    PhyPropertyData windinput;
     PhyPropertyData swrinput;
     PhyPropertyData VertMixinput;
     PhyPropertyData noiseinput;
@@ -4533,7 +4413,6 @@ typedef struct {
 	int tempid; /**< Tracer id for temperature */
 	int saltid; /**< Tracer id for salinity */
 	int pHid; /**< Tracer id for salinity */
-    int windid; /**< Tracer id for wind */
     int noiseid; /**< Tracer id for noise pollution */
     int lightpid; /**< Tracer id for light pollution */
 	int **checkedalready; /**< Array of flags to indicate whether local temperature
@@ -4594,12 +4473,6 @@ typedef struct {
 	double Ksmother_const;
     
     int sp_boring_sponges;
-    
-    /* Phosphorous and Carbon related */
-    double Pads_r_t0;
-    double r_immob_PIP_t0;
-    double Pads_K;
-    double Pads_KO;
     
 	/*@}*/
 
@@ -4700,7 +4573,7 @@ typedef struct {
 	int flagmodeltemp; /**< Flag indicating which seasonal temperature variation
 	 formulation to use */
 	int flagq10; /**< Flag indicating whether q10 considerations on */
-	double Tcorr; /**< Temperature correction */
+	double Tcorr;
 	double current_corr;
 
 	int flaghemisphere; /**< Flag indicating hemisphere model is in (so get
@@ -4723,8 +4596,8 @@ typedef struct {
 	 across entire domain */
 	int flagagestruct; /**< Flag indicating whether to track age-class distribution
 	 within age phase */
-	int flagtempdepend_move; /**< Flag indicating whether movement activities is temperature dependent */
-    int flagtempdepend_reprod; /**< Flag indicating whether spawning and reproduction is temperature dependent */
+	int flagtempdepend; /**< Flag indicating whether ecological activities
+	 (e.g. movement and spawning) temperature dependent */
 	int flagsaltdepend; /**< Flag indicating whether ecological activities
 	 (e.g. movement and spawning) salinity dependent */
 	int flagO2depend; /**< Flag indicating whether ecological activities
@@ -4808,13 +4681,8 @@ typedef struct {
 
 	/** Additional tracer information */
 	int track_atomic_ratio;
-    int flagratio_warn;
-    double N_to_C;
-    double N_to_P;
 	AtomicRatioStructure *atomicRatioInfo;
 
-    int track_wind; /* Tracking wind for forcing recruitment */
-    
 	int track_contaminants;	/* Are we tracking contaminants in the model */
     int biopools_dodge_contam; /* So can stop biomass pools inappriopriately dodging contaminants - important in some models */
 	int num_contaminants;
@@ -4824,23 +4692,11 @@ typedef struct {
     int flag_contamInteractModel;
     int flag_contamOnlyAmplify;
     int flag_contamGrowthModel;
-    int flag_contamReprodModel;
     int flag_contamMove;
     int flag_contamMinTemp;
-    int flag_detritus_contam;
-    int flag_contam_fisheries_mgmt;
-    int flag_contam_halflife_spbased;
-    int flag_contamMaternalTransfer;
-    int flag_contam_distrib;
-    int contam_fishery_closure_day;
-    int contam_fishery_closure_period;
-    int contam_fishery_closure_option;
     
-    double contam_sig_uptake_const;
     double contam_tau;
-    
-    double *ContamClosed;
-    ContaminantStructure **contaminantStructure;
+	ContaminantStructure **contaminantStructure;
 
 	double X_CN; /**< C:N ratio for use in Redfield or conversion AFDW to wet weight (typically 5.7) */
     double k_wetdry;
@@ -4887,7 +4743,6 @@ typedef struct {
     double ****turbid_effect; /* Refuge from predation provided by turbidity conditions - only in effect if flagIsEstuary is active (on) */
 
     double *tot_SSB; /* Spawning stock biomass */
-    double **tot_cohort; /* Total cohort numbers */
 
 	double **coveramt; /* Proportional cover by each substrate type per box */
 	int REEFcover_id;
@@ -4992,7 +4847,6 @@ typedef struct {
 	double Speed_recboat; /* Speed of recreational fishing boats */
 
     int K_max_co_sp;
-    int K_max_impacted_sp; /* id of the last impacted species listed in the groups.csv file */
 	int K_num_fisheries; /* Maximum number of fisheries in the model */
 	int K_max_num_subfleet;
 	int K_max_num_zoning; /* Maximum number of fisheries zonings in the model */
@@ -5012,7 +4866,6 @@ typedef struct {
 	int flagfinfish; /* Flag inficating fish fin-fish */
 	int flagincidmort; /* Flag indicating incidental mortality on */
 	int flagendangered; /* Flag indicating whether using management based on PET groups */
-	int flagSSBforHCR; /* Flag indicating whether using SSB for HCR (1) or total B (0) */
 	int flagmpa; /* Flag indicating form of spatial management used */
 	int flagrollingmpa; /* Flag indicating whether have rolling spatial management or not */
 	int flaginfringe; /* Flag indicating whether there are management infringements */
@@ -5043,19 +4896,6 @@ typedef struct {
 	 TAC calculations */
 	int dynanyway; /**< Flag indicating whether want dynamic effort allocation and pseudo assessment or
 	 pseudo movement to go with the pseudo assessment */
-    
-    /* Ecosystem cap related */
-    int maxF_aggregate; /**< Flag to do with system cap calculations - indicagging whether want maxF as sum over mFC or max of mFC */
-    int use_time_avg_biom;  /**< Flag to do with system cap calculations -  if using B not N in calculating expected catch, is whether use avg min,max B stored over the year or rolling_B  */
-    int use_time_avg_wgt; /**< Flag to do with system cap calculations -  if using N not B in calculating expected catch, is whether use avg min,max wgt stored over the year or rolling_wgt */
-    int syst_cap_calc_method; /**< Flag to do with system cap calculations  - whether use numbers based application of the catch equation or just average B */
-    int sp_pref_inv_norm_done; /**< Flag to do with system cap calculations - whether the normalised weighting has been done for later use in ecosystem cap HCR */
-    int M_est_method; /**< Flag to do with system cap calculations - which option for calculating M */
-    double Ecosystm_Cap_tonnes; /**< Value of ecosystem catch cap in tonnes */
-    int K_rolling_cap_num; /**< Value used to create array and refer to values - will be ceil(12 * bm->K_cap_rolling_period) */
-    double K_cap_rolling_period; /**< Length of the period to using for the roling average in years */
-
-    int **rolling_cap_initialised; /**< Flag so know whether initialised or not as yet */
     
     int flagSimpleStartStopMPAs; /**< Flag indicating simple start and stop dates for MPAs un use */
     int MPAstartyr; /**< Run day that MPAs start */
@@ -5176,10 +5016,6 @@ typedef struct {
 	double ***RecCatch; /**< Recreational catch statistics */
 	double **targetspbiom; /**< Biomass map to condition fisheries effort allocation
 	 and targeting of trips */
-    
-    double **CumDisplaceEffort; /** Cumualtive displaced effort - for reporting purposes */
-    
-    double ***selectivity;    /** Constant selectivity per cohort or stage for each group (for the invertebrates it is identical to the entries above for constant selectivity regardless of size.*/
 
 	double ***TACamt; /* Array of total allowable catch levels */
 	double ****BiTACamt; /* Array of bimonthly total allowable catch levels */
@@ -5224,13 +5060,11 @@ typedef struct {
 	double targ_refB; /* Target reference point B (e.g. B40) for tiered harvest rules */
 	double targ_refC; /* Target reference point C (e.g. B60) for tiered harvest rules */
 	double targ_refD; /* Target reference point D (e.g. B50) for tiered harvest rules */
-  double targ_refE; /* Target reference point E (e.g. B20) for tiered harvest rules */
 	double lim_ref; /* Limit reference point for assessments and TAC setting */
 	double forage_refA; /* Target reference point A (e.g. B48) for forage species in tiered harvest rules */
 	double forage_refB; /* Target reference point B (e.g. B40) for forage species in tiered harvest rules */
 	double forage_refC; /* Target reference point C (e.g. B60) for forage species in tiered harvest rules */
 	double forage_refD; /* Target reference point D (e.g. B50) for forage species in tiered harvest rules */
-  double forage_refE; /* Target reference point E (e.g. B20) for forage species in tiered harvest rules */
 	double forage_lim_ref; /* Limit reference point for forage species in assessments and TAC setting */
     double byproduct_refA; /* Target reference point A (e.g. B48) for byproduct species in tiered harvest rules */
     double byproduct_refB; /* Target reference point B (e.g. B40) for byproduct species in tiered harvest rules */
@@ -5257,8 +5091,6 @@ typedef struct {
 	int bulkTAC;			  /* Whether multi-year TACs are one total for the entire period or if
 								 it is annual quota to track just not doing an assessment for x years */
 	int OldCatchReset;		  /* Whether need to reset the OldCatchSum and TotOldCumCatch arrays */
-    
-    int EffortModelsActive; /* Flag to indicate an effort model is in use */
 
 	/* Parameters for tiered assessments - for catch-cost-risk analyses */
 	RBCstructure RBCestimation;
@@ -5378,7 +5210,6 @@ typedef struct {
 	double **tassPatchy; /* String of gaps between samples (for patchy sampling) */
 	int pseudo_assess; /* Flag indicating whether using pseudo assessments */
     int do_sumB_HCR; /* Whether the harvest control rule applies to the sum of the guild rather than per species */
-    int do_syst_cap; /* Whether using an ecosystem cap in management or not */
 
 	/**@name
 	 * Assessment model parameters
@@ -5679,13 +5510,11 @@ typedef struct {
     int Contam; /* flag indication whether a contaminant tracer or not */
 } Namelist;
 
-
 /*********************************************************************
  Global variables
  *********************************************************************/
 extern double **dvol, ***dtr;
 extern double **CatchSum;
-extern double ****mFCchange;
 
 extern int it_count, waterboundary;
 
@@ -5808,7 +5637,7 @@ void boundaries(MSEBoxModel *bm, double ***newwctr, double ***newsedtr, double *
 void dz_from_volume(MSEBoxModel *bm);
 void nz_from_nomdz(MSEBoxModel *bm);
 void layer_coords(MSEBoxModel *bm, FILE *llogfp);
-void sed_layer_coords(SedModel *sm, FILE *llogfp);
+void sed_layer_coords(SedModel *sm);
 
 void ice_layer_coords(Box *bp, IceModel *ice);
 
@@ -5858,6 +5687,14 @@ void Amoeba(MSEBoxModel *bm, int assessing, int sp, double dayt, char* speciesna
 		double prm_sp, int *nfunk, int *ilow, FILE *ofp, double *xpar);
 void powell(MSEBoxModel *bm, int sp, double *xf, double **xunit, int npar, double ftol, int *iter, double *ss, int funkflag);
 
+/* Redus management related prototypes */
+void Redus_Linkage_Start(MSEBoxModel *bm);
+int freeRedus();
+
+/* RAssess related */
+void RRAssess_Linkage_Start(MSEBoxModel *bm);
+void Do_RAssess(MSEBoxModel *bm, int species, int year, FILE *llogfp);
+int freeRRAssess();
 
 /* Economics related prototypes */
 void Quicksort_Dir(double *x, double *bbx, double *ccx, double *ddx, double *eex, int n, int ascendflag);
@@ -5878,14 +5715,6 @@ FILE * initDynTier4File(MSEBoxModel *bm);
 FILE * initDynTier4CTLFile(MSEBoxModel *bm);
 
 #ifdef RASSESS_LINK_ENABLED
-/* RAssess related */
-void RRAssess_Linkage_Start(MSEBoxModel *bm);
-void Do_RAssess(MSEBoxModel *bm, int species, int year, FILE *llogfp);
-int freeRRAssess();
-
-/* Redus management related prototypes */
-void Redus_Linkage_Start(MSEBoxModel *bm);
-int freeRedus();
 void REDUS_management(MSEBoxModel *bm, FILE *llogfp);
 void RAssessSurvey(MSEBoxModel *bm, FILE *llogfp);
 #endif

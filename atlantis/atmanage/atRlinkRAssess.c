@@ -73,7 +73,7 @@ FILE * Init_RAssess_File(MSEBoxModel *bm, int species) {
 
     /** Create filename **/
     sprintf(fname,"%s_%s",FunctGroupArray[species].groupCode, bm->RAssessRinName);
-    printf("Init_RAssess_File: Creating %s\n",fname);
+    printf("Creating %s\n",fname);
     
     /* Create file */
     if ((fp = Util_fopen(bm, fname, "w")) == NULL)
@@ -307,8 +307,6 @@ void Run_RAssess(MSEBoxModel *bm, int species, FILE *RAssessfp) {
     double Rret;
     int errorOccurred = 0;
     int idR = FunctGroupArray[species].speciesParams[whichRAssess_id];
-    
-    printf("Run_RAssess for species %s idR %d RAssessRuseScript %d\n", FunctGroupArray[species].groupCode, idR, bm->RAssessRuseScript);
     
     if(idR < 0) {
         quit("whichRAssess is negative for %s so can't complete Run_RAssess\n", FunctGroupArray[species].groupCode);

@@ -85,7 +85,6 @@ static void Check_Ecosystem_F_Harvest_Control_Rule(MSEBoxModel *bm, FILE *llogfp
 static void Check_F_Harvest_Control_Rule(MSEBoxModel *bm, FILE *llogfp);
 static void Per_Sp_Frescale (MSEBoxModel *bm, FILE *llogfp, int sp);
 static void Guild_Frescale (MSEBoxModel *bm, FILE *llogfp, int sp);
-static void Ecosystem_Cap_Frescale(MSEBoxModel *bm, FILE *llogfp);
 
 #ifdef RASSESS_LINK_ENABLED
     static void Check_R_management(MSEBoxModel *bm, FILE *llogfp);
@@ -234,9 +233,9 @@ void Annual_Effort_Scale(MSEBoxModel *bm, FILE *llogfp) {
  *	knowledge in management
  */
 void Make_Mgmt_Decisions(MSEBoxModel *bm, FILE *llogfp) {
-	int sp, nf, flag_sp, co_sp, co_sp2, co_TYPE, dont_scale2, do_assessing = 0, flagrecfish, in_quota, bim;
-	double totTAC, FC2_ratio, spA_TAC, spC_TAC = 0, expect_spC = 0, avg_DAS, num_DAS;
-	double spTotCumCatch, co_sp2_TotCumCatch;
+	int sp, nf, flag_sp, co_sp, co_sp2, co_TYPE, dont_scale, dont_scale2, do_assess, flagrecfish, in_quota, bim;
+	double totTAC, FC_ratio, FC2_ratio, spA_TAC, spB_TAC = 0, spC_TAC = 0, expect_spB = 0, expect_spC = 0, avg_DAS, num_DAS;
+	double spTotCumCatch, co_sp_TotCumCatch, co_sp2_TotCumCatch;
 	int year = (int)ceil(bm->dayt / 365);
     
     fprintf(llogfp,"Time: %e year %d\n", bm->dayt, year);
@@ -248,16 +247,8 @@ void Make_Mgmt_Decisions(MSEBoxModel *bm, FILE *llogfp) {
 	Check_R_management(bm, llogfp);
 #endif
     
-    /* If doing pseudo assessments go do them now */
-    do_assessing = 1;
-    if (bm->pseudo_assess || bm->useRBCTiers || bm->do_TACassessing) {
-        do_assessing = 1;
-    } else if (!bm->do_TACassessing) {  // used to be "else if (!bm->do_assessing)" but can have the case where want science collection but not TAC setting
-        do_assessing = 0;
-    }
-    
     // Do not bother executing these in the first year
-    if ((bm->thisyear > 0) || (!do_assessing)){
+    if (bm->thisyear > 0) {
         Check_F_Harvest_Control_Rule(bm, llogfp);
         Check_Ecosystem_F_Harvest_Control_Rule(bm, llogfp);
     } else {
@@ -269,8 +260,16 @@ void Make_Mgmt_Decisions(MSEBoxModel *bm, FILE *llogfp) {
         }
     }
 
+	/* If doing pseudo assessments go do them now */
+	do_assess = 1;
+	if (bm->pseudo_assess || bm->useRBCTiers || bm->do_TACassessing) {
+		do_assess = 1;
+	} else if (!bm->do_TACassessing) {  // used to be "else if (!bm->do_assessing)" but can have the case where want science collection but not TAC setting
+		do_assess = 0;
+	}
+
 	/* If not using assessment model then don't bother with this step */
-	if (!do_assessing) {
+	if (!do_assess) {
 		return;
 	}
 
@@ -288,34 +287,32 @@ void Make_Mgmt_Decisions(MSEBoxModel *bm, FILE *llogfp) {
 	}
 
 	/* Do assessments */
+    // Call PGMSY first as does own species assessments - so don't redo those species below
+    if (bm->PGMSY_on) {
+        Call_PGMSY(bm, year, llogfp);
+    }
+    
 	for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
-        // Under single species assessments - for single species only or PGMSY
-        if((bm->UsingRAssess == 1) && (FunctGroupArray[sp].isTAC > 1)) {
-#ifdef RASSESS_LINK_ENABLED
-            Do_RAssess(bm, sp, year, llogfp);
-#else
-            quit("How get here as R link not active so set UsingRAssess to 0\n");
-#endif
-        } else if(bm->useRBCTiers) {
-            CallTierAssessment(bm, sp, year, llogfp);
+        if ((int)(bm->RBCestimation.RBCspeciesParam[sp][MultispAssessType_id]) > SingleSpOnly) {
+            // Do nothing as covered in multispecies call - PGMSY or otherwise
         } else {
-            AMS_Tiered_Assessment(bm, sp, llogfp);
+            // Under single species assessments
+            if((bm->UsingRAssess == 1) && (FunctGroupArray[sp].isTAC > 1)) {
+#ifdef RASSESS_LINK_ENABLED
+                Do_RAssess(bm, sp, year, llogfp);
+#else
+                quit("How get here as R link not active so set UsingRAssess to 0\n");
+#endif
+            } else if(bm->useRBCTiers) {
+                CallTierAssessment(bm, sp, year, llogfp);
+            } else {
+                AMS_Tiered_Assessment(bm, sp, llogfp);
+            }
         }
 	}
     
-    // Allow for F based assessment rule her etoo, judt in case, especiallyfor Norway
-    if ((bm->thisyear > 0) && do_assessing){
-        Check_F_Harvest_Control_Rule(bm, llogfp);
-        Check_Ecosystem_F_Harvest_Control_Rule(bm, llogfp);
-    }
-
-    fprintf(bm->logFile, "Time: %e year: %d Getting read to do DoMultiStockAssessment as useMultispAssess: %d\n", bm->dayt, year, bm->useMultispAssess);
-
     /* Do multispecies assessments if needed */
     if (bm->useMultispAssess) {
-        if (bm->PGMSY_on) {
-            Call_PGMSY(bm, year, llogfp);
-        }
         DoMultiStockAssessment(bm, year, llogfp);
     }
 
@@ -323,95 +320,159 @@ void Make_Mgmt_Decisions(MSEBoxModel *bm, FILE *llogfp) {
 	for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
 		if (FunctGroupArray[sp].isFished == TRUE) {
 
-            /* If only resetting Fs skip ahead now */
+			/* If only resetting Fs skip ahead now */
 			if (FunctGroupArray[sp].speciesParams[flagFonly_id])
 				continue;
+
+			co_sp = (int) (FunctGroupArray[sp].co_sp[0]);
+			co_sp2 = (int) (FunctGroupArray[sp].co_sp[1]);
             
-            co_TYPE = (int) (FunctGroupArray[sp].speciesParams[coType_id]);
-            spTotCumCatch = Harvest_Get_TotCumCatch(sp, nf, bm->thisyear);
-
-            for (co_sp = 0; co_sp < FunctGroupArray[sp].speciesParams[max_co_sp_id]; co_sp++ ) {
-                co_sp2 = FunctGroupArray[sp].co_sp[co_sp];
+            if ((bm->K_max_co_sp > 2) && bm->newmonth)
+                warn("Only first 2 compantions species being considered\n");
             
-                /* If neither of the companion groups is fished then do nothing */
-                if ((co_sp2 == -1 || FunctGroupArray[co_sp2].isFished == FALSE))
-                    continue;
+			co_TYPE = (int) (FunctGroupArray[sp].speciesParams[coType_id]);
 
-                if (co_sp2 > 0) {
-                    fprintf(llogfp, "Time: %e, looking at %s vs co_sp: %s, co_sp2: %s, flagdyn_coupdate: %d\n", bm->dayt, FunctGroupArray[sp].groupCode, FunctGroupArray[co_sp].groupCode, FunctGroupArray[co_sp2].groupCode, bm->flagdyn_coupdate);
-                } else {
-                    fprintf(llogfp, "Time: %e, looking at %s vs co_sp: %s, flagdyn_coupdate: %d\n", bm->dayt, FunctGroupArray[sp].groupCode, FunctGroupArray[co_sp].groupCode, bm->flagdyn_coupdate);
-                }
+			/* If neither of the companion groups is fished then do nothing */
+			if ((co_sp == -1 || FunctGroupArray[co_sp].isFished == FALSE) && (co_sp2 == -1 || FunctGroupArray[co_sp2].isFished == FALSE))
+				continue;
 
-                for (nf = 0; nf < bm->K_num_fisheries; nf++) {
+			//			if((co_sp != Not_fished_id) || (co_sp2 != Not_fished_id)){
+			//				/* Do nothing as want to continue */
+			//			} else {
+			//				/* No companions so skip */
+			//				continue;
+			//			}
+			if (co_sp2 > 0) {
+				fprintf(llogfp, "Time: %e, looking at %s vs co_sp: %s, co_sp2: %s, flagdyn_coupdate: %d\n", bm->dayt, FunctGroupArray[sp].groupCode,
+						FunctGroupArray[co_sp].groupCode, FunctGroupArray[co_sp2].groupCode, bm->flagdyn_coupdate);
 
-                    /* Only change management in fisheries where management active */
-                    if (bm->FISHERYprms[nf][manage_on_id] < 1)
-                        continue;
+			} else {
+				fprintf(llogfp, "Time: %e, looking at %s vs co_sp: %s, flagdyn_coupdate: %d\n", bm->dayt, FunctGroupArray[sp].groupCode,
+						FunctGroupArray[co_sp].groupCode, bm->flagdyn_coupdate);
+			}
 
-                    co_sp2_TotCumCatch = 0.0;
-                    if (bm->flagdyn_coupdate) {
-                        /* Update catch ratios */
-                        if (co_sp2 != -1 && FunctGroupArray[co_sp2].isFished == TRUE) {
-                            co_sp2_TotCumCatch = Harvest_Get_TotCumCatch(co_sp2, nf, bm->thisyear);
-                            FC2_ratio = co_sp2_TotCumCatch / (spTotCumCatch + small_num);
-                        } else {
-                            FC2_ratio = 1.0;
-                        }
-                    } else {
-                        /* Always use initial (read-in) catch ratios */
-                        FC2_ratio = FunctGroupArray[sp].co_sp_catch[nf][co_sp2];
-                    }
-                    spA_TAC = bm->TACamt[sp][nf][now_id];
+			for (nf = 0; nf < bm->K_num_fisheries; nf++) {
 
-                    /* Cope with zero catches when quota still available */
-                    if ((spTotCumCatch == 0) && spA_TAC) {
-                        FC2_ratio = max(1.0, FunctGroupArray[sp].co_sp_catch[nf][co_sp2]);
-                    }
+				/* Only change management in fisheries where management active */
+				if (bm->FISHERYprms[nf][manage_on_id] < 1)
+					continue;
 
-                    if (co_sp2 != -1 && FunctGroupArray[co_sp2].isFished == TRUE) {
-                        spC_TAC = bm->TACamt[co_sp2][nf][now_id];
-                        expect_spC = FC2_ratio * spA_TAC; // What expected TAC of companion to A should be
-                        dont_scale2 = 0;
+				spTotCumCatch = Harvest_Get_TotCumCatch(sp, nf, bm->thisyear);
+				co_sp_TotCumCatch = 0.0;
+				co_sp2_TotCumCatch = 0.0;
 
-                        /* For those cases where there is no actual catch despite wanting quota don't play with the TACs */
-                        if (!co_sp2_TotCumCatch && spC_TAC) {
-                            dont_scale2 = 1;
-                        }
-                    } else {
-                        dont_scale2 = 1;
-                    }
+				if (bm->flagdyn_coupdate) {
+					/* Update catch ratios */
+					if (co_sp != -1 && FunctGroupArray[co_sp].isFished == TRUE) {
+						co_sp_TotCumCatch = Harvest_Get_TotCumCatch(co_sp, nf, bm->thisyear);
+						FC_ratio = co_sp_TotCumCatch / (spTotCumCatch + small_num);
+					} else
+						FC_ratio = 1.0;
+					if (co_sp2 != -1 && FunctGroupArray[co_sp2].isFished == TRUE) {
+						co_sp2_TotCumCatch = Harvest_Get_TotCumCatch(co_sp2, nf, bm->thisyear);
+						FC2_ratio = co_sp2_TotCumCatch / (spTotCumCatch + small_num);
+					} else
+						FC2_ratio = 1.0;
+				} else {
+					/* Always use initial (read-in) catch ratios */
+					FC_ratio = bm->SP_FISHERYprms[sp][nf][co_sp_catch_id];
+					FC2_ratio = bm->SP_FISHERYprms[sp][nf][co_sp_catch2_id];
+				}
+				spA_TAC = bm->TACamt[sp][nf][now_id];
 
-                    /* Reset TACs dependent on TAC of companion group */
-                    switch (co_TYPE) {
-                        case Weakest_Link: /* Set TAC based on weakest link in the pair */
-                            if (!dont_scale2 && (spC_TAC > expect_spC)) {
-                                bm->TACamt[co_sp2][nf][now_id] = expect_spC;
-                                bm->TAC_trigger[nf][triggered_scalar_id] *= expect_spC / (spC_TAC + small_num);
+				/*
+				 if((nf == dtrawlBMS_id) && ((co_sp == FPO_id) || (co_sp2 == FPO_id))){
+				 fprintf(llogfp, "Time: %e, %s, FC_ratio: %e, FC2_ratio: %e, spA_TAC: %e\n", bm->dayt, FisheryArray[nf].fisheryCode, FC_ratio, FC2_ratio, spA_TAC);
+				 fprintf(llogfp, "TotCumCatch%s: %e, TotCumCatch%s: %e, TotCumCatch%s: %e, co_sp_catch: %e, co_sp_Catch2: %e\n",
+				 FunctGroupArray[sp].groupCode, spTotCumCatch, FunctGroupArray[co_sp].groupCode, co_sp_TotCumCatch], FunctGroupArray[co_sp2].groupCode, co_sp2_TotCumCatch, bm->SP_FISHERYprms[sp][nf][co_sp_catch_id], bm->SP_FISHERYprms[sp][nf][co_sp_catch2_id]);
+				 }
+				 */
 
-                                fprintf(llogfp, "Time: %e, TAC for %s in %s was changed by %e (WLtrig_scalar: %e, expect_spB: %e, spC_Tac: %e) to %e\n", bm->dayt, FunctGroupArray[co_sp2].groupCode, FisheryArray[nf].fisheryCode, expect_spC / (spC_TAC + small_num), bm->TAC_trigger[nf][triggered_scalar_id], expect_spC, spC_TAC, bm->TACamt[co_sp2][nf][now_id]);
-                            }
-                            break;
-                        case Strongest_link: /* Set TAC based on strongest link in the pair */
-                            if (!dont_scale2 && (spC_TAC < expect_spC)) {
-                                bm->TACamt[co_sp2][nf][now_id] = expect_spC;
-                                bm->TAC_trigger[nf][triggered_scalar_id] *= expect_spC / (spC_TAC + small_num);
+				/* Cope with zero catches when quota still available */
+				if ((spTotCumCatch == 0) && spA_TAC) {
+					FC_ratio = max(1.0, bm->SP_FISHERYprms[sp][nf][co_sp_catch_id]);
+					FC2_ratio = max(1.0, bm->SP_FISHERYprms[sp][nf][co_sp_catch2_id]);
+				}
 
-                                fprintf(llogfp, "Time: %e, TAC for %s in %s was changed by %e (SLtrig_scalar: %e, expect_spB: %e, spC_Tac: %e) to %e\n", bm->dayt, FunctGroupArray[co_sp2].groupCode, FisheryArray[nf].fisheryCode, expect_spC / (spC_TAC + small_num), bm->TAC_trigger[nf][triggered_scalar_id], expect_spC, spC_TAC, bm->TACamt[co_sp2][nf][now_id]);
-                            }
-                            break;
-                        default:
-                            quit("No such companion TAC option as yet. Must chose either weakest (0) or strongest (1) link\n");
-                            break;
-                    }
+				if (co_sp != -1 && FunctGroupArray[co_sp].isFished == TRUE) { // co_sp != Not_fished_id){
+					spB_TAC = bm->TACamt[co_sp][nf][now_id];
+					expect_spB = FC_ratio * spA_TAC; // What expected TAC of companion to A should be
+					dont_scale = 0;
 
-                    /* Output simple list of new TACs */
-                    /*
-                     if (!dont_scale2) {
-                        fprintf(llogfp, "Time: %e, sp %s in %s coTAC = %e (%s-TAC: %e)\n", bm->dayt, FunctGroupArray[sp].groupCode, FisheryArray[nf].fisheryCode, bm->TACamt[sp][nf][now_id], FunctGroupArray[co_sp2].groupCode, bm->TACamt[co_sp2][nf][now_id]);
-                     }
-                     */
-                }
+					/* For those cases where there is no actual catch despite woning quota don't play with the TACs */
+					if (!co_sp_TotCumCatch && spB_TAC)
+						dont_scale = 1;
+				} else
+					dont_scale = 1;
+
+				if (co_sp2 != -1 && FunctGroupArray[co_sp2].isFished == TRUE) { //co_sp2 != Not_fished_id){
+					spC_TAC = bm->TACamt[co_sp2][nf][now_id];
+					expect_spC = FC2_ratio * spA_TAC; // What expected TAC of companion to A should be
+					dont_scale2 = 0;
+
+					/* For those cases where there is no actual catch despite woning quota don't play with the TACs */
+					if (!co_sp2_TotCumCatch && spC_TAC)
+						dont_scale2 = 1;
+				} else
+					dont_scale2 = 1;
+
+				/*
+				 if((nf == dtrawlBMS_id) && ((co_sp == FPO_id) || (co_sp2 == FPO_id))){
+				 fprintf(llogfp,"Time: %e, spB_TAC: %e, expect_spB: %e, dont_scale: %d, spC_TAC: %e, expect_spC: %e, dont_scale2: %d\n",
+				 bm->dayt, spB_TAC, expect_spB, dont_scale, spC_TAC, expect_spC, dont_scale2);
+				 }
+				 */
+
+				/* Reset TACs dependent on TAC of companion group */
+				switch (co_TYPE) {
+				case Weakest_Link: /* Set TAC based on weakest link in the pair */
+					if (!dont_scale && (spB_TAC > expect_spB)) {
+						bm->TACamt[co_sp][nf][now_id] = expect_spB;
+						bm->TAC_trigger[nf][triggered_scalar_id] *= expect_spB / (spB_TAC + small_num);
+
+						fprintf(llogfp, "Time: %e, TAC for %s in %s was changed by %e (WLtrig_scalar: %e, expect_spB: %e, spB_Tac: %e) to %e\n", bm->dayt,
+								FunctGroupArray[co_sp].groupCode, FisheryArray[nf].fisheryCode, expect_spB / (spB_TAC + small_num),
+								bm->TAC_trigger[nf][triggered_scalar_id], expect_spB, spB_TAC, bm->TACamt[co_sp][nf][now_id]);
+
+					}
+					if (!dont_scale2 && (spC_TAC > expect_spC)) {
+						bm->TACamt[co_sp2][nf][now_id] = expect_spC;
+						bm->TAC_trigger[nf][triggered_scalar_id] *= expect_spC / (spC_TAC + small_num);
+
+						fprintf(llogfp, "Time: %e, TAC for %s in %s was changed by %e (WLtrig_scalar: %e, expect_spB: %e, spC_Tac: %e) to %e\n", bm->dayt,
+								FunctGroupArray[co_sp2].groupCode, FisheryArray[nf].fisheryCode, expect_spC / (spC_TAC + small_num),
+								bm->TAC_trigger[nf][triggered_scalar_id], expect_spC, spC_TAC, bm->TACamt[co_sp2][nf][now_id]);
+					}
+					break;
+				case Strongest_link: /* Set TAC based on strongest link in the pair */
+					if (!dont_scale && (spB_TAC < expect_spB)) {
+						bm->TACamt[co_sp][nf][now_id] = expect_spB;
+						bm->TAC_trigger[nf][triggered_scalar_id] *= expect_spB / (spB_TAC + small_num);
+
+						fprintf(llogfp, "Time: %e, TAC for %s in %s was changed by %e (SLtrig_scalar: %e, expect_spB: %e, spB_Tac: %e) to %e\n", bm->dayt,
+								FunctGroupArray[co_sp].groupCode, FisheryArray[nf].fisheryCode, expect_spB / (spB_TAC + small_num),
+								bm->TAC_trigger[nf][triggered_scalar_id], expect_spB, spB_TAC, bm->TACamt[co_sp][nf][now_id]);
+					}
+					if (!dont_scale2 && (spC_TAC < expect_spC)) {
+						bm->TACamt[co_sp2][nf][now_id] = expect_spC;
+						bm->TAC_trigger[nf][triggered_scalar_id] *= expect_spC / (spC_TAC + small_num);
+
+						fprintf(llogfp, "Time: %e, TAC for %s in %s was changed by %e (SLtrig_scalar: %e, expect_spB: %e, spC_Tac: %e) to %e\n", bm->dayt,
+								FunctGroupArray[co_sp2].groupCode, FisheryArray[nf].fisheryCode, expect_spC / (spC_TAC + small_num),
+								bm->TAC_trigger[nf][triggered_scalar_id], expect_spC, spC_TAC, bm->TACamt[co_sp2][nf][now_id]);
+					}
+					break;
+				default:
+					quit("No such companion TAC option as yet. Must chose either weakest (0) or strongest (1) link\n");
+					break;
+				}
+
+				/* Output simple list of new TACs */
+
+				//if ((!dont_scale) || (!dont_scale2))
+				//				if ((!dont_scale) && (!dont_scale2))
+				//					fprintf(llogfp, "Time: %e, sp %s in %s coTAC = %e (%s-TAC: %e, %s-TAC: %e)\n", bm->dayt, FunctGroupArray[sp].groupCode, FisheryArray[nf].fisheryCode,
+				//							bm->TACamt[sp][nf][now_id], FunctGroupArray[co_sp].groupCode, bm->TACamt[co_sp][nf][now_id], FunctGroupArray[co_sp2].groupCode, bm->TACamt[co_sp2][nf][now_id]);
 			}
 		}
 	}
@@ -501,9 +562,7 @@ void Make_Mgmt_Decisions(MSEBoxModel *bm, FILE *llogfp) {
 						/* Don't include recfishing in quota allocation for now (as often not quota-ed)
 						 FIX - may have to change this if recfishing becomes quota allocated group
 						 */
-                        if(!FunctGroupArray[sp].isTAC || (bm->TACamt[sp][nf][now_id] < no_quota)) {
-                            totTAC += bm->TACamt[sp][nf][now_id];
-                        }
+						totTAC += bm->TACamt[sp][nf][now_id];
 						fprintf(llogfp, " %s=%e", FisheryArray[nf].fisheryCode, bm->TACamt[sp][nf][now_id]);
 					}
 				}
@@ -582,23 +641,20 @@ void AMS_Tiered_Assessment(MSEBoxModel *bm, int sp, FILE *llogfp) {
 		 FIX - Make this more flexible!
 		 */
 		if (bm->pseudo_assess) {
-            if (FunctGroupArray[sp].isVertebrate == TRUE) {
-                Assess_Pseudo_Estimate_Prm(bm, sp, llogfp);
-            } else {
-                return;
-            }
+			if (FunctGroupArray[sp].isVertebrate == TRUE)
+				Assess_Pseudo_Estimate_Prm(bm, sp, llogfp);
+			else
+				return;
 		}
 
 		/* If only resetting Fs skip ahead now */
-        if (FunctGroupArray[sp].speciesParams[flagFonly_id]) {
-            return;
-        }
+		if (FunctGroupArray[sp].speciesParams[flagFonly_id])
+			return;
 
 		/* If multiyear TAC and not the correct year continue on */
 		FunctGroupArray[sp].speciesParams[tac_resetnow_id] = 0;
-        if(FunctGroupArray[sp].speciesParams[tac_resetcount_id] < FunctGroupArray[sp].speciesParams[tac_resetperiod_id]) {
-            return;
-        }
+		if(FunctGroupArray[sp].speciesParams[tac_resetcount_id] < FunctGroupArray[sp].speciesParams[tac_resetperiod_id])
+			return;
 		FunctGroupArray[sp].speciesParams[tac_resetcount_id] = 0; // Reinitialise the counter if going to reset TAC
 		FunctGroupArray[sp].speciesParams[tac_resetnow_id] = 1;
 
@@ -786,7 +842,6 @@ void AMS_Tiered_Assessment(MSEBoxModel *bm, int sp, FILE *llogfp) {
 			break;
         case tier8:
         case tier9:
-        case tier13:
             RBC = 0.0;
             quit("Need to add code for this tier in AMS_Tiered_Assessment()\n");
             break;
@@ -819,9 +874,7 @@ void AMS_Tiered_Assessment(MSEBoxModel *bm, int sp, FILE *llogfp) {
 					/* Also update annual reporting and storage of old quotas */
 					bm->TACamt[sp][nf][old_id] = bm->TACamt[sp][nf][now_id];
 
-                    if(!FunctGroupArray[sp].isTAC || (bm->TACamt[sp][nf][now_id] < no_quota)) {
-                        totTAC += bm->TACamt[sp][nf][now_id];
-                    }
+					totTAC += bm->TACamt[sp][nf][now_id];
 				}
 				if (FunctGroupArray[sp].speciesParams[sp_concern_id]) {
 					totcatch += Harvest_Get_TotCumCatch(sp, nf, bm->thisyear);//bm->TotCumCatch[sp][nf][bm->thisyear];
@@ -1011,79 +1064,61 @@ void Check_F_Harvest_Control_Rule(MSEBoxModel *bm, FILE *llogfp) {
 	int sp, nf, tier;
     
     // Per species HCR setting
-    switch (bm->do_sumB_HCR) {
-        case per_sp_rescale:
-            for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
-               if (FunctGroupArray[sp].isFished == TRUE) {
-               
-                   if(bm->usingRedus_R_HCR) {   // Used to say < 1 but that would mean it wasn't in RedusR - also used to be at a species level using FunctGroupArray[sp].speciesParams[flagusingRedusR_HCR_id] but now assume it is all or nothing across all species in the model
-                       continue; // As being done in R instead
-                   }
-
-                   /* Set the mFC scale value to 1.0 just in case */
-                   for (nf = 0; nf < bm->K_num_fisheries; nf++) {
-                       bm->SP_FISHERYprms[sp][nf][mFC_scale_id] = 1.0;
-                   }
-
-                   /* If not resetting (but doing TAC reset etc) skip ahead now */
-                   if (!FunctGroupArray[sp].speciesParams[flagFonly_id])
-                       continue;
-
-                   /* Check to see that want to use a harvest control rule */
-                   tier = (int) (FunctGroupArray[sp].speciesParams[tier_id]);
-                   if (tier != tier_orig) {
-                       /* Calculate Fcurr and update using the harvest control rule */
-                        Per_Sp_Frescale(bm, llogfp, sp);
-                   }
+    if (!bm->do_sumB_HCR) {
+        for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
+           if (FunctGroupArray[sp].isFished == TRUE) {
+           
+               if(FunctGroupArray[sp].speciesParams[flagusingRedusR_HCR_id]) {   // Used to say < 1 but that woudl mean it wasn't in RedusR
+                   continue; // As being done in R instead
                }
-            }
-            break;
-        case per_guild_rescale:
-            //Reset done check
-            for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
-                FunctGroupArray[sp].speciesParams[done_Co_sp_id] = 0;
-                
-                /* Set the mFC scale value to 1.0 just in case - can't do in next loop as could be reset as part of the guild */
-                for (nf = 0; nf < bm->K_num_fisheries; nf++) {
-                    bm->SP_FISHERYprms[sp][nf][mFC_scale_id] = 1.0;
-                }
-            }
+
+               /* Set the mFC scale value to 1.0 just in case */
+               for (nf = 0; nf < bm->K_num_fisheries; nf++) {
+                   bm->SP_FISHERYprms[sp][nf][mFC_scale_id] = 1.0;
+               }
+
+               /* If not resetting (but doing TAC reset etc) skip ahead now */
+               if (!FunctGroupArray[sp].speciesParams[flagFonly_id])
+                   continue;
+
+               /* Check to see that want to use a harvest control rule */
+               tier = (int) (FunctGroupArray[sp].speciesParams[tier_id]);
+               if (tier != tier_orig) {
+                   /* Calculate Fcurr and update using the harvest control rule */
+                    Per_Sp_Frescale(bm, llogfp, sp);
+               }
+           }
+       }
+    } else {
+    
+        //Reset done check
+        for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
+            FunctGroupArray[sp].speciesParams[done_Co_sp_id] = 0;
             
-            for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
-                if (FunctGroupArray[sp].isFished == TRUE) {
-                    if(bm->usingRedus_R_HCR) {  // Used to say < 1 but that would mean it wasn't in RedusR - also used to be at a species level using FunctGroupArray[sp].speciesParams[flagusingRedusR_HCR_id] but now assume it is all or nothing across all species in the model
-                        continue; // As being done in R instead
-                    }
+            /* Set the mFC scale value to 1.0 just in case - can't do in next loop as could be reset as part of the guild */
+            for (nf = 0; nf < bm->K_num_fisheries; nf++) {
+                bm->SP_FISHERYprms[sp][nf][mFC_scale_id] = 1.0;
+            }
+        }
+        
+        for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
+            if (FunctGroupArray[sp].isFished == TRUE) {
+                if(FunctGroupArray[sp].speciesParams[flagusingRedusR_HCR_id]) {  // Used to say < 1 but that woudl mean it wasn't in RedusR
+                    continue; // As being done in R instead
+                }
 
-                    /* If not resetting (but doing TAC reset etc) skip ahead now */
-                    if (!FunctGroupArray[sp].speciesParams[flagFonly_id])
-                        continue;
+                /* If not resetting (but doing TAC reset etc) skip ahead now */
+                if (!FunctGroupArray[sp].speciesParams[flagFonly_id])
+                    continue;
 
-                    /* Check to see that want to use a harvest control rule - assumes all species in the guild handled in teh same way */
-                    int tier = (int) (FunctGroupArray[sp].speciesParams[tier_id]);
-                    if ((tier != tier_orig) && (!FunctGroupArray[sp].speciesParams[done_Co_sp_id])) {
-                        /* Calculate Fcurr and update using the harvest control rule applied at a guild level */
-                        Guild_Frescale(bm, llogfp, sp);
-                    }
+                /* Check to see that want to use a harvest control rule - assumes all species in the guild handled in teh same way */
+                int tier = (int) (FunctGroupArray[sp].speciesParams[tier_id]);
+                if ((tier != tier_orig) && (!FunctGroupArray[sp].speciesParams[done_Co_sp_id])) {
+                    /* Calculate Fcurr and update using the harvest control rule applied at a guild level */
+                    Guild_Frescale(bm, llogfp, sp);
                 }
             }
-            break;
-        case per_system_cap:
-            for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
-                if (FunctGroupArray[sp].isFished == TRUE) {
-                    
-                    if(bm->usingRedus_R_HCR || (!FunctGroupArray[sp].speciesParams[flagFonly_id]) || (!FunctGroupArray[sp].speciesParams[flag_systcap_sp_id]))
-                        continue;
-                    
-                    /* Set the mFC scale value to 1.0 just in case */
-                    for (nf = 0; nf < bm->K_num_fisheries; nf++) {
-                        bm->SP_FISHERYprms[sp][nf][mFC_scale_id] = 1.0;
-                    }
-                }
-            }
-            /* Get F rescaled */
-             Ecosystem_Cap_Frescale(bm, llogfp);
-            break;
+        }
     }
 
 	return;
@@ -1095,10 +1130,8 @@ void Check_F_Harvest_Control_Rule(MSEBoxModel *bm, FILE *llogfp) {
 *
 *******************************************************************************/
 void Per_Sp_Frescale (MSEBoxModel *bm, FILE *llogfp, int sp) {
-    int cohort, ij, b, nf, flagF, nc, k;
-    double FTARG, F_rescale, Fcurr, calcF, Fstep1, this_mFC, counter;
-    //double M;
-    //double calcM;
+    int nf, flagF, nc, k;
+    double FTARG, F_rescale, Fcurr, calcM, calcF, Fstep1, this_mFC, counter;
     
     int tier = (int) (FunctGroupArray[sp].speciesParams[tier_id]);
     int er_case = (int) (FunctGroupArray[sp].speciesParams[estError_id]);
@@ -1107,207 +1140,116 @@ void Per_Sp_Frescale (MSEBoxModel *bm, FILE *llogfp, int sp) {
     
     int maxstock = FunctGroupArray[sp].numStocks;
     
+    double Braw = bm->totfishpop[sp] * bm->X_CN * mg_2_tonne;
+    double Bcurr = Assess_Add_Error(bm, er_case, Braw, est_bias, est_cv);
+    
     double BrefA = FunctGroupArray[sp].speciesParams[BrefA_id] * bm->estBo[sp];
     double BrefB = FunctGroupArray[sp].speciesParams[BrefB_id] * bm->estBo[sp];
-    double BrefE = FunctGroupArray[sp].speciesParams[BrefE_id] * bm->estBo[sp];
     double Blim = FunctGroupArray[sp].speciesParams[Blim_id] * bm->estBo[sp];
     double FrefA = FunctGroupArray[sp].speciesParams[FrefA_id];
     double FrefH = FunctGroupArray[sp].speciesParams[FrefH_id];
-    double FrefLim = FunctGroupArray[sp].speciesParams[FrefLim_id];
 
-    double Braw, Bcurr;
-
-    if(!do_assess) {  // Where do_assess set at atlantismain.c level as requires Assess_Resources() call in atasseess lib
-        if (bm->flagSSBforHCR){
-            /* Using SSB in the HCR - HAP 2024 - I wrote this using script from atSSBDataGen.c */
-            for (cohort = 0; cohort < FunctGroupArray[sp].numCohortsXnumGenes; cohort++) {
-                for (ij = 0; ij < bm->nbox; ij++) {
-                    for (b = 0; b < bm->boxes[ij].nz; b++) {
-                            Braw += ((bm->boxes[ij].tr[b][FunctGroupArray[sp].structNTracers[cohort]] + bm->boxes[ij].tr[b][FunctGroupArray[sp].resNTracers[cohort]]) *
-                                    bm->boxes[ij].tr[b][FunctGroupArray[sp].NumsTracers[cohort]] *
-                                    FunctGroupArray[sp].habitatCoeffs[WC] *
-                                    bm->X_CN *
-                                    mg_2_tonne) *
-                                    FunctGroupArray[sp].scaled_FSPB[cohort];
-                                // Note, HAP tried this withough FSPB and it produced the same value as bm->totfishpop[sp] * bm->X_CN * mg_2_tonne
-                            }
-                    }
-                }
-                    fprintf(llogfp, "Time: %e %s, Braw (total SSB) before Assess_Add_Error() - %e\n", bm->dayt, FunctGroupArray[sp].groupCode, Braw);
-        } else {
-            Braw = bm->totfishpop[sp] * bm->X_CN * mg_2_tonne;
-            fprintf(llogfp, "Time: %e %s, Braw (total stock biomass) before Assess_Add_Error() - %e\n", bm->dayt, FunctGroupArray[sp].groupCode, Braw);
-        }
-        Bcurr = Assess_Add_Error(bm, er_case, Braw, est_bias, est_cv);
-    } else {
-        Bcurr = bm->NAssess[sp][est_med_stock_id];
-        Fcurr = bm->NAssess[sp][est_Fcurr_id];
-        //M = bm->NAssess[sp][est_M_id];
-    }
-    
     fprintf(llogfp, "Time: %e doing %s with tier %d\n", bm->dayt, FunctGroupArray[sp].groupCode, tier);
-    fprintf(llogfp, "The HCR refernce poitns are as follows:\n");
-    fprintf(llogfp, "BrefA: %e, BrefB: %e, Blim: %e, FrefLim: %e, FrefA: %e, FrefH: %e\n", BrefA, BrefB, Blim, FrefLim, FrefA, FrefH);
-    
+
     /* Find Fcurr *
      update_date = (int) (FunctGroupArray[sp].speciesParams[calcupdate_date_id]);
      // Start with mortality estimates
+    
+    // This is the old method - not used anymore //
      
-     // This is the old method - not used anymore //
-     
-     // TODO: This should be F from calcTrackedMort
-     if (update_date > 182) {
-     // If restarted records within last 6 months use previous year's records as more complete
-     start_N = bm->calcNstart[sp][hist_id];
-     catch_N = bm->calcFnum[sp][hist_id];
-     mort_scale = 1.0;
-     } else {
-     // If restart records early each year then current records should be sufficent
-     start_N = bm->calcNstart[sp][expect_id];
-     catch_N = bm->calcFnum[sp][expect_id];
-     mort_scale = 365.0 / (365.0 - update_date);
-     }
+    // TODO: This should be F from calcTrackedMort
+    if (update_date > 182) {
+        // If restarted records within last 6 months use previous year's records as more complete
+        start_N = bm->calcNstart[sp][hist_id];
+        catch_N = bm->calcFnum[sp][hist_id];
+        mort_scale = 1.0;
+    } else {
+        // If restart records early each year then current records should be sufficent
+        start_N = bm->calcNstart[sp][expect_id];
+        catch_N = bm->calcFnum[sp][expect_id];
+        mort_scale = 365.0 / (365.0 - update_date);
+    }
      
      // Sanity checks
-     if (start_N < 0)
-     start_N = 1;
-     if (catch_N < 0)
-     catch_N = 0;
-     
-     Fcurr = catch_N / (start_N + small_num);            // TODO: We may need to make this a direct read of mFC * mFC_scale rather than "estimate" F
+    if (start_N < 0)
+        start_N = 1;
+    if (catch_N < 0)
+        catch_N = 0;
+    
+    Fcurr = catch_N / (start_N + small_num);            // TODO: We may need to make this a direct read of mFC * mFC_scale rather than "estimate" F
      
      // Adjust for any partial year of data effects
-     Fcurr *= mort_scale;
-     
-     */
+    Fcurr *= mort_scale;
+    
+    */
     
     /** New perfect knowledge way of determining M and F */
     calcF = 0.0;
-    //calcM = 0.0;
+    calcM = 0.0;
     counter = 0.0;
     for (nc = 0; nc < FunctGroupArray[sp].numCohorts; nc++) {
         for (k = 0; k < maxstock; k++) {
-            //calcM += (bm->calcTrackedMort[sp][nc][k][finalM1_id] + bm->calcTrackedMort[sp][nc][k][finalM2_id]);
+            calcM += (bm->calcTrackedMort[sp][nc][k][finalM1_id] + bm->calcTrackedMort[sp][nc][k][finalM2_id]);
             calcF += bm->calcTrackedMort[sp][nc][k][finalF_id];
             counter++;
         }
     }
-    //calcM /= counter;
+    calcM /= counter;
     calcF /= counter;
     Fcurr = calcF;
-    
+   
     fprintf(llogfp, "Time: %e %s has Fcurr %e\n", bm->dayt, FunctGroupArray[sp].groupCode, Fcurr);
-    
-    switch (tier) {
-        case tier0: // Intentional flow throgh for all these cases
-        case tier1:
-        case tier2:
-        case tier3:
-        case tier4:
-        case tier5:
-        case tier6:
-        case tier7:
-        case dyntier4:
-        case dyntier1B0:
-        case sp_rollover: // So not US (tier8) or Norway (tier 9) or Iceland (tier13)
-            if (Bcurr >= BrefA) {
-                /* Greater than BrefA (e.g. B48) so use F48 */
-                FTARG = FrefA;
-                //FTARG = Fcurr;
-            } else if ((Bcurr < BrefA) && (Bcurr >= BrefB)) {
-                /* Less than BrefA and greater than BrefB (e.g. B40), for stability remain at F48 */
-                FTARG = FrefA;
-            } else if ((Bcurr < BrefB) && (Bcurr > Blim)) {
-                /* Less than BrefB and greater than Blim (e.g. B20) so reduce F rate */
-                FTARG = FrefA * ((Bcurr - Blim) / (BrefB - Blim));
-            } else {
-                /* Less than Blim so set F = 0 */
-                FTARG = 0;
-            }
-            break;
-        case tier8: // Tier 8 version of the broken stick - how its applied in the US and Norway
-        case tier9:
-            if (Bcurr >= BrefA) {
-                /* Greater than BrefA (e.g. B48) so fish at a higher rate */
-                FTARG = FrefH;
-            } else if ((Bcurr < BrefA) && (Bcurr >= BrefB)) {
-                /* Less than BrefA and greater than BrefB (e.g. B40), for stability remain at F48 */
-                FTARG = FrefA;
-            } else if ((Bcurr < BrefB) && (Bcurr > Blim)) {
-                /* Less than BrefB and greater than Blim (e.g. B20) so reduce F rate 
-                   Formulate updated to allow for FrefLme to be non-zero */
-                FTARG = ((FrefLim * (BrefB - Bcurr) + FrefA * (Bcurr - Blim)) / (BrefB - Blim));
-            } else {
-                /* Less than Blim so set F = FrefLim (typicall aboit 0.05) */
-                FTARG = FrefLim;
-            }
-            break;
-        case tier13: // Icelandic escapement approach
-            if (Bcurr > Blim) {
-                /* Bigger than Blim so set F rate */
-                FTARG = 1 - (Blim / BrefB);
-            } else {
-                /* Less than Blim so set F = 0 */
-                FTARG = 0;
-            }
-            break;
-        case tier14: // Same as tier 1 but allows for truncating the descending limb and closing the fishery below BrefE, Alaska pollock and cod style
-            if (Bcurr >= BrefA) {
-                /* Greater than BrefA (e.g. B48) so use F48 */
-                FTARG = FrefA;
-                //FTARG = Fcurr;
-            } else if ((Bcurr < BrefA) && (Bcurr >= BrefB)) {
-                /* Less than BrefA and greater than BrefB (e.g. B40), for stability remain at F48 */
-                FTARG = FrefA;
-            } else if ((Bcurr < BrefB) && (Bcurr > BrefE)) {
-                /* Less than BrefB and greater than BrefE (usually B20 for Alaska pollock and cod) so reduce F rate linearly towards Blim */
-                FTARG = FrefA * ((Bcurr - Blim) / (BrefB - Blim));
-            } else {
-                /* Less than BrefE so set F = 0 */
-               FTARG = 0;
-            }
-            break;
-        default:
-            quit("Per_Sp_Frescale: We do not have any code for tier %d\n", tier);
-            break;
+
+    if (tier < tier8) {  // So not US (tier8) or Norway (tier 9)
+        /* Tier 1 - Best quantitative assessment available */
+        if (Bcurr >= BrefA) {
+            /* Greater than BrefA (e.g. B48) so use F48 */
+            FTARG = FrefA;
+            //FTARG = Fcurr;
+        } else if ((Bcurr < BrefA) && (Bcurr >= BrefB)) {
+            /* Less than BrefA and greater than BrefB (e.g. B40), for stability remain at F48 */
+            FTARG = FrefA;
+        } else if ((Bcurr < BrefB) && (Bcurr > Blim)) {
+            /* Less than BrefB and greater than Blim (e.g. B20) so reduce F rate */
+            FTARG = FrefA * ((Bcurr - Blim) / (BrefB - Blim));
+        } else {
+            /* Less than Blim so set F = 0 */
+            FTARG = 0;
+        }
+    } else {
+        /* Tier 8 version of the broken stick - how its applied in the US and Norway */
+        if (Bcurr >= BrefA) {
+            /* Greater than BrefA (e.g. B48) so fish at a higher rate */
+            FTARG = FrefH;
+        } else if ((Bcurr < BrefA) && (Bcurr >= BrefB)) {
+            /* Less than BrefA and greater than BrefB (e.g. B40), for stability remain at F48 */
+            FTARG = FrefA;
+        } else if ((Bcurr < BrefB) && (Bcurr > Blim)) {
+            /* Less than BrefB and greater than Blim (e.g. B20) so reduce F rate */
+            FTARG = FrefA * ((Bcurr - Blim) / (BrefB - Blim));
+        } else {
+            /* Less than Blim so set F = 0 */
+            FTARG = 0;
+        }
+
     }
 
     /* Rescale all F accordingly */
     if(!Fcurr && FTARG) {
         F_rescale = FunctGroupArray[sp].speciesParams[F_restart_id];
-    } else {
-        switch (tier) {
-            case tier0:     // Intentional flow throgh for all these cases
-            case tier1:
-            case tier2:
-            case tier3:
-            case tier4:
-            case tier5:
-            case tier6:
-            case tier7:
-            case dyntier4:
-            case dyntier1B0:
-            case sp_rollover:
-            case tier13:
-            case tier14:
-                Fstep1 = Fcurr / (FunctGroupArray[sp].speciesParams[maxmFC_id] * 365.0);  // As Fcurr is annual but mFC is daily
-                F_rescale = Fstep1 * (FTARG / (Fcurr + small_num));  // Re-scale existing F
-                break;
-            case tier9: // Norwegian way of doing it - to avoid overcatch during spin-up phase
-                Fstep1 = Fcurr / (FunctGroupArray[sp].speciesParams[maxmFC_id] * 365.0);  // As Fcurr is annual but mFC is daily
-                F_rescale = Fstep1 * (FTARG / (FrefA + small_num));
-                break;
-            case tier8:
-                /* In tier 8 version rescaling vs FrefA - although applied vs mFC
-                 so just in case the user has not entered FrefA for mFC do a two step rescaling here */
-                this_mFC = FunctGroupArray[sp].speciesParams[maxmFC_id] * 365.0;  // As FrefA is annual but mFC is daily
-                Fstep1 = FrefA / this_mFC;
-                F_rescale = Fstep1 * (FTARG / (FrefA + small_num));  // Re-scale the F
-                break;
-            default:
-                quit("Per_Sp_Frescale: We do not have any code for tier %d\n", tier);
-                break;
+    } else if (tier != tier8) {
+        Fstep1 = Fcurr / (FunctGroupArray[sp].speciesParams[maxmFC_id] * 365.0);  // As Fcurr is annual but mFC is daily
+        if (tier != tier9) {
+            F_rescale = Fstep1 * (FTARG / (Fcurr + small_num));  // Re-scale existing F
+        } else {
+            F_rescale = Fstep1 * (FTARG / (FrefA + small_num));  // Norwegian way of doing it - to avoid overcatch during spin-up phase
         }
+    } else {
+        /* In tier 8 version rescaling vs FrefA - although applied vs mFC
+         so just in case the user has not entered FrefA for mFC do a two step rescaling here */
+        this_mFC = FunctGroupArray[sp].speciesParams[maxmFC_id] * 365.0;  // As FrefA is annual but mFC is daily
+        Fstep1 = FrefA / this_mFC;
+        F_rescale = Fstep1 * (FTARG / (FrefA + small_num));  // Re-scale the F
     }
     
     if (bm->checkstart) {
@@ -1322,14 +1264,8 @@ void Per_Sp_Frescale (MSEBoxModel *bm, FILE *llogfp, int sp) {
 
         flagF = (int) (bm->SP_FISHERYprms[sp][nf][flagF_id]);
         if (flagF) {
-
-            if(!tier){
-                bm->SP_FISHERYprms[sp][nf][mFC_scale_id] = 1.0;
-            } else {
-                bm->SP_FISHERYprms[sp][nf][mFC_scale_id] = F_rescale;
-            }
-
-            WriteAnnBrokenStickFile(bm, sp, nf, tier, FrefLim, FrefA, FrefH, Blim, BrefA, BrefB, Fcurr, FTARG, Bcurr, F_rescale);
+            bm->SP_FISHERYprms[sp][nf][mFC_scale_id] = F_rescale;
+            WriteAnnBrokenStickFile(bm, sp, nf, Fcurr, FTARG, Bcurr, F_rescale);
 
             if (bm->checkstart) {
                 fprintf(llogfp, "Time: %e %s mFC_scale: %e, F_rescale: %e)\n", bm->dayt, FunctGroupArray[sp].groupCode, bm->SP_FISHERYprms[sp][nf][mFC_scale_id], F_rescale);
@@ -1353,7 +1289,7 @@ void Guild_Frescale (MSEBoxModel *bm, FILE *llogfp, int sp) {
     double *calcF_sp = Util_Alloc_Init_1D_Double(bm->K_max_co_sp + 1, 0.0); // The +1 is for the primary species
     double *counter_sp = Util_Alloc_Init_1D_Double(bm->K_max_co_sp + 1, 0.0); // The +1 is for the primary species
     double *Fcurr_sp = Util_Alloc_Init_1D_Double(bm->K_max_co_sp + 1, 0.0); // The +1 is for the primary species
-    double counter, Fcurr;
+    double calcM, calcF, counter, Fcurr;
 
     int tier = (int) (FunctGroupArray[sp].speciesParams[tier_id]);
     int er_case = (int) (FunctGroupArray[sp].speciesParams[estError_id]);
@@ -1367,13 +1303,10 @@ void Guild_Frescale (MSEBoxModel *bm, FILE *llogfp, int sp) {
     double Blim = FunctGroupArray[sp].speciesParams[Blim_id] * bm->estBo[sp];
     double FrefA = FunctGroupArray[sp].speciesParams[FrefA_id];
     double FrefH = FunctGroupArray[sp].speciesParams[FrefH_id];
-    double FrefLim = FunctGroupArray[sp].speciesParams[FrefLim_id];
-    
-    fprintf(llogfp, "Time: %e doing %s with tier %d\n", bm->dayt, FunctGroupArray[sp].groupCode, tier);
-    fprintf(llogfp, "The HCR refernce poitns are as follows:\n");
-    fprintf(llogfp, "BrefA: %e, BrefB: %e, Blim: %e, FrefLim: %e, FrefA: %e, FrefH: %e\n", BrefA, BrefB, Blim, FrefLim, FrefA, FrefH);
 
-    for (groupIndex = 0; groupIndex < FunctGroupArray[sp].speciesParams[max_co_sp_id]; groupIndex++ ) {
+    fprintf(llogfp, "Time: %e doing %s with tier %d\n", bm->dayt, FunctGroupArray[sp].groupCode, tier);
+
+    for (groupIndex = 0; groupIndex < bm->K_max_co_sp; groupIndex++) {
         othersp = FunctGroupArray[sp].co_sp[groupIndex];
     
         Braw += bm->totfishpop[othersp] * bm->X_CN * mg_2_tonne;
@@ -1387,7 +1320,7 @@ void Guild_Frescale (MSEBoxModel *bm, FILE *llogfp, int sp) {
     FrefH = FunctGroupArray[sp].speciesParams[FrefH_id];
     
     /** Using perfect knowledge way of determining M and F - averaging over the species in the guild */
-    for (groupIndex = 0; groupIndex < FunctGroupArray[sp].speciesParams[max_co_sp_id]; groupIndex++ ) {
+    for (groupIndex = 0; groupIndex < bm->K_max_co_sp + 1; groupIndex++) {
         if (groupIndex < bm->K_max_co_sp) {
             othersp = FunctGroupArray[sp].co_sp[groupIndex];
         } else {
@@ -1448,13 +1381,13 @@ void Guild_Frescale (MSEBoxModel *bm, FILE *llogfp, int sp) {
             /* Less than BrefA and greater than BrefB (e.g. B40), for stability remain at F48 */
             FTARG = FrefA;
         } else if ((Bcurr < BrefB) && (Bcurr > Blim)) {
-            /* Less than BrefB and greater than Blim (e.g. B20) so reduce F rate
-               Formulate updated to allow for FrefLme to be non-zero */
-            FTARG = ((FrefLim * (BrefB - Bcurr) + FrefA * (Bcurr - Blim)) / (BrefB - Blim));
+            /* Less than BrefB and greater than Blim (e.g. B20) so reduce F rate */
+            FTARG = FrefA * ((Bcurr - Blim) / (BrefB - Blim));
         } else {
-            /* Less than Blim so set F = FrefLim (typicall aboit 0.05) */
-            FTARG = FrefLim;
+            /* Less than Blim so set F = 0 */
+            FTARG = 0;
         }
+
     }
 
     /* Rescale all F accordingly - base it on primary species - TODO: FIX should this be done per species? */
@@ -1477,8 +1410,7 @@ void Guild_Frescale (MSEBoxModel *bm, FILE *llogfp, int sp) {
     
     
     /* Apply rescaling to each species in the guild */
-    for (groupIndex = 0; groupIndex < FunctGroupArray[sp].speciesParams[max_co_sp_id]; groupIndex++ ) {
-
+    for (groupIndex = 0; groupIndex < bm->K_max_co_sp + 1; groupIndex++) {
         if (groupIndex < bm->K_max_co_sp) {
             othersp = FunctGroupArray[sp].co_sp[groupIndex];
         } else {
@@ -1489,7 +1421,7 @@ void Guild_Frescale (MSEBoxModel *bm, FILE *llogfp, int sp) {
             fprintf(llogfp, "Time: %e %s F_rescale: %e, FTARG: %e, Fcurr: %e)\n", bm->dayt, FunctGroupArray[othersp].groupCode, F_rescale, FTARG, Fcurr);
         }
 
-        /* Write output */
+        /* If this is the first year then don't do the scaling */
         for (nf = 0; nf < bm->K_num_fisheries; nf++) {
             /* Only change management in fisheries where management active */
             if (bm->FISHERYprms[nf][manage_on_id] < 1)
@@ -1498,7 +1430,7 @@ void Guild_Frescale (MSEBoxModel *bm, FILE *llogfp, int sp) {
             flagF = (int) (bm->SP_FISHERYprms[othersp][nf][flagF_id]);
             if (flagF) {
                 bm->SP_FISHERYprms[othersp][nf][mFC_scale_id] = F_rescale;
-                WriteAnnBrokenStickFile(bm, othersp, nf, tier, FrefLim, FrefA, FrefH, Blim, BrefA, BrefB, Fcurr, FTARG, Bcurr, F_rescale);
+                WriteAnnBrokenStickFile(bm, othersp, nf, Fcurr, FTARG, Bcurr, F_rescale);
 
                 if (bm->checkstart) {
                     fprintf(llogfp, "Time: %e %s mFC_scale: %e, F_rescale: %e)\n", bm->dayt, FunctGroupArray[othersp].groupCode,
@@ -1513,493 +1445,6 @@ void Guild_Frescale (MSEBoxModel *bm, FILE *llogfp, int sp) {
     
     return;
     
-}
-
-/**************************************************************************//**
-*    \brief Calculates current B and F state and how need to rescale if to meet a catch cap
-*
-*******************************************************************************/
-
-void Ecosystem_Cap_Frescale(MSEBoxModel *bm, FILE *llogfp) {
-    int sp, nf, nc, cohort, ij, b, k, flagF, tier, er_case, maxstock, mFC_end_age, mFC_start_age, flagfcmpa, sel_curve, stage, basechrt;
-    double max_mFC, F_rescale, FTARG, Bcurr, calcM, survival, Fcurr, calcF, Fstep1, this_mFC, M, est_bias, est_cv, BrefA, BrefB, BrefE, Blim, FrefA, FrefH, FrefLim, Braw, sel, this_expect_catch, sp_fishery_pref_weight, w_inv, tot_w_inv, counter, mFC, mFC_change_scale, mpa_scale, mpa_infringe, Wgt, li, gear_change_scale, this_Num, this_start, this_end, this_Biom, Z_Est, expectF, Catch_Eqn_Denom, orig_expected_catch, excess, deductions, new_expected_catch, rescale_scalar,tot_area, fishable_area;
-    //double calcM;
-    
-    /* Initialise weights if has not been done previously */
-    if (!bm->sp_pref_inv_norm_done) {
-        tot_w_inv = 0.0;
-        for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
-            if (FunctGroupArray[sp].isFished == TRUE) {
-                
-                // Follow-through for sp that are not part of OY
-                if((!FunctGroupArray[sp].speciesParams[flagFonly_id]) || (!FunctGroupArray[sp].speciesParams[flag_systcap_sp_id]))
-                    continue;
-                
-                /* Weigths on each species - (e.g., as set by Council)  - with 1 is the least important, n > 1 more  important */
-                sp_fishery_pref_weight = FunctGroupArray[sp].speciesParams[sp_fishery_pref_id];
-                
-                /* Use inverse weights to attribute a share of the excess to each stock */
-                w_inv = 1.0 / sp_fishery_pref_weight;
-                tot_w_inv += w_inv;
-            }
-        }
-
-        /* Normalize w_inv */
-        for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
-            if (FunctGroupArray[sp].isFished == TRUE) {
-                
-                // Follow-through for sp that are not part of OY
-                if((!FunctGroupArray[sp].speciesParams[flagFonly_id]) || (!FunctGroupArray[sp].speciesParams[flag_systcap_sp_id]))
-                    continue;
-                
-                sp_fishery_pref_weight = FunctGroupArray[sp].speciesParams[sp_fishery_pref_id];
-                w_inv = 1.0 / sp_fishery_pref_weight;
-                FunctGroupArray[sp].speciesParams[sp_fishery_pref_norm_id] = w_inv / tot_w_inv;
-            }
-        }
-        bm->sp_pref_inv_norm_done = 1;
-    }
-    
-    /* Prep the mpa calcs needed - as required per fleet not species so do up front - only update if need to */
-    
-    for (nf = 0; nf < bm->K_num_fisheries; nf++) {
-        
-        /* Correct for presence of mpas */
-        flagfcmpa = (int) (bm->FISHERYprms[nf][flagmpa_id]);
-        if (flagfcmpa) {
-            tot_area = 0.0;
-            fishable_area = 0.0;
-            for (b = 0; b < bm->nbox; b++) {
-                tot_area += bm->boxes[b].area;
-                fishable_area += bm->boxes[b].area * bm->MPA[b][nf];
-            }
-            bm->FISHERYprms[nf][mpascale_cap_id] = fishable_area / tot_area;
-        } else {
-            bm->FISHERYprms[nf][mpascale_cap_id] = 1.0;
-        }
-            
-    }
-
-
-    /* Steps:
-    1. Determine FTARG using single species approach (so how rescale mFC so to be in line with single species harvest cnotrol rule)
-    2. Apply catch equation to find catch expected with that FTARG
-    3. Sum the expected catches and compare against the system cap
-    3. Redo mFc_scale to make sure not breaching system cap when aggregate across species
-    */
-    
-    //Step 1: apply catch equation
-    double tot_expect_catch = 0.0;
-    for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
-        if (FunctGroupArray[sp].isFished == TRUE) {
-
-            // Follow-through for sp that are not part of OY
-            if((!FunctGroupArray[sp].speciesParams[flagFonly_id]) || (!FunctGroupArray[sp].speciesParams[flag_systcap_sp_id]))
-                continue;
-
-            gear_change_scale = 0;
-            tier = (int) (FunctGroupArray[sp].speciesParams[tier_id]);
-            er_case = (int) (FunctGroupArray[sp].speciesParams[estError_id]);
-            est_bias = FunctGroupArray[sp].speciesParams[estBias_id];
-            est_cv = FunctGroupArray[sp].speciesParams[estCV_id];
-            maxstock = FunctGroupArray[sp].numStocks;
-            BrefA = FunctGroupArray[sp].speciesParams[BrefA_id] * bm->estBo[sp];
-            BrefB = FunctGroupArray[sp].speciesParams[BrefB_id] * bm->estBo[sp];
-            BrefE = FunctGroupArray[sp].speciesParams[BrefE_id] * bm->estBo[sp];
-            Blim = FunctGroupArray[sp].speciesParams[Blim_id] * bm->estBo[sp];
-            FrefA = FunctGroupArray[sp].speciesParams[FrefA_id];
-            FrefH = FunctGroupArray[sp].speciesParams[FrefH_id];
-            FrefLim = FunctGroupArray[sp].speciesParams[FrefLim_id];
-            
-            if(!do_assess) {  // Where do_assess set at atlantismain.c level as requires Assess_Resources() call in atasseess lib
-                if (bm->flagSSBforHCR){
-                    /* Using SSB in the HCR - HAP 2024 - I wrote this using script from atSSBDataGen.c */
-                    for (cohort = 0; cohort < FunctGroupArray[sp].numCohortsXnumGenes; cohort++) {
-                        for (ij = 0; ij < bm->nbox; ij++) {
-                            for (b = 0; b < bm->boxes[ij].nz; b++) {
-                                 Braw += ((bm->boxes[ij].tr[b][FunctGroupArray[sp].structNTracers[cohort]] + bm->boxes[ij].tr[b][FunctGroupArray[sp].resNTracers[cohort]]) *
-                                 bm->boxes[ij].tr[b][FunctGroupArray[sp].NumsTracers[cohort]] *
-                                 FunctGroupArray[sp].habitatCoeffs[WC] *
-                                 bm->X_CN *
-                                 mg_2_tonne) *
-                                 FunctGroupArray[sp].scaled_FSPB[cohort];
-                                // Note, HAP tried this withough FSPB and it produced the same value as bm->totfishpop[sp] * bm->X_CN * mg_2_tonne
-                            }
-                        }
-                    }
-                    fprintf(llogfp, "Time: %e %s, Braw (total SSB) before Assess_Add_Error() - %e\n", bm->dayt, FunctGroupArray[sp].groupCode, Braw);
-                } else {
-                    Braw = bm->totfishpop[sp] * bm->X_CN * mg_2_tonne;
-                    fprintf(llogfp, "Time: %e %s, Braw (total stock biomass) before Assess_Add_Error() - %e\n", bm->dayt, FunctGroupArray[sp].groupCode, Braw);
-                }
-                Bcurr = Assess_Add_Error(bm, er_case, Braw, est_bias, est_cv);
-            } else {
-                Bcurr = bm->NAssess[sp][est_med_stock_id];
-                Fcurr = bm->NAssess[sp][est_Fcurr_id];
-                M = bm->NAssess[sp][est_M_id];
-            }
-
-            max_mFC = 365.0 * FunctGroupArray[sp].speciesParams[maxmFC_id];
-            //max_F = -365.0 * log(1.0 - max_mFC); // turn max_mFC to corresponding max F experienced by this species. BUT this breaks internal consistency with Fstep1
-            
-            /** New perfect knowledge way of determining M and F */
-            calcF = 0.0;
-            //calcM = 0.0;
-            counter = 0.0;
-            for (nc = 0; nc < FunctGroupArray[sp].numCohorts; nc++) {
-                for (k = 0; k < maxstock; k++) {
-                    //calcM += (bm->calcTrackedMort[sp][nc][k][finalM1_id] + bm->calcTrackedMort[sp][nc][k][finalM2_id]);
-                    calcF += bm->calcTrackedMort[sp][nc][k][finalF_id];
-                    counter++;
-                }
-            }
-            //calcM /= counter;
-            calcF /= counter;
-            Fcurr = calcF;
-            
-            fprintf(llogfp, "Time: %e %s has Fcurr %e\n", bm->dayt, FunctGroupArray[sp].groupCode, Fcurr);
-            
-            switch (tier) {
-                case tier0: // Intentional flow throgh for all these cases
-                case tier1:
-                case tier2:
-                case tier3:
-                case tier4:
-                case tier5:
-                case tier6:
-                case tier7:
-                case dyntier4:
-                case dyntier1B0:
-                case sp_rollover: // So not US (tier8) or Norway (tier 9) or Iceland (tier13)
-                    if (Bcurr >= BrefA) {
-                        /* Greater than BrefA (e.g. B48) so use F48 */
-                        FTARG = FrefA;
-                        //FTARG = Fcurr;
-                    } else if ((Bcurr < BrefA) && (Bcurr >= BrefB)) {
-                        /* Less than BrefA and greater than BrefB (e.g. B40), for stability remain at F48 */
-                        FTARG = FrefA;
-                    } else if ((Bcurr < BrefB) && (Bcurr > Blim)) {
-                        /* Less than BrefB and greater than Blim (e.g. B20) so reduce F rate */
-                        FTARG = FrefA * ((Bcurr - Blim) / (BrefB - Blim));
-                    } else {
-                        /* Less than Blim so set F = 0 */
-                        FTARG = 0;
-                    }
-                    break;
-                case tier8: // Tier 8 version of the broken stick - how its applied in the US and Norway
-                case tier9:
-                    if (Bcurr >= BrefA) {
-                        /* Greater than BrefA (e.g. B48) so fish at a higher rate */
-                        FTARG = FrefH;
-                    } else if ((Bcurr < BrefA) && (Bcurr >= BrefB)) {
-                        /* Less than BrefA and greater than BrefB (e.g. B40), for stability remain at F48 */
-                        FTARG = FrefA;
-                    } else if ((Bcurr < BrefB) && (Bcurr > Blim)) {
-                        /* Less than BrefB and greater than Blim (e.g. B20) so reduce F rate
-                           Formulate updated to allow for FrefLme to be non-zero */
-                        FTARG = ((FrefLim * (BrefB - Bcurr) + FrefA * (Bcurr - Blim)) / (BrefB - Blim));
-                    } else {
-                        /* Less than Blim so set F = FrefLim (typicall aboit 0.05) */
-                        FTARG = FrefLim;
-                    }
-                    break;
-                case tier13: // Icelandic escapement approach
-                    if (Bcurr > Blim) {
-                        /* Bigger than Blim so set F rate */
-                        FTARG = 1 - (Blim / BrefB);
-                    } else {
-                        /* Less than Blim so set F = 0 */
-                        FTARG = 0;
-                    }
-                    break;
-               case tier14: // Same as tier 1 but allows for truncating the descending limb and closing the fishery below BrefE, Alaska pollock and cod style
-                    if (Bcurr >= BrefA) {
-                        /* Greater than BrefA (e.g. B48) so use F48 */
-                        FTARG = FrefA;
-                        //FTARG = Fcurr;
-                    } else if ((Bcurr < BrefA) && (Bcurr >= BrefB)) {
-                        /* Less than BrefA and greater than BrefB (e.g. B40), for stability remain at F48 */
-                        FTARG = FrefA;
-                    } else if ((Bcurr < BrefB) && (Bcurr > BrefE)) {
-                        /* Less than BrefB and greater than BrefE (usually B20 for Alaska pollock and cod) so reduce F rate linearly towards Blim */
-                        FTARG = FrefA * ((Bcurr - Blim) / (BrefB - Blim));
-                    } else {
-                        /* Less than BrefE so set F = 0 */
-                        FTARG = 0;
-                    }
-                    break;
-                default:
-                    quit("Per_Sp_Frescale: We do not have any code for tier %d\n", tier);
-                    break;
-            }
-
-            /* Rescale all F accordingly to be in line with single species expectations - basically F to deliver the Acceptable Biological Catch */
-            if(!Fcurr && FTARG) {
-                F_rescale = FunctGroupArray[sp].speciesParams[F_restart_id];
-            } else {
-                switch (tier) {
-                    case tier0:     // Intentional flow throgh for all these cases
-                    case tier1:
-                    case tier2:
-                    case tier3:
-                    case tier4:
-                    case tier5:
-                    case tier6:
-                    case tier7:
-                    case dyntier4:
-                    case dyntier1B0:
-                    case sp_rollover:
-                    case tier13:
-                    case tier14:
-                        Fstep1 = Fcurr / (FunctGroupArray[sp].speciesParams[maxmFC_id] * 365.0);  // As Fcurr is annual but mFC is daily
-                        F_rescale = Fstep1 * (FTARG / (Fcurr + small_num));  // Re-scale existing F (need to do vs mFC rather than just Fcurr as code applies it against mFC)
-                        break;
-                    case tier9: // Norwegian way of doing it - to avoid overcatch during spin-up phase
-                        Fstep1 = Fcurr / (FunctGroupArray[sp].speciesParams[maxmFC_id] * 365.0);  // As Fcurr is annual but mFC is daily
-                        F_rescale = Fstep1 * (FTARG / (FrefA + small_num));
-                        break;
-                    case tier8:
-                        /* In tier 8 version rescaling vs FrefA - although applied vs mFC
-                         so just in case the user has not entered FrefA for mFC do a two step rescaling here */
-                        this_mFC = FunctGroupArray[sp].speciesParams[maxmFC_id] * 365.0;  // As FrefA is annual but mFC is daily
-                        Fstep1 = FrefA / this_mFC;
-                        F_rescale = Fstep1 * (FTARG / (FrefA + small_num));  // Re-scale the F
-                        break;
-                    default:
-                        quit("Per_Sp_Frescale: We do not have any code for tier %d\n", tier);
-                        break;
-                }
-            }
-            
-            if (bm->checkstart) {
-                fprintf(llogfp, "Time: %e %s F_rescale: %e, FTARG: %e, Fcurr: %e)\n", bm->dayt, FunctGroupArray[sp].groupCode, F_rescale, FTARG, Fcurr);
-            }
-
-            /* If this is the first year then don't do the scaling */
-            for (nf = 0; nf < bm->K_num_fisheries; nf++) {
-                /* Only change management in fisheries where management active */
-                if (bm->FISHERYprms[nf][manage_on_id] < 1)
-                    continue;
-
-                flagF = (int) (bm->SP_FISHERYprms[sp][nf][flagF_id]);
-                if (flagF) {
-
-                    if(!tier){
-                        bm->SP_FISHERYprms[sp][nf][mFC_scale_id] = 1.0;
-                    } else {
-                        bm->SP_FISHERYprms[sp][nf][mFC_scale_id] = F_rescale;
-                    }
-                    
-                    
-                    /* Write out end result of original species focused assessment */
-                    WriteAnnBrokenStickFile(bm, sp, nf, tier, FrefLim, FrefA, FrefH, Blim, BrefA, BrefB, Fcurr, FTARG, Bcurr, F_rescale);
-                    
-                    /* Get fishing mortality - corrected from (day-1) to (s-1) */
-                    mFC_start_age = (int) (bm->SP_FISHERYprms[sp][nf][mFC_start_age_id]);
-                    mFC_end_age = (int) (bm->SP_FISHERYprms[sp][nf][mFC_end_age_id]);
-                    mFC = bm->SP_FISHERYprms[sp][nf][mFC_id] * 365.0;
-                    mFC *= bm->SP_FISHERYprms[sp][nf][mFC_scale_id];  // Apply the broken stick scalar from above
-                    
-                    /* Get scenario scalars */
-                    if (bm->flagchangeF){
-                        mFC_change_scale = Get_Fishery_Group_Change_Scale(bm, nf,sp, mFC_num_changes_id, mFC_num_changes_id, mFCchange[sp]);
-                    } else {
-                        mFC_change_scale = 1.0;
-                    }
-                    
-                    /* Correct for presence of mpas */
-                    flagfcmpa = (int) (bm->FISHERYprms[nf][flagmpa_id]);
-                    if (flagfcmpa)
-                        mpa_scale = bm->FISHERYprms[nf][mpascale_cap_id];
-                    else
-                        mpa_scale = 1.0;
-
-                    /* Allow for infringement */
-                    if (bm->flaginfringe) {
-                        mpa_infringe = bm->FISHERYprms[nf][infringe_id];
-                        if (mpa_infringe > mpa_scale)
-                            mpa_scale = mpa_infringe;
-                    }
-
-                    sel_curve = (int) (bm->FISHERYprms[nf][selcurve_id]);
-                    FunctGroupArray[sp].speciesParams[sp_fishery_expected_catch_id] = 0;
-                    for (nc = 0; nc < FunctGroupArray[sp].numCohortsXnumGenes; nc++) {
-                        basechrt = nc / FunctGroupArray[sp].numGeneTypes;
-                        
-                        /* Convert model weight (mg AFDSW) into g wet weight and then length in cm */
-                        if (FunctGroupArray[sp].isVertebrate == TRUE) {
-                            if (!bm->use_time_avg_wgt) {
-                                if (bm->dayt>0 && FunctGroupArray[sp].min_wgt[nc] > MAXDOUBLE) {
-                                    quit("Ecosystem_Cap_Frescale: Time %e min_wgt for %s-%d is larger than is feasible (%e) something has gone wrong\n", bm->dayt, FunctGroupArray[sp].groupCode, nc, FunctGroupArray[sp].min_wgt[nc]);
-                                }
-                                if (bm->dayt>0 && FunctGroupArray[sp].max_wgt[nc] < MINDOUBLE) {
-                                    quit("Ecosystem_Cap_Frescale: Time %e max_wgt for %s-%d is smaller than is feasible (%e) something has gone wrong\n", bm->dayt, FunctGroupArray[sp].groupCode, nc, FunctGroupArray[sp].max_wgt[nc]);
-                                }
-                                Wgt = (FunctGroupArray[sp].min_wgt[nc] + FunctGroupArray[sp].max_wgt[nc]) / 2.0;
-                            } else {
-                                Wgt = FunctGroupArray[sp].rolling_wgt[nc][bm->K_rolling_cap_num];
-                            }
-                            if (Wgt < small_num)
-                                Wgt = small_num; /* To avoid divide by zero problems  */
-                            li = Ecology_Get_Size(bm, sp, Wgt, nc);
-                        } else {
-                            Wgt = 1.0;
-                            li = Ecology_Get_Size(bm, sp, Wgt, nc);
-                        }
-                        
-                        stage = FunctGroupArray[sp].cohort_stage[nc];
-                        /* In the case where using selectivity to determine which ages suffer the fishing mortality */
-                        if( bm->flag_sel_with_mFC) {
-                            /* Calculate selectivity - size based only applies to vertebrates not the biomass pool invertebrates */
-                            //sel = Get_Selectivity(bm, sp, stage, nf, li, sel_curve, 0.0, 0.0); // Replaced with Get_Catch_Selectivity() for consistency with other fishing options
-                            sel = Get_Catch_Selectivity(bm, sp, stage, nf, li, &gear_change_scale, &sel_curve);
-                            
-                        } else {
-                            sel = 1.0;
-                            
-                            /* Only put this filter on if not using selectivity as the filter */
-                            if(FunctGroupArray[sp].isVertebrate == TRUE || FunctGroupArray[sp].groupAgeType == AGE_STRUCTURED_BIOMASS){
-                                if((basechrt < mFC_start_age) || (basechrt >= mFC_end_age))
-                                /* Actually too young to be caught so don't apply the mortality here */
-                                    mFC = 0;
-                            }
-                        }
-                        
-                        /* Find what the predicted catch would be by applying fishing mortality */
-                        if (!bm->syst_cap_calc_method) {
-                            // Bring in M
-                            switch (bm->M_est_method) {
-                                case fixed_input_M:
-                                    calcM = FunctGroupArray[sp].speciesParams[assess_nat_mort_id];
-                                    break;
-                                case Z_and_F_based:
-                                    if (FunctGroupArray[sp].isVertebrate == TRUE) {
-                                        this_Num = 0.0;
-                                        for (k = 0; k < maxstock; k++) {
-                                            this_start += bm->calcTrackedMort[sp][nc][k][start_id];
-                                            this_end += bm->calcTrackedMort[sp][nc][k][endNum_id];
-                                        }
-                                    } else {
-                                        this_Biom = 0.0;
-                                        for (k = 0; k < maxstock; k++) {
-                                            this_start += bm->calcTrackedMort[sp][nc][k][start_id];
-                                            this_end += bm->calcTrackedMort[sp][nc][k][endNum_id];
-                                        }
-                                    }
-                                    Z_Est = 1.0 - (this_end / (this_start + small_num));
-                                    if (Z_Est < Fcurr) {
-                                        warn("Time: %e for %s - Z calculation too small versus number caught so set to F as default in Ecosystem_Cap_Frescale\n", bm->dayt, FunctGroupArray[sp].groupCode);
-                                        Z_Est = Fcurr;
-                                    }
-                                    calcM = Z_Est - Fcurr;
-                                    break;
-                                case full_dynamic_M_est:
-                                    calcM = 0.0;
-                                    counter = 0.0;
-                                    for (k = 0; k < maxstock; k++) {
-                                        calcM += (bm->calcTrackedMort[sp][nc][k][finalM1_id] + bm->calcTrackedMort[sp][nc][k][finalM2_id]);
-                                        counter++;
-                                    }
-                                    
-                                    calcM /= counter;
-                                    break;
-                                case assess_M_est:
-                                    if(!do_assess) {
-                                        quit("Ecosystem_Cap_Frescale: For %s Can't use option %d for M_est_method if do_assess = 0\n", FunctGroupArray[sp].groupCode, assess_M_est);
-                                    } else {
-                                        M = bm->NAssess[sp][est_M_id];
-                                    }
-                                default:
-                                    quit("No such option for syst_cap_calc_method. Please set to 0 for fixed M (read in from harvest.prm), 1 for M = Z-F, 2 for fully dynamic estimation of M given in model predation, or 3 for M estimated in an assessment\n");
-                            }
-                            
-                            
-                            
-                            // Apply Baranov catch equation by cohort
-                            expectF = mFC * mpa_scale * mFC_change_scale * sel;
-                            Catch_Eqn_Denom = expectF + calcM;
-                            survival = 1.0 - exp(-1.0 * Catch_Eqn_Denom);
-                            
-                            // Assume all stocks and genetypes being pooled to get the Numbers at age
-                            // TODO: Do per Stock and geneotype separately
-                            if(expectF > 0) { // Only do this if non-zero F to avoid time wasting loops
-                                if (FunctGroupArray[sp].isVertebrate == TRUE) {
-                                    this_Num = 0.0;
-                                    for (k = 0; k < maxstock; k++) {
-                                        this_Num += bm->calcTrackedMort[sp][nc][k][start_id];
-                                    }
-                                    this_Biom = (Wgt * bm->X_CN * mg_2_tonne) * this_Num;
-                                } else {
-                                    this_Biom = 0.0;
-                                    for (k = 0; k < maxstock; k++) {
-                                        this_Biom = bm->calcTrackedMort[sp][nc][k][start_id] * bm->X_CN * mg_2_tonne;
-                                    }
-                                }
-                                this_expect_catch = this_Biom * (expectF / Catch_Eqn_Denom) * survival;
-                                tot_expect_catch += this_expect_catch;
-                            }
-                        } else {
-                            if (!bm->use_time_avg_biom) {
-                                if (bm->dayt>0 && FunctGroupArray[sp].min_B[nc] > MAXDOUBLE) {
-                                    quit("Ecosystem_Cap_Frescale: Time %e min_B for %s-%d is larger than is feasible (%e) something has gone wrong\n", bm->dayt, FunctGroupArray[sp].groupCode, nc, FunctGroupArray[sp].min_B[nc]);
-                                }
-                                if (bm->dayt>0 && FunctGroupArray[sp].max_B[nc] < MINDOUBLE) {
-                                    quit("Ecosystem_Cap_Frescale: Time %e max_B for %s-%d is smaller than is feasible (%e) something has gone wrong\n", bm->dayt, FunctGroupArray[sp].groupCode, nc, FunctGroupArray[sp].max_B[nc]);
-                                }
-                                this_Biom = (FunctGroupArray[sp].min_B[nc] + FunctGroupArray[sp].max_B[nc]) / 2.0;
-                            } else {
-                                this_Biom = FunctGroupArray[sp].rolling_B[nc][bm->K_rolling_cap_num];
-                            }
-                            this_expect_catch = mFC * mpa_scale * mFC_change_scale * sel * this_Biom * bm->X_CN * mg_2_tonne;
-                            tot_expect_catch += this_expect_catch;
-                        }
-                        FunctGroupArray[sp].speciesParams[sp_fishery_expected_catch_id] += this_expect_catch;
-                    }
-                }
-            }
-        }
-    }
-    
-    /* Compare tot_expect_catch vs the total system expected catch - if in excess then rescale using preferential weighting */
-    if (tot_expect_catch > bm->Ecosystm_Cap_tonnes ) {
-        excess = tot_expect_catch - bm->Ecosystm_Cap_tonnes;
-        
-        for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
-            if (FunctGroupArray[sp].isFished == TRUE) {
-                
-                // Follow-through for sp that are not part of OY
-                if((!FunctGroupArray[sp].speciesParams[flagFonly_id]) || (!FunctGroupArray[sp].speciesParams[flag_systcap_sp_id]))
-                    continue;
-                /* Rescale excess based on these weigths * */
-                deductions = excess * FunctGroupArray[sp].speciesParams[sp_fishery_pref_norm_id];
-                FunctGroupArray[sp].speciesParams[sp_fishery_deduction_id] = deductions;
-                
-                orig_expected_catch = FunctGroupArray[sp].speciesParams[sp_fishery_expected_catch_id];
-                if (orig_expected_catch) { // only both of expected catch is non-zero
-                    new_expected_catch = orig_expected_catch - deductions;
-                    rescale_scalar = (new_expected_catch / orig_expected_catch);
-                    for (nf = 0; nf < bm->K_num_fisheries; nf++) {
-                        bm->SP_FISHERYprms[sp][nf][orig_mFC_scale_id] = bm->SP_FISHERYprms[sp][nf][mFC_scale_id]; // For reporting purposes
-                        bm->SP_FISHERYprms[sp][nf][mFC_scale_id] *= rescale_scalar;
-                    }
-                }
-            }
-        }
-    }
-    
-    /* Write out end result */
-    for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
-        if (FunctGroupArray[sp].isFished == TRUE) {
-            for (nf = 0; nf < bm->K_num_fisheries; nf++) {
-                flagF = (int) (bm->SP_FISHERYprms[sp][nf][flagF_id]);
-                if (flagF) {
-                    WriteAnnCapResultFile(bm, sp, nf);
-                }
-            }
-        }
-    }
-    
-    return;
 }
 
 
@@ -2030,7 +1475,7 @@ void Check_Ecosystem_F_Harvest_Control_Rule(MSEBoxModel *bm, FILE *llogfp){
 
 						// If species of concern less than threshold value down scale effort of relevant fisheries
 						if(fishnowpop < FC_thresh){
-                            for (i = 0; i < FunctGroupArray[sp].speciesParams[max_co_sp_id]; i++ ) {
+							for(i=0; i<bm->K_max_co_sp; i++){
 								co_sp = (int)(FunctGroupArray[sp].co_sp[i]);
                                 
                                 if ((co_sp < 0) || (co_sp > bm->K_num_tot_sp))

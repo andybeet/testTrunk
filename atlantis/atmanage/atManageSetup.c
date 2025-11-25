@@ -328,7 +328,7 @@ void Manage_Init(MSEBoxModel *bm, FILE *llogfp) {
 		/* Create basket quota management arrays */
 		bm->sp_basket = Util_Alloc_Init_2D_Int(1, bm->K_num_basket, bm->K_num_tot_sp);
 		bm->TAC_over = Util_Alloc_Init_3D_Int(1, bm->K_num_fisheries, bm->K_num_tot_sp, 0);
-        bm->rolling_cap_initialised = Util_Alloc_Init_2D_Int((bm->K_num_max_cohort * bm->K_num_max_genetypes), bm->K_num_tot_sp, 0);
+
 		return;
 	}
 
@@ -358,6 +358,7 @@ void Manage_Init(MSEBoxModel *bm, FILE *llogfp) {
 	Convert_Management_To_XML(bm, bm->fishprmIfname, convertedXMLFileName);
 
 	Read_Manage_Paramaters(bm, convertedXMLFileName);
+
 	Init_Manage_Flags(bm, llogfp);
 
 	/* Allocate the arrays where the size is based on values read in from input file */
@@ -437,7 +438,7 @@ void Manage_Init(MSEBoxModel *bm, FILE *llogfp) {
 //		fprintf(llogfp, "Manage_Init: size-based selectivity curve set for ptrawlPWN fishery so stage based selectivity constants adopted for PWN\n");
 //		warn("Manage_Init: size-based selectivity curve set for ptrawlPWN fishery so stage based selectivity constants adopted for PWN\n");
 //	}
-    
+
 	/* initialised the effort scale array */
 	for (sp = 0; sp < bm->K_num_fisheries; sp++) {
 		for (i = 0; i < 2; i++) {
@@ -522,7 +523,6 @@ void Manage_Init(MSEBoxModel *bm, FILE *llogfp) {
                 FunctGroupArray[sp].speciesParams[BrefB_id] = bm->forage_refB;
                 FunctGroupArray[sp].speciesParams[BrefC_id] = bm->forage_refC;
                 FunctGroupArray[sp].speciesParams[BrefD_id] = bm->forage_refD;
-                FunctGroupArray[sp].speciesParams[BrefE_id] = bm->forage_refE;
                 FunctGroupArray[sp].speciesParams[Blim_id] = bm->forage_lim_ref;
                 break;
             case target_tier: /* Target species reference points */
@@ -530,7 +530,6 @@ void Manage_Init(MSEBoxModel *bm, FILE *llogfp) {
 				FunctGroupArray[sp].speciesParams[BrefB_id] = bm->targ_refB;
 				FunctGroupArray[sp].speciesParams[BrefC_id] = bm->targ_refC;
 				FunctGroupArray[sp].speciesParams[BrefD_id] = bm->targ_refD;
-				FunctGroupArray[sp].speciesParams[BrefE_id] = bm->targ_refE;
 				FunctGroupArray[sp].speciesParams[Blim_id] = bm->lim_ref;
                 break;
             case byproduct_tier: /* Byproduct species reference points */
@@ -577,7 +576,7 @@ void Manage_Init(MSEBoxModel *bm, FILE *llogfp) {
 			}
 		}
 	}
-    
+
 	/* Get discard co-occuring ids if needed */
 	need_discard = 0;
 	for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
@@ -749,11 +748,6 @@ void Manage_Init(MSEBoxModel *bm, FILE *llogfp) {
 			break;
 		}
 	}
-    
-    bm->do_syst_cap = 0;
-    if (bm->do_sumB_HCR == per_system_cap) {
-        bm->do_syst_cap = 1;
-    }
 
 	/* Set up check to see if only F forcing being used per species */
 	for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
@@ -796,20 +790,12 @@ void Manage_Init(MSEBoxModel *bm, FILE *llogfp) {
             FunctGroupArray[sp].speciesParams[estCV_id] = estCVi[sp];
             FunctGroupArray[sp].speciesParams[estBias_id] = estBiasi[sp];
             
-            //printf("%s has estError: %e, estCV: %e, estBias: %e\n", FunctGroupArray[sp].groupCode, FunctGroupArray[sp].speciesParams[estError_id], FunctGroupArray[sp].speciesParams[estCV_id], FunctGroupArray[sp].speciesParams[estBias_id]);
+            printf("%s has estError: %e, estCV: %e, estBias: %e\n", FunctGroupArray[sp].groupCode, FunctGroupArray[sp].speciesParams[estError_id], FunctGroupArray[sp].speciesParams[estCV_id], FunctGroupArray[sp].speciesParams[estBias_id]);
             
 			FunctGroupArray[sp].speciesParams[FrefA_id] = FrefAi[sp];
             FunctGroupArray[sp].speciesParams[FrefH_id] = FrefHi[sp];
-            FunctGroupArray[sp].speciesParams[FrefLim_id] = FrefLimi[sp];
             
             FunctGroupArray[sp].speciesParams[F_restart_id] = FreStarti[sp];
-            
-            FunctGroupArray[sp].speciesParams[flag_systcap_sp_id] = FlagSystCapSPi[sp];
-            FunctGroupArray[sp].speciesParams[sp_fishery_pref_id] = SystCapSPprefi[sp];
-            
-            if(!do_assess) {
-                FunctGroupArray[sp].speciesParams[assess_nat_mort_id] = AssessMorti[sp];
-            }
             
             
     /* Also check to see if shot-by-shot CPUE is needed */
@@ -819,12 +805,8 @@ void Manage_Init(MSEBoxModel *bm, FILE *llogfp) {
                     bm->FISHERYprms[fishery_id][flagneed_shots_id] = 1;
                 }
     /* And what the maximum starting F is */
-                if (!bm->maxF_aggregate) {
-                    if (bm->SP_FISHERYprms[sp][fishery_id][mFC_id] > max_F) {
-                        max_F = bm->SP_FISHERYprms[sp][fishery_id][mFC_id];
-                    }
-                } else {
-                    max_F += bm->SP_FISHERYprms[sp][fishery_id][mFC_id];
+                if (bm->SP_FISHERYprms[sp][fishery_id][mFC_id] > max_F) {
+                    max_F = bm->SP_FISHERYprms[sp][fishery_id][mFC_id];
                 }
                 
             }
@@ -920,7 +902,6 @@ void Manage_Init(MSEBoxModel *bm, FILE *llogfp) {
 	free1d(whichrefi);
     free1d(FrefAi);
     free1d(FrefHi);
-    free1d(FrefLimi);
 	free1d(LeverUsei);
     
     free1d(estErrori);
@@ -928,13 +909,6 @@ void Manage_Init(MSEBoxModel *bm, FILE *llogfp) {
     free1d(estBiasi);
 
     free1d(FreStarti);
-    
-    free1d(FlagSystCapSPi);
-    free1d(SystCapSPprefi);
-    
-    if(!do_assess) {
-        free1d(AssessMorti);
-    }
 
     /* Generate CPUE data negative biominal distributions - moved to economics library as need subfleet array which not created here yet
     if(bm->flagStoreShotCPUE){
@@ -1078,9 +1052,7 @@ void Calculate_BiTAC(MSEBoxModel *bm, FILE *llogfp) {
 				for (bim = 0; bim < 6; bim++) {
 					sumBiTAC = 0;
 					for (i = 0; i < bm->K_num_fisheries; i++) {
-                        if(!FunctGroupArray[sp].isTAC || (bm->TACamt[sp][nf][now_id] < no_quota)) {
-                            sumBiTAC += bm->BiTAC_sp[bim][nreg][sp][now_id] * bm->TACamt[sp][i][now_id];
-                        }
+						sumBiTAC += bm->BiTAC_sp[bim][nreg][sp][now_id] * bm->TACamt[sp][i][now_id];
 					}
 					bm->BiTAC_sp[bim][nreg][sp][now_id] = sumBiTAC;
 				}
@@ -1243,8 +1215,6 @@ void Allocate_Arrays_Pre_Load(MSEBoxModel *bm) {
 
 	origEffort_vdistrib = Util_Alloc_Init_2D_Double(bm->wcnz, bm->K_num_fisheries, 0.0);
     
-    bm->ContamClosed = Util_Alloc_Init_1D_Double(bm->nbox, 0.0);
-
 }
 
 void Allocate_Arrays_Post_Load(MSEBoxModel *bm) {
@@ -1429,8 +1399,6 @@ void Manage_Free(MSEBoxModel *bm) {
 	free2d(gear_conflict);
 	free3d(MPAendangeredlist);
 	free2d(MPAoverfishedlist);
-    
-    free1d(bm->ContamClosed);
 
 	if (bm->flag_fisheries_on == TRUE) {
 		free3d(CAPchange);

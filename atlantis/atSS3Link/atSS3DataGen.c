@@ -30,7 +30,6 @@ void GetFishLength_n_AgeData(MSEBoxModel *bm, int groupIndex, int iyr);
 void GetEnviroData(MSEBoxModel *bm, int groupIndex, int iyr);
 void GetBiomassData(MSEBoxModel *bm, int groupIndex, int iyr);
 void GetCloseKinNum(MSEBoxModel *bm, int groupIndex, int iyr);
-void RecordHistF(MSEBoxModel *bm, int sp, int iyr);
 
 void FindRawData(MSEBoxModel *bm, int itype, int iyr, int groupIndex, double ****tempcatch, double *****rawnumdata, double *****rawsizedata);
 void GetLenProps(MSEBoxModel *bm, int groupIndex, int id, int itype, int f, int r, int s, int iyr, double **lenprops, int *iseed);
@@ -84,12 +83,10 @@ void GenData(MSEBoxModel *bm, int groupIndex, int yearIndex) {
         // get close kin data if required
         if(bm->CloseKinEst->UseCloseKin && FunctGroupArray[groupIndex].isCloseKin) {
             GetCloseKinNum(bm, groupIndex, yearIndex);
-            CKsimulator(bm, groupIndex, yearIndex);
+            //CKsimulator(bm, groupIndex, yearIndex);
             bm->CloseKinEst[groupIndex].nCKsampled++;
         }
             
-        // Store historical F
-        RecordHistF(bm, groupIndex, yearIndex);
 
     } else {
         fprintf(bm->logFile, "No assessment done for %s as tier = 0\n", FunctGroupArray[groupIndex].groupCode);
@@ -184,13 +181,8 @@ void GetBiomassData(MSEBoxModel *bm, int groupIndex, int iyr) {
     int find_SSBshift = 0;
     double thistot = 0.0;
     
-    /* Initialise */
     Util_Init_1D_Double(bm->RBCestimation.RBCspeciesArray[groupIndex].propR, Nregions, 0.0);
     Util_Init_2D_Double(bm->RBCestimation.RBCspeciesArray[groupIndex].propSR, Nregions, Nstocks, 0.0);
-    for (cohort = 0; cohort < FunctGroupArray[groupIndex].numCohortsXnumGenes; cohort++) {
-        bm->tot_cohort[groupIndex][cohort] = 0.0;
-    }
-    
 
     /* Find if need SSB_zero */
     if(bm->RBCestimation.RBCspeciesArray[groupIndex].SBioZero[Nstocks][Nregions] == 0.0)
@@ -212,14 +204,12 @@ void GetBiomassData(MSEBoxModel *bm, int groupIndex, int iyr) {
                 for (ij = MIGRATION[groupIndex].num_in_queue_done; ij < MIGRATION[groupIndex].num_in_queue; ij++) {
                     this_SSB += (MIGRATION[groupIndex].RN[cohort][ij] + MIGRATION[groupIndex].SN[cohort][ij]) * MIGRATION[groupIndex].DEN[cohort][ij] * bm->X_CN * mg_2_kg;
                     bm->tot_SSB[groupIndex] += FunctGroupArray[groupIndex].scaled_FSPB[cohort] * this_SSB;
-                    bm->tot_cohort[groupIndex][cohort] += MIGRATION[groupIndex].DEN[cohort][ij];
                 }
             }
         
             sn = FunctGroupArray[groupIndex].structNTracers[cohort];
             rn = FunctGroupArray[groupIndex].resNTracers[cohort];
             den = FunctGroupArray[groupIndex].NumsTracers[cohort];
-            //bm->tot_Bcohort[groupIndex][cohort] = 0.0;
             
             // Biomass inside the model domain
             thistot = 0.0;
@@ -235,7 +225,6 @@ void GetBiomassData(MSEBoxModel *bm, int groupIndex, int iyr) {
                     bm->RBCestimation.RBCspeciesArray[groupIndex].propR[r_id] += FunctGroupArray[groupIndex].scaled_FSPB[cohort] * this_SSB;
                     thistot += FunctGroupArray[groupIndex].scaled_FSPB[cohort] * this_SSB;
                     bm->RBCestimation.RBCspeciesArray[groupIndex].propSR[r_id][stock_id] += FunctGroupArray[groupIndex].scaled_FSPB[cohort] * this_SSB;
-                    bm->tot_cohort[groupIndex][cohort] += bm->boxes[ij].tr[k][den];
                  }
             }
             
@@ -248,7 +237,6 @@ void GetBiomassData(MSEBoxModel *bm, int groupIndex, int iyr) {
             sn = FunctGroupArray[groupIndex].structNTracers[cohort];
             rn = FunctGroupArray[groupIndex].resNTracers[cohort];
             den = FunctGroupArray[groupIndex].NumsTracers[cohort];
-            //bm->tot_Bcohort[groupIndex][cohort] = 0.0;
         
             for (ij = 0; ij < bm->nbox; ij++) {
                 r_id = bm->regID[ij];
@@ -263,7 +251,6 @@ void GetBiomassData(MSEBoxModel *bm, int groupIndex, int iyr) {
                     thistot += FunctGroupArray[groupIndex].scaled_FSPB[cohort] * this_SSB;
                     bm->RBCestimation.RBCspeciesArray[groupIndex].propR[r_id] += FunctGroupArray[groupIndex].scaled_FSPB[cohort] * this_SSB;
                     bm->RBCestimation.RBCspeciesArray[groupIndex].propSR[r_id][stock_id] += FunctGroupArray[groupIndex].scaled_FSPB[cohort] * this_SSB;
-                    bm->tot_cohort[groupIndex][cohort] += bm->boxes[ij].tr[k][den];
                 }
             }
         }
@@ -502,10 +489,9 @@ void GetCatch_n_DiscardData(MSEBoxModel *bm, int groupIndex, int iyr) {
 			step1 = bm->RBCestimation.RBCspeciesArray[groupIndex].actualcatch[f][r] * exp(norm - 0.5 * sigma * sigma);
             bm->RBCestimation.RBCspeciesArray[groupIndex].CatchData[f][r][iyr] = step1;
             totcatch += step1;
-            if(bm->RBCestimation.RBCspeciesArray[groupIndex].CatchData[f][r][iyr] > 0) {  // Indicate catch present because then can do length sampling calculations etc
+            if(bm->RBCestimation.RBCspeciesArray[groupIndex].CatchData[f][r][iyr] > 0)  // Indicate catch present because then can do length sampling calculations etc
                 bm->RBCestimation.RBCspeciesArray[groupIndex].Ia[f][r] = 1;
-            }
-            
+
 			// Get the effort data - always required
 			sigma = sqrt(log(1 + bm->RBCestimation.RBCspeciesArray[groupIndex].EffortCV[f] * bm->RBCestimation.RBCspeciesArray[groupIndex].EffortCV[f])); //  log-normal sigma from cv
 			norm = Util_xnorm(0.0, sigma, &bm->RBCestimation.Iseedz);
@@ -862,10 +848,6 @@ void GetEnviroData(MSEBoxModel *bm, int groupIndex, int iyr) {
     double ans, tot, num;
     int Nregions = (int)(bm->RBCestimation.RBCspeciesParam[groupIndex][NumRegions_id]);
     
-    if(verbose){
-        printf("GetEnviroData\n");
-    }
-    
     if(bm->RBCestimation.RBCspeciesParam[groupIndex][num_enviro_obs_id] > 0) {
         bm->RBCestimation.RBCspeciesParam[groupIndex][num_enviro_obs_id] = iyr + 1;
         
@@ -885,10 +867,6 @@ void GetEnviroData(MSEBoxModel *bm, int groupIndex, int iyr) {
         }
     }
     
-    if(verbose){
-        printf("End GetEnviroData\n");
-    }
-    
     return;
 }
 
@@ -902,8 +880,6 @@ void GetEnviroData(MSEBoxModel *bm, int groupIndex, int iyr) {
 // called by : GetFishLengthData
 // calls :
 // created  : Nov 2007 Sally
-//
-// Note that tempcatch is the rawdata array
 //
 //*****************************************************************************
 void FindRawData(MSEBoxModel *bm, int itype, int iyr, int groupIndex, double ****tempcatch, double *****rawnumdata, double *****rawsizedata) {
@@ -1219,117 +1195,6 @@ void GetCloseKinNum(MSEBoxModel *bm, int groupIndex, int iyr) {
     return;
 }
 
-//******************************************************************************
-//
-// Name:  RecordHistF
-// Description:  store F based on recorded catch and effort data
-//               and get average of the 5 most recent years
-//
-// created  : September 2023 Beth Fulton
-//
-//*****************************************************************************
-void RecordHistF(MSEBoxModel *bm, int sp, int iyr) {
-    int minYr, ij, k, nf, n, r, sn, rn, den, stage, pid;
-    //int maxYr;
-    double avgPeriod = 0.0;
-    double fishableBiomass = 0.0, avgF = 0.0, avgC = 0.0, spbiom, q, sel;
-    int Nfleets = (int)(bm->RBCestimation.RBCspeciesParam[sp][NumFisheries_id]);
-    
-    if(verbose) {
-        printf("RecordHistF for %s\n", FunctGroupArray[sp].groupCode);
-    }
-    
-    for (ij = 0; ij < bm->nbox; ij++) {
-        if (bm->boxes[ij].type != BOUNDARY) {
-            for (k = 0; k < bm->boxes[ij].nz; k++) {
-                bm->cell_vol = bm->boxes[ij].area * bm->boxes[ij].dz[k];
-                
-                switch (FunctGroupArray[sp].groupAgeType) {
-                case AGE_STRUCTURED:
-                    for (n = 0; n < FunctGroupArray[sp].numCohortsXnumGenes; n++) {
-                        sn = FunctGroupArray[sp].structNTracers[n];
-                        rn = FunctGroupArray[sp].resNTracers[n];
-                        den = FunctGroupArray[sp].NumsTracers[n];
-                        stage = FunctGroupArray[sp].cohort_stage[n];
-                        spbiom = (bm->boxes[ij].tr[k][sn] + bm->boxes[ij].tr[k][rn]) * bm->boxes[ij].tr[k][den];
-                        
-                        /* Consideration per fishery */
-                        for (nf = 0; nf < bm->K_num_fisheries; nf++) {
-                            sel = bm->selectivity[sp][nf][stage];
-                            q = bm->SP_FISHERYprms[sp][nf][q_id];
-                            
-                            fishableBiomass += sel * q * spbiom;
-                        }
-                    }
-                    break;
-                case AGE_STRUCTURED_BIOMASS:
-                    for (n = 0; n < FunctGroupArray[sp].numCohortsXnumGenes; n++) {
-                        pid = FunctGroupArray[sp].totNTracers[n];
-                        stage = FunctGroupArray[sp].cohort_stage[n];
-                        spbiom = bm->boxes[ij].tr[k][pid];
-                        
-                        /* Consideration per fishery */
-                        for (nf = 0; nf < bm->K_num_fisheries; nf++) {
-                            sel = bm->selectivity[sp][nf][stage];
-                            q = bm->SP_FISHERYprms[sp][nf][q_id];
-                            
-                            fishableBiomass += sel * q * spbiom;
-                        }
-                    }
-                    break;
-                case BIOMASS:
-                    /* Do nothing */
-                    pid = FunctGroupArray[sp].totNTracers[0];
-                    spbiom = bm->boxes[ij].tr[k][pid];
-                        
-                    /* Consideration per fishery */
-                    for (nf = 0; nf < bm->K_num_fisheries; nf++) {
-                        sel = bm->selectivity[sp][nf][0];
-                        q = bm->SP_FISHERYprms[sp][nf][q_id];
-                    }
-                    fishableBiomass += sel * q * spbiom;
-
-                    break;
-                }
-            }
-        }
-    }
-    
-    for (nf = 0; nf < Nfleets; nf++) {
-        bm->RBCestimation.RBCspeciesArray[sp].Fhist[nf][iyr] = 0.0;
-        for (r = 0; r < bm->RBCestimation.RBCspeciesParam[sp][NumRegions_id]; r++) {
-            bm->RBCestimation.RBCspeciesArray[sp].Fhist[nf][iyr] += (bm->RBCestimation.RBCspeciesArray[sp].CatchData[nf][r][iyr] + bm->RBCestimation.RBCspeciesArray[sp].DiscData[nf][r][iyr]) / fishableBiomass;
-
-        }
-    }
-    
-    // Calculate the averages - over teh review period, which is typically 5 years
-    minYr = iyr - bm->RBCestimation.ReviewPeriod;
-    if (minYr < 0) {
-        minYr = 0;
-    }
-    
-    avgF = 0.0;
-    avgC = 0.0;
-    avgPeriod = 0.0;
-    for (ij = minYr; ij < (iyr + 1); ij++) {
-        for (nf = 0; nf < Nfleets; nf++) {
-            avgF += bm->RBCestimation.RBCspeciesArray[sp].Fhist[nf][ij];
-            for (r = 0; r < bm->RBCestimation.RBCspeciesParam[sp][NumRegions_id]; r++) {
-                avgC += bm->RBCestimation.RBCspeciesArray[sp].CatchData[nf][r][ij];
-            }
-        }
-        avgPeriod += 1.0;
-    }
-    avgF /= avgPeriod;
-    avgC /= avgPeriod;
-    
-    bm->RBCestimation.RBCspeciesParam[sp][F_5yrAvg_id] = avgF;
-    bm->RBCestimation.RBCspeciesParam[sp][Catch_5yrAvg_id] = avgC;
-    
-    return;
-}
-
 
 //******************************************************************************
 //
@@ -1343,7 +1208,7 @@ void GenSample(MSEBoxModel *bm, int groupIndex, int vecsize, int nf, int r_id, i
     int ns, nc, l;
     int Ncohorts = FunctGroupArray[groupIndex].numCohortsXnumGenes;
     int bin_size = (int)(FunctGroupArray[groupIndex].speciesParams[allometic_bin_size_id]);
-    double this_totsum = 0.0;
+    double totsum = 0.0;
     double p_a, sum_p, li;
     
     Util_Init_1D_Double(bm->RBCestimation.RBCspeciesArray[groupIndex].props, (FunctGroupArray[groupIndex].numCohortsXnumGenes), 0.0);
@@ -1352,14 +1217,14 @@ void GenSample(MSEBoxModel *bm, int groupIndex, int vecsize, int nf, int r_id, i
     // Find proportions to act as probabilities of selection
     for (nc = 0; nc < Ncohorts; nc++) {
         bm->RBCestimation.RBCspeciesArray[groupIndex].props[nc] += rawnumdata[nf][r_id][s][nc][itype];
-        this_totsum += rawnumdata[nf][r_id][s][nc][itype];
+        totsum += rawnumdata[nf][r_id][s][nc][itype];
     }
     
     // Normal use to get into proprtons
     for (nc = 0; nc < Ncohorts; nc++) {
-        bm->RBCestimation.RBCspeciesArray[groupIndex].props[nc] /= (this_totsum + small_num);
+        bm->RBCestimation.RBCspeciesArray[groupIndex].props[nc] /= (totsum + small_num);
     }
-    if (!this_totsum) {
+    if (!totsum) {
         fprintf(bm->logFile, "No fish to sample for %s fishery class %d region %d sex %d itype %d - despite wanting to collect %d samples\n", FunctGroupArray[groupIndex].groupCode, nf, r_id, s, itype, sample_size);
         return;
     }

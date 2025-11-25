@@ -792,22 +792,22 @@ void Do_Aging_Update_Trait(MSEBoxModel *bm, int species, FILE *llogfp) {
 	int cohort, basecohort, ntrait, b, k, last_cohort, den, last_den;
 	long double evol_scalar, p_ageup, current_val, val_shift, new_val;
     double existing_value, new_value;
+	double *numbers_entering;
+	double *numbers_already_present;
+
 	int sp_numGeneTypes = (int) (FunctGroupArray[species].numGeneTypes);
 	int i = FunctGroupArray[species].ageClassSize - 1;
-	
-    if (i < 0)
+	if (i < 0)
 		i = 0;
 
 	if((!FunctGroupArray[species].speciesParams[flag_id]) || (!bm->flag_do_evolution) || (FunctGroupArray[species].numGeneTypes < 2))
 		return;  // As not active or evolution not active
 
-    if (verbose) {
-        printf("Creating Aging trait arrays\n");
-    }
+	//printf("Creating Aging trait arrays\n");
 
-    Util_Init_1D_Double(numbers_entering, bm->K_num_max_cohort * bm->K_num_max_genetypes, 0.0);
-    Util_Init_1D_Double(numbers_already_present, bm->K_num_max_cohort * bm->K_num_max_genetypes, 0.0);
-    
+	numbers_entering = Util_Alloc_Init_1D_Double(bm->K_num_max_cohort * bm->K_num_max_genetypes, 0.0);
+	numbers_already_present = Util_Alloc_Init_1D_Double(bm->K_num_max_cohort * bm->K_num_max_genetypes, 0.0);
+
 	if ((bm->current_box == bm->first_box) && (bm->current_layer == bm->top_layer)) { // As only want to do it once per event
 		// Find relative weightings based on numbers in cohort and aging into it - so can do weighted average for the property
 
@@ -876,6 +876,10 @@ void Do_Aging_Update_Trait(MSEBoxModel *bm, int species, FILE *llogfp) {
 			}
 		}
 	}
+
+
+	free1d(numbers_entering);
+	free1d(numbers_already_present);
 
 	return;
 }

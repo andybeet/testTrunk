@@ -291,7 +291,7 @@ void Read_PGMSY_output(MSEBoxModel *bm, int year, FILE *llogfp) {
             // TheYear TheRBC  and all the rest are the catch per metier
             
             // Assign projection RBC
-            bm->RBCestimation.RBCspeciesArray[sp].RBC_by_year[year] = values[1];  // Nead all years (i) as used in calculating Average RBC below
+            bm->RBCestimation.RBCspeciesArray[sp].RBC_by_year[year][i] = values[1];  // Nead all years (i) as used in calculating Average RBC below
             if (year == values[0]) {
                 // Store current RBC
                 bm->RBCestimation.RBCspeciesParam[spID][RBCest_id] = values[1];
@@ -314,13 +314,25 @@ void Read_PGMSY_output(MSEBoxModel *bm, int year, FILE *llogfp) {
             // Calculate the average RBC
             AveRBC = 0;
             for (int yr = bm->RBCestimation.RBCspeciesArray[sp].mgt_rbcYear; yr < bm->RBCestimation.RBCspeciesArray[sp].mgt_rbcYear + bm->RBCestimation.nRBCaverage - 1; yr++) {
-                AveRBC += bm->RBCestimation.RBCspeciesArray[sp].RBC_by_year[yr];
+                AveRBC += bm->RBCestimation.RBCspeciesArray[sp].RBC_by_year[year][yr];
             }
             AveRBC /= ((float)(bm->RBCestimation.nRBCaverage));
 
             // Replace the RBCs
-            bm->RBCestimation.RBCspeciesArray[sp].RBC_by_year[year] = AveRBC;
-            //fprintf(bm->logFile, "Time: %e Final RBC (PGMSY) for %s now has RBC_by_year: %e\n", bm->dayt, FunctGroupArray[sp].groupCode, bm->RBCestimation.RBCspeciesArray[sp].RBC_by_year[year]);
+            for (int yr = bm->RBCestimation.RBCspeciesArray[sp].mgt_rbcYear; yr < bm->RBCestimation.RBCspeciesArray[sp].mgt_rbcYear + bm->RBCestimation.nRBCaverage - 1; yr++) {
+                bm->RBCestimation.RBCspeciesArray[sp].RBC_by_year[year][yr] = AveRBC;
+                bm->RBCestimation.RBCspeciesParam[sp][RBCest_id] = AveRBC;
+                
+                /*
+                for (m = 0; m < bm->RBCestimation.RBCspeciesParam[sp][NumFisheries_id]; m++) {
+                    fprintf(bm->logFile, "Time: %e year: %d yr: %d %s m: %d\n", bm->dayt, year, yr, FunctGroupArray[sp].groupCode, m);
+                 }
+                 */
+            }
+            for (int yr = bm->RBCestimation.RBCspeciesArray[sp].mgt_rbcYear; yr < bm->RBCestimation.RBCspeciesParam[sp][MaxYr_id]+3; yr++) {
+                fprintf(bm->logFile, "Time: %e Final RBC (PGMSY) for %s yr %d RBC_by_year: %e\n", bm->dayt, FunctGroupArray[sp].groupCode, yr, bm->RBCestimation.RBCspeciesArray[sp].RBC_by_year[year][yr]);
+                
+            }
         }
     }
     

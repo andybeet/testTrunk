@@ -182,7 +182,8 @@ void Ecology_Test_Fish_Total(MSEBoxModel *bm, double ***valtr, double **landtr, 
 			diff = totnew - totold;
 			buffsize = small_num * totold;
 			if ((diff > buffsize) && (diff > small_num))
-				fprintf(llogfp, "time: %e, %s %s gained in size (%e vs now %e so gained %e individuals)\n", bm->dayt, spotcall, FunctGroupArray[sp].groupCode, totold, totnew, diff);
+				fprintf(llogfp, "time: %e, %s %s gained in size (%e vs now %e so gained %e individuals)\n", bm->dayt, spotcall, FunctGroupArray[sp].groupCode,
+						totold, totnew, diff);
 
 		}
 	}
@@ -210,8 +211,7 @@ void Check_Gape(MSEBoxModel *bm, FILE *llogfp) {
 	char key[BMSLEN*2];
 
 	int ij, k, n, sn, rn, den, sp, prey, preyage, chrtstage, preychrt, flag_sp, maxstock_id, i, indx, qidi;
-    int qid, recdate, spmigrate;
-    //int pid;
+    int qid, recdate, spmigrate, pid;
     double sp_abund, sum_prop, totrec, totrecold, sp_AgeClassSize, relSN, relRN, relDEN;
 
 	if (!bm->flaggape && !bm->flagchecksize && !bm->fishout && !bm->coming_to_end)
@@ -404,7 +404,8 @@ void Check_Gape(MSEBoxModel *bm, FILE *llogfp) {
 						}
                         
                         /* Migration check */
-						//pid = FunctGroupArray[sp].cohort_stage[n];
+						pid = FunctGroupArray[sp].cohort_stage[n];
+                        
                         //printf("Last step Check_Gape W-%d-%d-b %s pid: %d\n", sp, n, FunctGroupArray[sp].groupCode, pid);
                         
                         for (qid = MIGRATION[sp].num_in_queue_done; qid < MIGRATION[sp].num_in_queue; qid++) {                            
@@ -574,33 +575,5 @@ void Check_Gape(MSEBoxModel *bm, FILE *llogfp) {
     //printf("Last step Check_Gape\n");
     
 	return;
-}
-
-void Ecology_Check_VertAbund(MSEBoxModel *bm, double ***valtr, FILE *llogfp, int instance) {
-    int ij, k, n, den;
-    double totden = 0.0;
-    int sp = bm->which_check;
-    
-    sp = 23;
-
-    for (n = 0; n < FunctGroupArray[sp].numCohortsXnumGenes; n++) {
-        totdenCheck[n][0] = 0.0;
-        totdenCheck[n][1] = 0.0;
-        for (ij = 0; ij < bm->nbox; ij++) {
-            if (bm->boxes[ij].type != BOUNDARY) {
-                for (k = 0; k < bm->boxes[ij].nz; k++) {
-                    den = FunctGroupArray[sp].NumsTracers[n];
-                    totdenCheck[n][0] += bm->boxes[ij].tr[k][den];
-                    totdenCheck[n][1] += valtr[ij][k][den];
-                }
-            }
-        }
-        
-        fprintf(llogfp, "Time: %e %d %s-%d instance %d totdenCheck: %e newvalCheck: %e\n",
-                bm->dayt, bm->current_box, FunctGroupArray[sp].groupCode, n, instance, totdenCheck[n][0], totdenCheck[n][1]);
-
-    }
-        
-    return;
 }
 

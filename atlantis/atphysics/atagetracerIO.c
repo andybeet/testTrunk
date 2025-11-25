@@ -396,7 +396,7 @@ void writeBMAnnAgeCatData(int fid, int dump, MSEBoxModel *bm) {
     long start[2];
     long count[2];
     int sp, cohort, this_cohort, ai, propit, sn, rn, did, id, k, nf, tid, numAges;
-    double totlayer, thistotden, rel_access, tot;
+    double totlayer, totden, rel_access, tot;
     double *avgpopratio;
     double *avgsze;
     
@@ -440,25 +440,25 @@ void writeBMAnnAgeCatData(int fid, int dump, MSEBoxModel *bm) {
                         for (b = 0; b < bm->nbox; b++) {
                             avgpopratio[b] = 0.0;
                             avgsze[b] = 0.0;
-                            thistotden = 0.0;
+                            totden = 0.0;
                             totlayer = 0.0;
                             for (k = 0; k < bm->wcnz; k++) {
                                 if (bm->wctr[b][k][did] > bm->min_dens) { // Sum over water column but only if > min_dens present
                                     avgpopratio[b] += FunctGroupArray[sp].boxPopRatio[b][k][cohort][ai];
                                     totlayer += 1.0;
                                     avgsze[b] += (bm->wctr[b][k][sn] + bm->wctr[b][k][rn]) * bm->wctr[b][k][did];
-                                    thistotden += bm->wctr[b][k][did];
+                                    totden += bm->wctr[b][k][did];
                                 }
                             }
                             // Sanity checks
                             if(!totlayer)
                                 totlayer = small_num;
-                            if(!thistotden)
-                                thistotden = small_num;
+                            if(!totden)
+                                totden = small_num;
                             
                             // Final averages
                             avgpopratio[b] /= totlayer;
-                            avgsze[b] /= thistotden;
+                            avgsze[b] /= totden;
                         }
                         
                         for (propit = out_catch_id; propit < (out_discards_id + 1); propit++) {

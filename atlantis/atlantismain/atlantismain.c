@@ -9,7 +9,7 @@
 
  Purpose:        Main routine for atlantis mse box model
 
- Arguments:      See Util_Usage(1) routine below for explanation
+ Arguments:      See Util_Usage() routine below for explanation
  of command line arguments
 
  Returns:        int - 0 if successful
@@ -177,8 +177,6 @@ static void set_up_vvdistrib(MSEBoxModel *bm);
 static void setupMSEBoxModel(int argc, char *argv[], MSEBoxModel *bm);
 static void checknetCDFFiles(MSEBoxModel *bm);
 
-void Util_Usage(int dummy);
-
 FILE *logfp;
 FILE *haltfp;
 
@@ -210,7 +208,6 @@ EvolutionStruct *DNA;
 CoralStruct *CORALREEF;
 PhysioChemStruct *PhysioChemArray;
 FisheryStruct *FisheryArray;
-AssessProjectionStruct *ASSESS_PROJECTION;
 
 int it_count, waterboundary;
 int sp;
@@ -218,7 +215,6 @@ int sp;
 double **dvol, ***dtr;
 double **CatchSum;
 int **FisherySpeciesCatchFlags; /* Array to hold a flag for each fishery/species combinations to indicate which species are fished by which fisheries */
-double ****mFCchange;
 
 int runNextTimeStep(MSEBoxModel *bm){
 	int b, halt = 0;
@@ -227,8 +223,8 @@ int runNextTimeStep(MSEBoxModel *bm){
 
 	if (verbose > 1)
 		printf("Call checking time\n");
-    
-    /* Check the time */
+
+	/* Check the time */
 	Ecology_Time_Check(bm, bm->t, bm->dt, logfp);
     
      /* Print current time */
@@ -252,7 +248,7 @@ int runNextTimeStep(MSEBoxModel *bm){
 		if(bm->terrestrial_on){
 			writeBMLandData(bm->ncOfid, bm->ncOfdump, bm, 0);
 		}
-        
+
 		ncsync(bm->ncOfid);
 		bm->ncOfdump++;
         
@@ -261,13 +257,13 @@ int runNextTimeStep(MSEBoxModel *bm){
 		writeBMSummaryEpiData(bm->ncOsumfid, bm->ncOsumdump, bm);
 		ncsync(bm->ncOsumfid);
 		bm->ncOsumdump++;
-        
+
 		/* Write production/consumption data */
 		writeBMphysData(bm->ncOpcfid, bm->ncOpcdump, bm, 2);
 		writeBMDiagData(bm->ncOpcfid, bm->ncOpcdump, bm, 2);
 		ncsync(bm->ncOpcfid);
 		bm->ncOpcdump++;
-        
+
         /* Write annual age structured output - if required */
         if (bm->flag_age_output > 1) {
             writeBMphysData(bm->ncOaafid, bm->ncOaadump, bm, 1);
@@ -300,12 +296,10 @@ int runNextTimeStep(MSEBoxModel *bm){
         
         /* Write details */
 		writeBMphysData(bm->ncOdetfishfid, bm->ncOdetfishdump, bm, 3);
-        
 		writeBMFisheriesData(bm->ncOdetfishfid, bm->ncOdetfishdump, bm, 3);
-        
 		ncsync(bm->ncOdetfishfid);
 		bm->ncOdetfishdump++;
-        
+
         /* Write annual age structured output - if required */
         if (bm->flag_age_output > 1) {
             writeBMphysData(bm->ncOaacfid, bm->ncOaacdump, bm, 1);
@@ -334,10 +328,9 @@ int runNextTimeStep(MSEBoxModel *bm){
 		memcpy(newlandtr[0], bm->landtr[0], sizeof(double) * (long unsigned int)bm->nbox * (long unsigned int)bm->nland);
 	}
 
-    
     /* Calculate stock values for each group */
 	Util_Calculate_StockID(bm);
-    
+
     if (verbose > 1)
 		printf("Call doing assessment \n");
 
@@ -365,7 +358,7 @@ int runNextTimeStep(MSEBoxModel *bm){
         }
 #endif
 	}
-    
+
     /* Annual fisheries management decisions (TACS and seasonal closure dates)
 	 - has to occur after migrations as that's when total biomasses calculated
 	 when using perfect knowledge managers */
@@ -390,7 +383,7 @@ int runNextTimeStep(MSEBoxModel *bm){
 			Harvest_Annual_Calculations(bm, logfp);
 			Manage_Annual_Calculations(bm, logfp);
 			Annual_Mgmt_Implementation(bm, logfp);
-            
+
 			Update_Harvest_Index_Values(bm, logfp);
 			Manage_Update_Indices(bm, logfp);
 
@@ -401,7 +394,7 @@ int runNextTimeStep(MSEBoxModel *bm){
 		}
 
 	}
-    
+
     /* Calculate total effort */
 	if (verbose > 1)
 		printf("Call effort allocation and economics (if appropriate)\n");
@@ -417,14 +410,10 @@ int runNextTimeStep(MSEBoxModel *bm){
 				printf("Call economics\n");
 			Economics(bm, logfp);
 		}
-        
-        if (bm->flagdisplace) { // Record displaced effort if using that effort allocation option
-            if(bm->newmonth && bm->flagday) {
-                Harvest_Report_Monthly_Stats(bm, logfp);
-            }
-        }
-        
+			printf("########### Manage_Calculate_Total_Effort\n");
+
 		Manage_Calculate_Total_Effort(bm, logfp);
+			printf("########### Out Manage_Calculate_Total_Effort\n");
 
 		/* To increase speed in debugging use this to provide fisheries with catches
 		 while skipping biology.
@@ -450,6 +439,7 @@ int runNextTimeStep(MSEBoxModel *bm){
 
         /* Do any maturity updating */
 		Ecology_Update_Invert_Cohorts(bm, logfp);
+        
         Ecology_Update_Vertebrate_Cohorts(bm, logfp);
         
         /* Update any scaled values such as growth rates */
@@ -459,11 +449,11 @@ int runNextTimeStep(MSEBoxModel *bm){
             printf("Call migration of vertebrates\n");
 
         /* Calculate total vertebrates for the area and perform migrations */
-        Ecology_Update_Move_Entry(bm, logfp);  // Not in fishmove test loop as might have inverts being updated
         if (bm->fishmove) {
+            Ecology_Update_Move_Entry(bm, logfp);
             Ecology_Total_Verts_And_Migration(bm, bm->dt, logfp);
         }
-        
+
 		Ecology_Invading_Species(bm, bm->dt, logfp);
         
         if (fishtest) {
@@ -471,19 +461,15 @@ int runNextTimeStep(MSEBoxModel *bm){
 		}
 
 		Ecology_Calculate_Total_Abundance(bm, bm->dt, 0, logfp);
-        
+
 		if (verbose > 1)
 			printf("Call migration of invertebrates\n");
 
         /* Perform invertebrate migrations */
 		Ecology_Invert_Migration(bm, bm->dt, logfp);
+		if (verbose > 1)
+			printf("Call ecology\n");
 
-        if (verbose > 1) {
-            printf("Call ecology\n");
-            fflush(stdout);
-            fflush(stderr);
-        }
-        
         /* Do biological processes - step through biology for each box */
 		for (b = 0; b < bm->nbox; b++) {
 
@@ -505,7 +491,7 @@ int runNextTimeStep(MSEBoxModel *bm){
 
 				/* Check fish abundance */
 				if (fishtest && bm->checkbox) {
-					sprintf(keystrname, "After box %d ecology", b);
+					sprintf(keystrname, "After box %d", b);
 					Ecology_Test_Fish_Total(bm, newwctr, newlandtr, use_tr, keystrname, logfp);
 				}
             } else {
@@ -521,12 +507,11 @@ int runNextTimeStep(MSEBoxModel *bm){
                 }
             }
 		}
-        
 		Ecology_Starve_Notice(bm, logfp);
-
 		Harvest_Update_Temp_Catch_Array(bm, logfp);
+
 	}
-    
+
     /*
 	 check_vals(&bm,newwctr,bm->wcnz,"water, after biology\n");
 	 check_vals(&bm,newsedtr,bm->sednz,"sediment, after biology\n");
@@ -540,7 +525,7 @@ int runNextTimeStep(MSEBoxModel *bm){
         physics(bm, newwctr, newsedtr, logfp);
 		//physics(bm, newwctr, newsedtr, newicetr, newlandtr, logfp);
     }
-    
+
     #ifdef CLAM_LINK_ENABLED
 	//if(do_CLAMLinkage){
 	//    CLAM_Check_Indicators(&bm);
@@ -556,7 +541,7 @@ int runNextTimeStep(MSEBoxModel *bm){
 
 	/* Boundary stuff */
 	boundaries(bm, newwctr, newsedtr, newicetr, newlandtr, logfp);
-    
+
 	//fprintf(bm->logFile, "end of boundaries - Arsenic in wc 1:0 = %e\n", newwctr[1][0][1499]);
 	//fprintf(bm->logFile, "end of boundaries - Arsenic in sed 1:0 = %e\n", newsedtr[1][0][1499]);
 
@@ -567,7 +552,7 @@ int runNextTimeStep(MSEBoxModel *bm){
 	if(bm->ice_on == TRUE){
 		memcpy(bm->icetr[0][0], newicetr[0][0], sizeof(double) * (long unsigned int)bm->nbox * (long unsigned int)bm->icenz * (long unsigned int)bm->ntracer);
 	}
-    
+
 //	if(bm->terrestrial_on){
 //		memcpy(bm->landtr[0], newlandtr[0], sizeof(double) * bm->nbox * bm->nland);
 //	}
@@ -583,13 +568,10 @@ int runNextTimeStep(MSEBoxModel *bm){
         Check_Contam_Totals(bm);
     }
 
-    fflush(stdout);
-    fflush(stderr);
-
     /* Update time and step number */
 	bm->t += bm->dt;
 	bm->nt++;
-    
+
 	/* Check to see if can continue run or need to come to premature stop.
 	To do this check to see if can open dummy halt file in current directory */
 	if( (haltfp=Util_fopen(bm, "delete_to_halt_run","r")) == NULL ){
@@ -647,7 +629,6 @@ int main(int argc, char *argv[]) {
 	/* Store model start time */
 	bm.tstart = bm.t;
 	bm.nt = 0;
-    bm.dtsz_stored = bm.dt;
     
 #ifdef RASSESS_LINK_ENABLED
     
@@ -785,6 +766,7 @@ void setupMSEBoxModel(int argc, char *argv[], MSEBoxModel *bm) {
 
 	logfp = NULL;
 	haltfp = NULL;
+printf("step2a ###########################################################################\n");
 
 #ifdef _STUDIO
 	_CrtSetDbgFlag(_CRTDBG_CHECK_ALWAYS_DF);
@@ -804,7 +786,7 @@ void setupMSEBoxModel(int argc, char *argv[], MSEBoxModel *bm) {
 		if(argc == 2){
 			quit("Atlantis version %s\n", ATLANTIS_REVISION);
 		}
-		Util_Usage(1);
+		Util_Usage();
 
 	}
 
@@ -827,46 +809,46 @@ void setupMSEBoxModel(int argc, char *argv[], MSEBoxModel *bm) {
 			switch ((*argv)[1]) {
 			case 'i': // Input name
 				if (argc < 3)
-					Util_Usage(1);
+					Util_Usage();
 				strncpy(bm->ncIfname, *++argv, BMSLEN);
 				bm->ncIfdump = atoi(*++argv);
 				argc -= 2;
 				break;
 			case 'o': // Output name
 				if (argc < 2)
-					Util_Usage(1);
+					Util_Usage();
 				strncpy(bm->ncOfname, *++argv, BMSLEN);
 				argc--;
 				break;
 			case 'r': // Run parameter file
 				if (argc < 2)
-					Util_Usage(1);
+					Util_Usage();
 				strncpy(bm->runprmIfname, *++argv, BMSLEN);
 				argc--;
 				break;
 			case 'f': // Forcing parameter file
 				if (argc < 2)
-					Util_Usage(1);
+					Util_Usage();
 				strncpy(bm->forceIfname, *++argv, BMSLEN);
 				argc--;
 				break;
 			case 'p': // Physics parameter file
 				if (argc < 2)
-					Util_Usage(1);
+					Util_Usage();
 				strncpy(bm->physprmIfname, *++argv, BMSLEN);
 				argc--;
 				do_physics = 1;
 				break;
 			case 'b': // Biology parameter file
 				if (argc < 2)
-					Util_Usage(1);
+					Util_Usage();
 				strncpy(bm->bioprmIfname, *++argv, BMSLEN);
 				argc--;
 				do_biology = 1;
 				break;
 			case 'h': // Harvest parameter file
 				if (argc < 2)
-					Util_Usage(1);
+					Util_Usage();
 				strncpy(bm->fishprmIfname, *++argv, BMSLEN);
 				argc--;
 				do_biology = 1;
@@ -874,60 +856,60 @@ void setupMSEBoxModel(int argc, char *argv[], MSEBoxModel *bm) {
 				break;
 			case 'a': // Assessment parameter file
 				if (argc < 2)
-					Util_Usage(1);
+					Util_Usage();
 				strncpy(bm->assessprmIfname, *++argv, BMSLEN);
 				argc--;
 				do_assess = 1;
 				break;
 			case 'e': // Economics parameter file
 				if (argc < 2)
-					Util_Usage(1);
+					Util_Usage();
 				strncpy(bm->econprmIfname, *++argv, BMSLEN);
 				argc--;
 				do_economics = 1;
 				break;
 			case 'c':
 				if (argc < 2)
-					Util_Usage(1);
+					Util_Usage();
 				strncpy(bm->cabspot, *++argv, BMSLEN);
 				argc--;
 				break;
 			case 's': // Species config csv file
 				if (argc < 2)
-					Util_Usage(1);
+					Util_Usage();
 				strncpy(bm->functionGroupIfname, *++argv, BMSLEN);
 				argc--;
 				break;
 
 			case 'q': // Fisheries config csv file
 				if (argc < 2)
-					Util_Usage(1);
+					Util_Usage();
 				strncpy(bm->fisheryIfname, *++argv, BMSLEN);
 				argc--;
 				break;
             case 'm':
                 if (argc < 2)
-                    Util_Usage(1);
+                    Util_Usage();
                 strncpy(bm->migrationIfname, *++argv, BMSLEN);
                 argc--;
                 do_migration = 1;
                 break;
             case 'w':
 				if (argc < 2)
-					Util_Usage(1);
+					Util_Usage();
 				do_CLAMLinkage = 1;
 				strncpy(bm->CLAMLinkageprmIfname, *++argv, BMSLEN);
 				argc--;
 				break;
 			case 'l':  // Broker config file
 				if (argc < 2)
-					Util_Usage(1);
+					Util_Usage();
 				do_BrokerLinkage = 1;
 				strncpy(bm->brokerLinkageprmIfname, *++argv, BMSLEN);
 				argc--;
 				break;
 			case 'd': /* Destination folder */
-				if( argc < 2 ) Util_Usage(1);
+				if( argc < 2 ) Util_Usage();
 				strncpy(bm->destFolder, *++argv,BMSLEN);
 				trim(bm->destFolder);
 				strcat(bm->destFolder, FOLDER_SEP);
@@ -939,7 +921,7 @@ void setupMSEBoxModel(int argc, char *argv[], MSEBoxModel *bm) {
 				argc--;
 				break;
 			case 't': /* Input Path folder */
-				if( argc < 2 ) Util_Usage(1);
+				if( argc < 2 ) Util_Usage();
 				strncpy(bm->inputFolder, *++argv,BMSLEN);
 				trim(bm->inputFolder);
 				strcat(bm->inputFolder, FOLDER_SEP);
@@ -947,23 +929,23 @@ void setupMSEBoxModel(int argc, char *argv[], MSEBoxModel *bm) {
 				argc--;
 				break;
 			default:
-				Util_Usage(1);
+				Util_Usage();
 				break;
 			}
 		} else {
-			Util_Usage(1);
+			Util_Usage();
 		}
 	}
 
 	if (strcmp(bm->functionGroupIfname, "") == 0) {
-		Util_Usage(1);
+		Util_Usage();
 	}
 
 	if (strlen(bm->forceIfname) == 0) {
-		Util_Usage(1);
+		Util_Usage();
 	}
 	if (strlen(bm->ncOfname) == 0) {
-		Util_Usage(1);
+		Util_Usage();
 	}
 
 	/* Get core part of output netcdf filenames */
@@ -1001,6 +983,7 @@ void setupMSEBoxModel(int argc, char *argv[], MSEBoxModel *bm) {
     strncpy(bm->ncOAACfname, bm->ncOfname, (size_t)totname);
     //sprintf(bm->ncOAACfname, "%sANNAGECATCH.nc", bm->ncOAACfname);
     strcat(bm->ncOAACfname, "ANNAGECATCH.nc");
+printf("step2b ###########################################################################\n");
 
     //strncpy(bm->ncODIETfname, bm->ncOfname, (size_t)totname);
     //sprintf(bm->ncODIETfname, "%sDIET.nc", bm->ncODIETfname);
@@ -1008,7 +991,7 @@ void setupMSEBoxModel(int argc, char *argv[], MSEBoxModel *bm) {
 	/* Check that all required arguments were present */
 	if (!bm->ncIfname[0] || !bm->ncOfname[0] || !bm->runprmIfname[0] || !bm->forceIfname || !bm->fishprmIfname || !bm->assessprmIfname || !bm->econprmIfname
 			|| !bm->ncODetFishfname[0] || !bm->ncOFishfname[0] || !bm->ncOSumfname[0] || !bm->ncOPCfname[0] || bm->ncIfdump < 0)
-		Util_Usage(1);
+		Util_Usage();
 
 	/* Write arguments to parameter string */
 	sprintf(bm->params, "%s -i %s %d -o %s -s %s -g %s -c %s -d %s -r %s -f %s", progname, bm->ncIfname, bm->ncIfdump, bm->ncOfname, bm->ncOSumfname,
@@ -1054,6 +1037,7 @@ void setupMSEBoxModel(int argc, char *argv[], MSEBoxModel *bm) {
 
 	/* Set up the species parameter strings */
 	Util_Setup_Species_Param_Strings(bm);
+printf("step2c ###########################################################################\n");
 
 	set_keyprm_errfn(quit);
 
@@ -1091,6 +1075,8 @@ void setupMSEBoxModel(int argc, char *argv[], MSEBoxModel *bm) {
     if(verbose) {
         printf("Read box geometry\n");
     }
+
+printf("step2d ###########################################################################\n");
 
 	/* Read the model variable info. Physical info must be first,
 	 * as it reads the number of water column and sediment layers
@@ -1207,6 +1193,7 @@ void setupMSEBoxModel(int argc, char *argv[], MSEBoxModel *bm) {
     if(verbose) {
         printf("Finished allocating bm arrays\n");
     }
+printf("step2e ###########################################################################\n");
 
 	/* Read data */
 	readBMphysData(fid, bm->ncIfdump, bm, logfp);
@@ -1340,6 +1327,7 @@ void setupMSEBoxModel(int argc, char *argv[], MSEBoxModel *bm) {
 	 * the source/sink inputs so that the hydrodynamic time units are known
 	 */
 	printf("Initialise hydrodynamics\n");
+printf("step2f ###########################################################################\n");
 
 	hydro_init(bm);
 
@@ -1456,21 +1444,27 @@ void setupMSEBoxModel(int argc, char *argv[], MSEBoxModel *bm) {
 			Economic_Init(bm, logfp);
 		}
 	}
-    
+
     /* Open the general tracer output file */
+    printf("step2g ########################################################################################\n");
     printf("Create general output file with fid %d flagreusefile: %d\n", fid, bm->flagreusefile);
 	ncopts = 0;
 	if (fid == -1) {
+    printf("step2g1 ########################################################################################\n");
 		/* Create file */
 		fid = createBMDataFile(bm->destFolder, bm->ncOfname, bm, 0);
 		bm->ncOfdump = 0;
 	} else if (bm->flagreusefile == 2) {
+    printf("step2g2 ########################################################################################\n");
+
 		/* Create file anew */
 		ncopts = NC_CLOBBER;
-		ncclose(fid);        
+		ncclose(fid);
 		fid = createBMDataFile(bm->destFolder, bm->ncOfname, bm, 0);
 		bm->ncOfdump = 0;
 	} else if (bm->flagreusefile == 1) {
+    printf("step2g3 ########################################################################################\n");
+
 		/* File does exist - check dimension lengths */
 		ncopts = NC_VERBOSE;
 		ncdiminq(fid, ncdimid(fid, "b"), NULL, &n);
@@ -1500,11 +1494,12 @@ void setupMSEBoxModel(int argc, char *argv[], MSEBoxModel *bm) {
 		quit("file with name %s already exists, either delete, rename or set reuse param in run.prm to 1\n", bm->ncOfname);
 	}
 	bm->ncOfid = fid;
+    printf("step2h ########################################################################################\n");
     
     /* Open the fisheries output files */
 	if (bm->fishout) {
 		printf("Create fisheries output file\n");
-        
+
 		/* Overall fisheries output file */
 		ncopts = 0;
 		if (fid2 == -1) {
@@ -1538,8 +1533,8 @@ void setupMSEBoxModel(int argc, char *argv[], MSEBoxModel *bm) {
 		}
 		bm->ncOfishfid = fid2;
 		ncopts = NC_VERBOSE | NC_FATAL;
-        
- 		/* Detailed fisheries output file */
+
+		/* Detailed fisheries output file */
 		ncopts = 0;
 		if (fid5 == -1) {
 			fid5 = createBMDataFile(bm->destFolder, bm->ncODetFishfname, bm, 3);
@@ -1617,22 +1612,36 @@ void setupMSEBoxModel(int argc, char *argv[], MSEBoxModel *bm) {
 	}
 	bm->ncOsumfid = fid3;
 	ncopts = NC_VERBOSE | NC_FATAL;
-    
+
 	/* Open the growth/consumption tracer output file */
 	printf("Create growth and consumption output file\n");
 	ncopts = 0;
 	if (fid4 == -1) {
+fflush(stdout);
+fflush(stderr);
+printf("stepi1 growth, fid4 == -1 #################################################################\n");
+
 		/* Create file */
 		fid4 = createBMDataFile(bm->destFolder, bm->ncOPCfname, bm, 2);
 		bm->ncOpcdump = 0;
 
 	} else if (bm->flagreusefile == 2) {
+fflush(stdout);
+fflush(stderr);
+printf("stepi2 growth flagusefile == 2 #################################################################\n");
+
 		/* Create file anew */
 		ncopts = NC_CLOBBER;
 		ncclose(fid4);
 		fid4 = createBMDataFile(bm->destFolder, bm->ncOPCfname, bm, 2);
 		bm->ncOpcdump = 0;
+fflush(stdout);
+fflush(stderr);
+printf("stepi2 grwoth flagusefile ==2 last line of if  #################################################################\n");
+
+
 	} else if (bm->flagreusefile == 1) {
+
 		/* File does exist - check dimension lengths */
 		ncopts = NC_VERBOSE;
 		ncdiminq(fid4, ncdimid(fid4, "b"), NULL, &n);
@@ -1661,9 +1670,23 @@ void setupMSEBoxModel(int argc, char *argv[], MSEBoxModel *bm) {
 	} else {
 		quit("file with name %s already exists, either delete, rename or set reuse param in run.prm to 1\n", bm->ncOPCfname);
 	}
+fflush(stdout);
+printf("stepi3b #################################################################\n");
+printf("NC_VERBOSE = %d\n",NC_VERBOSE);
+printf("NC_FATAL = %d\n",NC_FATAL);
 	bm->ncOpcfid = fid4;
 	ncopts = NC_VERBOSE | NC_FATAL;
-    
+fflush(stdout);
+printf("stepi3c #################################################################\n");
+printf("NC_VERBOSE = %d\n",NC_VERBOSE);
+printf("NC_FATAL = %d\n",NC_FATAL);
+
+printf("ncopts %d\n",ncopts);
+printf("stepi4 #################################################################\n");
+printf("fid4 = %ds\n",fid4);
+printf("flagreusefile = %d\n",bm->flagreusefile);
+printf("flag_age_output = %d\n",bm->flag_age_output);
+
     /* Open the annual age structured output files - if required */
     if(bm->flag_age_output > 1) {
         printf("Create annual age structured output file\n");
@@ -1678,11 +1701,13 @@ void setupMSEBoxModel(int argc, char *argv[], MSEBoxModel *bm) {
             bm->ncOaadump = 0;
 
         } else if (bm->flagreusefile == 2) {
+
             /* Create file anew */
             ncopts = NC_CLOBBER;
             ncclose(fid6);
             fid6 = createBMAnnAgeBioDataFile(bm->destFolder, bm->ncOAAfname, bm);
             bm->ncOaadump = 0;
+
         } else if (bm->flagreusefile == 1) {
             /* File does exist - check dimension lengths */
             ncopts = NC_VERBOSE;
@@ -1741,8 +1766,9 @@ void setupMSEBoxModel(int argc, char *argv[], MSEBoxModel *bm) {
         }
 
     }
-    
-   /* Open the spatial diet output file - now in a text file
+
+printf("entering ecology boundary check .. \n");
+    /* Open the spatial diet output file - now in a text file
     printf("Create spatial output file\n");
     ncopts = 0;
     if (fid8 == -1) {
@@ -1827,6 +1853,7 @@ void setupMSEBoxModel(int argc, char *argv[], MSEBoxModel *bm) {
 			}
 		}
 	}
+    
     return;
 }
 
@@ -1835,6 +1862,7 @@ void setupMSEBoxModel(int argc, char *argv[], MSEBoxModel *bm) {
  */
 static void set_up_vvdistrib(MSEBoxModel *bm) {
 	int b, k, sp, ij;
+printf("step1 ########################################################################");
 
 	/* Initialise vert_vdistrib */
 	for (b = 0; b < bm->nbox; b++) {
@@ -1963,8 +1991,6 @@ void AllocateArrayMemory(MSEBoxModel *bm, FILE *llogfp) {
 	bm->CumCatch = Util_Alloc_Init_4D_Double(bm->wcnz, bm->nbox, bm->K_num_fisheries, bm->K_num_tot_sp, 0.0);
 	bm->CumDiscards = Util_Alloc_Init_3D_Double(bm->nbox, bm->K_num_fisheries, bm->K_num_tot_sp, 0.0);
 	bm->CumEffort = Util_Alloc_Init_2D_Double(bm->nbox, bm->K_num_fisheries, 0.0);
-    bm->CumDisplaceEffort = Util_Alloc_Init_2D_Double(bm->K_num_fisheries, bm->nbox, 0.0);
-    
 	bm->CatchTS_agedistrib = Util_Alloc_Init_3D_Double(bm->K_num_max_cohort, bm->K_num_tot_sp, bm->K_num_fisheries, 0.0);  // intentionally left as only per age cohort
 	bm->CatchTS_agedistribOrig = Util_Alloc_Init_3D_Double(bm->K_num_max_cohort, bm->K_num_tot_sp, bm->K_num_fisheries, 0.0);  // intentionally left as only per age cohort
 	bm->DAScalc = Util_Alloc_Init_1D_Double(bm->K_num_tot_sp, 0.0);
@@ -2171,6 +2197,8 @@ void checknetCDFFiles(MSEBoxModel *bm) {
 
 	ncopts = NC_CLOBBER;
 
+printf("step3 ##########################################################################");
+
 	if(bm->t == 0){
 		bm->ncOfIndex = 0;
 		bm->ncOfishIndex = 0;
@@ -2289,7 +2317,9 @@ void modelshutdown(MSEBoxModel *bm) {
 	if(RBCParamStrings)
 		c_free2d(RBCParamStrings);
     
-    c_free2d(bm->SP_FISHERYprmsName);
+    printf("Freeing model variables A\n");
+
+	c_free2d(bm->SP_FISHERYprmsName);
 
 	freeBMTracerInfo(bm);
 	freeBMphysInfo(bm);
@@ -2297,17 +2327,23 @@ void modelshutdown(MSEBoxModel *bm) {
 	freeBMEpiInfo(bm);
 	freeBMDiagInfo(bm);
     
-    if(bm->ice_on){
+    printf("Freeing model variables B\n");
+
+	if(bm->ice_on){
 		freeBMIceInfo(bm);
 	}
 	if(bm->terrestrial_on)
 		freeBMLandInfo(bm);
     
-    /* Free library specific arrays */
+    printf("Freeing model variables C\n");
+
+	/* Free library specific arrays */
 	if (do_assess){
 		SS3Link_Free(bm);
 		Assess_Free(bm);
 	}
+    
+    printf("Freeing model variables D\n");
 
 #ifdef BROKER_LINK_ENABLED
 	if(do_BrokerLinkage){
@@ -2315,12 +2351,16 @@ void modelshutdown(MSEBoxModel *bm) {
 	}
 #endif
     
+    printf("Freeing model variables E\n");
+    
 	Ecology_Free(bm);
 	Manage_Free(bm);
 	Harvest_Free(bm);
 	freePhysics(bm);
 	Economic_Free(bm);
 	Implementation_Free(bm);
+    
+    printf("Freeing model variables F\n");
     
 	/* If defined free up the CLAM module */
 #ifdef CLAM_LINK_ENABLED
@@ -2424,8 +2464,6 @@ void modelshutdown(MSEBoxModel *bm) {
 	free4d(bm->CumCatch);
 	free3d(bm->CumDiscards);
 	free2d(bm->CumEffort);
-    free2d(bm->CumDisplaceEffort);
-    
 	free3d(bm->CatchTS_agedistrib);
 	free3d(bm->CatchTS_agedistribOrig);
 	free3d(bm->DiscardTS_agedistrib);
@@ -2540,7 +2578,7 @@ void modelshutdown(MSEBoxModel *bm) {
  but without that part of the model (biology or physics)
  */
 
-void Util_Usage(int dummy) {
+void Util_Usage() {
 
 	printf("\nAtlantis SVN Updated to Version %s\n", ATLANTIS_REVISION);
 	printf("Atlantis SVN Path %s\n", ATLANTIS_WCPATH);

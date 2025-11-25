@@ -181,7 +181,7 @@ xmlNodePtr Parse_File(MSEBoxModel *bm, FILE *inputFP, char *fileName, xmlNodePtr
 					}
 					lengthValue = atoi(lengthString);
 					if(lengthValue != length){
-                        warn("Parse_File - Creating XML - Length of attribute %s (%d) in file %s is not the required length %d in file %s\n", varStr, lengthValue, fileName, length, fileName);
+                        warn("Creating XML - Length of attribute %s (%d) in file %s is not the required length %d in file %s\n", varStr, lengthValue, fileName, length, fileName);
 					}
 				}
 
@@ -968,8 +968,6 @@ xmlNodePtr Create_Species_ParamXML(MSEBoxModel *bm, char *fileName, FILE *inputF
 			//printf("varStr  = %s\n", varStr);
 			if (regexec(&(regBuffer), varStr, elementsof ( pmatch ), pmatch, 0) == 0) {
 
-                //printf("%s paramID %d", varStr, paramID);
-                
 				/* Get the speciesName. */
 				switch (paramID) {
 				case flag_id:
@@ -1016,13 +1014,6 @@ xmlNodePtr Create_Species_ParamXML(MSEBoxModel *bm, char *fileName, FILE *inputF
 				case Ralpha_id:
 				case jack_a_id:
 				case jack_b_id:
-                case prod_alpha_id:
-                case den_depend_beta1_id:
-                case den_depend_beta2_id:
-                case temp_coefft_id:
-                case rate_coefft_id:
-                case wind_coefft_id:
-                case recruit_var_id:
 				case PP_id:
 				case hta_id:
 				case htb_id:
@@ -1084,7 +1075,6 @@ xmlNodePtr Create_Species_ParamXML(MSEBoxModel *bm, char *fileName, FILE *inputF
 				case basketSP_id:
 				case basket_size_id:
 				case coType_id:
-                case max_co_sp_id:
 				case p_split_id:
 	            case mStarve_id:
 				case mT_id:
@@ -1472,7 +1462,7 @@ xmlNodePtr Create_Species_Cohort_ParamXML(MSEBoxModel *bm, char *fileName, FILE 
 					lengthString = strtok(NULL, seps);
 					lengthValue = atoi(lengthString);
 					if(lengthValue != size){
-						warn("Create_Species_Cohort_ParamXML - Length of attribute %s in file %s is not the required length %d in file %s\n", varStr, fileName, size, fileName);
+						warn("Length of attribute %s in file %s is not the required length %d in file %s\n", varStr, fileName, size, fileName);
 					}
 
 					for(nstage = 0; nstage < bm->K_num_max_stages; nstage++){
@@ -1624,7 +1614,7 @@ xmlNodePtr Create_Species_Spawn_ParamXML(MSEBoxModel *bm, char *fileName, FILE *
 					lengthString = strtok(NULL, seps);
 					lengthValue = atoi(lengthString);
 					if(lengthValue != size){
-						warn("Create_Species_Spawn_ParamXML - Length of attribute %s in file %s is not the required length %d in file %s\n", varStr, fileName, size, fileName);
+						warn("Length of attribute %s in file %s is not the required length %d in file %s\n", varStr, fileName, size, fileName);
 					}
 
 					for(nspawn = 0; nspawn < bm->K_num_max_spawns; nspawn++){
@@ -1794,6 +1784,8 @@ xmlNodePtr Create_Harvest_Fishery_Group_ParamXML(MSEBoxModel *bm, FILE *inputFP,
 				case imposecatchend_id:
 				case FC_reportscale_id:
 				case trip_lim_id:
+				case co_sp_catch_id:
+				case co_sp_catch2_id:
 				case prop_spawn_close_id:
 				case TAC_id:
 				case FC_case_id:
@@ -2317,7 +2309,6 @@ xmlNodePtr Create_RBC_Species_ParamXML(MSEBoxModel *bm, char *fileName, FILE *in
                 case Tier2Sig_id:
                 case Tier3Sig_id:
                 case isTriggerSpecies_id:
-                case trigger_threshold_id:
                 case UseRBCAveraging_id:
 				case PostRule_id:
 				case CPUEmult_id:
@@ -2369,8 +2360,6 @@ xmlNodePtr Create_RBC_Species_ParamXML(MSEBoxModel *bm, char *fileName, FILE *in
                 case mgt_indicator_id:
                 case init_mgt_category_id:
                 case init_mgt_sp_id:
-                case PGMSYBHalpha_id:
-                case PGMSYBHbeta_id:
 					speciesStr = varStr + strlen(RBCParamStrings[paramID]);
 					break;
 				default:

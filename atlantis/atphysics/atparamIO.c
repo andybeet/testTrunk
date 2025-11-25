@@ -177,22 +177,10 @@ static int Read_Run_Parameters(MSEBoxModel *bm, char *fileName) {
     bm->flag_pollutant_impacts = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, binary_check, "flag_pollutant_impacts");
 
 	bm->fishmove = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, binary_check, "fishmove");
-    if (!bm->fishmove)
-        warn("Vertebrate movement has been turned off (fishmove set to 0)\n");
-
 	bm->flaghemisphere = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, binary_check, "flaghemisphere");
 
 	/* Read in information about additional tracers */
 	bm->track_atomic_ratio = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, binary_check, "trackAtomicRatio");
-    if(bm->track_atomic_ratio) {
-        bm->flagratio_warn = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, binary_check, "flagratio_warn");
-        bm->N_to_C = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, no_checking, "N_to_C");
-        bm->N_to_P = Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, no_checking, "N_to_P");
-    }
-    
-    bm->external_populations = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, binary_check, "external_populations");
-    bm->flag_multiyr_migs = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, binary_check, "flag_multiyr_migs");
-    
 	bm->track_rugosity_arag = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, integer_check, "track_rugosity_arag");
 	bm->track_pH = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, integer_check, "track_pH");
     bm->flag_use_deltaH = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, integer_check, "flag_use_deltaH");
@@ -203,8 +191,6 @@ static int Read_Run_Parameters(MSEBoxModel *bm, char *fileName) {
     bm->mirror_invalid = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, integer_check, "mirror_invalid");
 	
     bm->flag_replicated_old = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, binary_check, "flag_replicated_old");
-    bm->flag_replicated_old_PPmort = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, binary_check, "flag_replicated_old_PPmort");
-
     bm->flag_old_embryo_init = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, binary_check, "flag_old_embryo_init");
     bm->flag_replicate_old_calendar = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, binary_check, "flag_replicate_old_calendar");
     bm->flag_sanity_check = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, binary_check, "flag_sanity_check");
@@ -212,61 +198,12 @@ static int Read_Run_Parameters(MSEBoxModel *bm, char *fileName) {
     bm->store_aggregate_yoy = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, binary_check, "store_aggregate_yoy");
     bm->store_mig_array = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, binary_check, "store_mig_array");
     
-    /* Read in the contaminant values */
-    /* Removed as was chucking up an odd ATTRIBUTE read that was had to sort out so just left the information with the Scenario options instead
-    groupingNode = Util_XML_Get_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, inputDoc->children, "ContaminantSettings");
-    if (groupingNode == NULL)
-        quit("ContaminantSettings attribute group not found in input file %s.\n", fileName);
-     */
-     //bm->track_contaminants = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, integer_check, "track_contaminants");
-
-    if(bm->track_contaminants == TRUE){
-        
-        printf("Reading contaminant parameters\n");
-        
-        bm->flag_contam_sanity_check = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, integer_check, "flag_contam_sanity_check");
-        bm->num_contaminants = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, integer_check, "num_contaminants");
-        if (bm->num_contaminants <= 1)
-            bm->flag_contamInteractModel = no_contam_interact;
-
-        bm->contaminantStructure = (ContaminantStructure **)malloc(sizeof(ContaminantStructure *) * (unsigned long int)bm->num_contaminants);
-        for(cIndex = 0; cIndex < bm->num_contaminants; cIndex++){
-            bm->contaminantStructure[cIndex] = (ContaminantStructure *)malloc(sizeof(ContaminantStructure ));
-        }
-        
-        printf("String about to read contaminant_names\n");
-        
-        /* Read in the names */
-        if(Util_XML_Read_Array_String(ATLANTIS_ATTRIBUTE, fileName, "contaminant_names", groupingNode, "contaminant_names", &values, bm->num_contaminants) == FALSE){
-            quit("Error: Unable to read parameter 'Contaminant_Names' from input file %s\n", fileName);
-        }
-        
-        printf("String name set up\n");
-
-        for(cIndex = 0; cIndex < bm->num_contaminants ; cIndex ++){
-            strcpy(bm->contaminantStructure[cIndex]->contaminant_name, values[cIndex]);
-
-            printf("name = %s, value = %s\n", values[cIndex], bm->contaminantStructure[cIndex]->contaminant_name);
-        }
-        printf("Loaded values and about to free values\n");
-        
-        //c_free2d(values);
-        //printf("value = %s\n", bm->contaminantStructure[0]->contaminant_name);
-
-        /* Read in the units */
-        if(Util_XML_Read_Array_String(ATLANTIS_ATTRIBUTE, fileName, "contaminant_units", groupingNode, "contaminant_units", &values,
-                                bm->num_contaminants) == FALSE){
-                    quit("Error: Unable to read parameter 'Contaminant_Units' from input file %s\n", fileName);
-                }
-
-        for(cIndex = 0; cIndex < bm->num_contaminants ; cIndex ++){
-            strcpy(bm->contaminantStructure[cIndex]->contaminant_unit , values[cIndex]);
-        }
-
-        c_free2d(values);
-    }
-
+    bm->external_populations = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, binary_check, "external_populations");
+    bm->flag_multiyr_migs = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, binary_check, "flag_multiyr_migs");
     
+    if (!bm->fishmove)
+		warn("Vertebrate movement has been turned off (fishmove set to 0)\n");
+
 	groupingNode = Util_XML_Get_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, inputDoc->children, "OutputOptions");
 	if (groupingNode == NULL)
 		quit("OutputOptions attribute group not found in input file %s.\n", fileName);
@@ -384,7 +321,60 @@ static int Read_Run_Parameters(MSEBoxModel *bm, char *fileName) {
 		quit("Error: Unable to read parameter 'ScaleGroupDensities/init_scalar' from input file %s\n", fileName);
 	}
 
-    
+	groupingNode = Util_XML_Get_Node(ATLANTIS_ATTRIBUTE_SUB_GROUP, inputDoc->children, "ContaminantSettings");
+	if (groupingNode == NULL)
+		quit("ContaminantSettings attribute group not found in input file %s.\n", fileName);
+
+    /* Read in the contaminant values */
+	//bm->track_contaminants = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, integer_check, "track_contaminants");
+
+	if(bm->track_contaminants == TRUE){
+        
+        printf("Reading contaminant parameters\n");
+        
+        bm->flag_contam_sanity_check = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, integer_check, "flag_contam_sanity_check");
+        bm->num_contaminants = (int) Util_XML_Read_Value(fileName, ATLANTIS_ATTRIBUTE, bm->ecotest, 1, groupingNode, integer_check, "num_contaminants");
+        if (bm->num_contaminants <= 1)
+            bm->flag_contamInteractModel = no_contam_interact;
+
+        bm->contaminantStructure = (ContaminantStructure **)malloc(sizeof(ContaminantStructure *) * (unsigned long int)bm->num_contaminants);
+		for(cIndex = 0; cIndex < bm->num_contaminants; cIndex++){
+			bm->contaminantStructure[cIndex] = (ContaminantStructure *)malloc(sizeof(ContaminantStructure ));
+		}
+        
+        printf("String about to read contaminant_names\n");
+        
+        /* Read in the names */
+		if(Util_XML_Read_Array_String(ATLANTIS_ATTRIBUTE, fileName, "contaminant_names", groupingNode, "contaminant_names", &values, bm->num_contaminants) == FALSE){
+			quit("Error: Unable to read parameter 'Contaminant_Names' from input file %s\n", fileName);
+		}
+        
+        printf("String name set up\n");
+
+		for(cIndex = 0; cIndex < bm->num_contaminants ; cIndex ++){
+			strcpy(bm->contaminantStructure[cIndex]->contaminant_name, values[cIndex]);
+
+			printf("name = %s, value = %s\n", values[cIndex], bm->contaminantStructure[cIndex]->contaminant_name);
+		}
+        printf("Loaded values and about to free values\n");
+        
+		//c_free2d(values);
+		//printf("value = %s\n", bm->contaminantStructure[0]->contaminant_name);
+
+		/* Read in the units */
+		if(Util_XML_Read_Array_String(ATLANTIS_ATTRIBUTE, fileName, "contaminant_units", groupingNode, "contaminant_units", &values,
+								bm->num_contaminants) == FALSE){
+					quit("Error: Unable to read parameter 'Contaminant_Units' from input file %s\n", fileName);
+				}
+
+		for(cIndex = 0; cIndex < bm->num_contaminants ; cIndex ++){
+			strcpy(bm->contaminantStructure[cIndex]->contaminant_unit , values[cIndex]);
+		}
+
+		c_free2d(values);
+	}
+
+
 	/* Print a heading on stdout if verbose enough */
 	if (verbose > 1) {
         printf("Read_Run_Parameters about to do keyprm_verbose\n");

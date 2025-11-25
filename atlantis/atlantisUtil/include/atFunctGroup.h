@@ -151,14 +151,13 @@ typedef struct {
     GROUP_TYPES groupType;		        /**< If this is a group if inverts then what type of invert is it.
 											This might be changed to allow for vert types if necessary */
     double Tcorr;	/** Temperature correction value for this functional group */
-    double TcorrEff; /**< Temperature efficiency correction */
     double Scorr;	/** Salinity correction value for this functional group */
     double pHcorr;	/** pH correction value for this functional group */
     double Ccorr; 	/** General contaminantion correction value for this functional group */
     double PolluteCorr;     /** Noise and light contamination correction value for this functional group */
     double *C_growth_corr; 	/** Growth contaminantion correction value for this functional group */
     double *C_move_corr;     /** Growth contaminantion correction value for this functional group */
-    double *C_reprod_corr;     /** Reproduction contaminantion correction value for this functional group */
+    double C_reprod_corr;     /** Reproduction contaminantion correction value for this functional group */
 
 	int *habitatCoeffs; /* If the group resides in the habitat then this value will be 1.0, else it will be 0.0 */
 
@@ -250,12 +249,8 @@ typedef struct {
      */
     int **contaminantTracers;   /* Base contaminant levels in a species */
     int **contamPropTracers;    /* So can track proportion of the individuals effected */
-    double ****agingContam;       /* For transferring contaminants */
     double *contaminantSpMort;	/* Mortality of each group/cohort due to all contaminants - calculated for each timestep */
     double **calcCLinearMort;	/* Mortality of each group/cohort due to this contaminant - calculated for each timestep */
-    double *reprodContam; /* Maternal transfer occuring during recruitment per species */
-    double *reprodContamCount; /* Count of parents contributing contaminants */
-    double *LocalPopCount; /* Count of local juveniels for suckling transfer of contaminants */
 
     /* Additional tracers - only allocated if bm->track_atomic_ratio is TRUE.*/
     int **addRatioTracers;		/** The index of the additinal ratio tracers. One tracer per cohort per additional element we are tracking */
@@ -285,16 +280,7 @@ typedef struct {
     double ***SizeCaught; /**< Sampled catch - size in catch */
     double **RAssessSpringSurvey; /**< Spring survey abundance - for RAssess */
     double **RAssessAutumnSurvey; /**< Autumn survey abundance - for RAssess */
-    
-    /* Used in tracking informaiton for calcualting system cap in fisheries */
-    double *min_wgt;
-    double *max_wgt;
-    double **rolling_wgt;
-    double *min_B;
-    double *max_B;
-    double **rolling_B;
 
-    /** Reproduction related */
     double *FSPB; /* Spawning ogives for vertebrates. This is the original value read in. This is then scaled and then the scaled array is the one that is used. */
     double *scaled_FSPB; /* Scaled spawning ogives for vertebrates */
     double **grow;			/** Growth in RN and SN of the vertebrates - set in Do_Vertebrate_Living */
@@ -329,9 +315,7 @@ typedef struct {
     double *speciesParams;
     double **cohortSpeciesParams;
     double **spawnSpeciesParams;
-    
     int *co_sp;
-    double **co_sp_catch;
 
     long double **preyEaten;			/** Prey eaten in each habitat type */
     long double ***preyEatenGlobal;
@@ -423,12 +407,6 @@ typedef struct{
     double ****num_recruits_updating;
     
     int *migIDmatch;
-    
-    /* Contaminant related */
-    double ****Contam;
-    double **AverageContam;
-    double *****RecruitContam;
-    double **SettlerContam;
 
 }DemographicStruct;
 extern DemographicStruct *EMBRYO;
@@ -479,11 +457,6 @@ typedef struct{
 	double **RN;
 	double **aging;
 	double **Box;
-    int **ReprodAllowed;
-    
-    double ***RecruitContam;
-    double ***contam;
-    double **contam_return;
     
     double **MigYOY;
     double **MigYOY_SN;
@@ -507,7 +480,6 @@ typedef struct{
     int **IsPartialMigration_Prm;
     int **PartialMigration_MinPrm;
     int **PartialMigration_MaxPrm;
-    int **ReprodAllowedPrm;
     double **survival_Prm;
     double **growth_Prm;
     int **returnstock_Prm;

@@ -181,6 +181,8 @@ SpeciesParamStruct FisheryGroupParamsArray[numGroupFisheryParams] =
 		{ "TotalAllowableCatch", TAC_id, "^TAC_[A-Z]", no_checking, 1.0, SP_FISHED },
 
 	/* TAC_Parameters */
+		{ "CompanionSpeciesRatio", co_sp_catch_id, "^co_sp_catch_", no_checking, 1.0, SP_FISHED },
+		{ "SecondCompanionSpeciesRatio", co_sp_catch2_id, "^co_sp_catch2_", no_checking, 1.0, SP_FISHED },
 		{ "ProportionSpawningClosed", prop_spawn_close_id, "^prop_spawn_close_", no_checking, 1.0, SP_FISHED },
 
 	/* Population threshold values */
@@ -564,3 +566,5 @@ void Util_XML_Read_Vert_Fishery_Param(MSEBoxModel *bm, char *fileName, xmlNodePt
 	}
 	free(nodeName);
 }
+
+

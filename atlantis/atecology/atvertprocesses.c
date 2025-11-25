@@ -569,11 +569,6 @@ double Avail_Fish(MSEBoxModel *bm, int guildcase, int chrt, int chrtstage, int p
 					
 					preystock = bm->group_stock[prey][bm->current_box][bm->current_layer];
 					
-                    /**
-                    if((guildcase == bm->which_check) && (bm->checkbox == bm->current_box)) {
-                        fprintf(llogfp, "UseHardFeedingWindow %d, UseBiLogisticFeedingWindow: %d\n", bm->UseHardFeedingWindow, bm->UseBiLogisticFeedingWindow);
-                    }
-                    **/
 
 					if ( bm->UseHardFeedingWindow ){
 						sizeScalar = 1.0;
@@ -582,13 +577,6 @@ double Avail_Fish(MSEBoxModel *bm, int guildcase, int chrt, int chrtstage, int p
                             Kmax_coefft = FunctGroupArray[guildcase].speciesParams[Kmax_coefft_id];
                             rel_size = SP[prey][bpreychrt][SN_id] / (SN * KUP_SN);
                             sizeScalar = rel_size * exp(Kmax_coefft * (1.0 - rel_size));
-                            
-                            /**
-                            if((guildcase == bm->which_check) && (bm->checkbox == bm->current_box)) {
-                                fprintf(llogfp, "Kmax_coefft %e, rel_size: %e, SN: %e, prey_SN: %e, KUP_SN: %e\n", Kmax_coefft, rel_size, SN, SP[prey][bpreychrt][SN_id], KUP_SN);
-                            }
-                            **/
-                            
                         } else { // Use bi-logistic form developed by Asta Audzijonyte
                             //sizeScalar = 1.0;
                             Kmax_coefft = FunctGroupArray[guildcase].speciesParams[Kmax_coefft_id];
@@ -676,7 +664,7 @@ double Avail_Fish(MSEBoxModel *bm, int guildcase, int chrt, int chrtstage, int p
 
 
 					/**
-					if((guildcase == bm->which_check) && (bm->checkbox == bm->current_box)) {
+					//if((guildcase == bm->which_check) && (bm->checkbox == bm->current_box)) {
 					//if((guildcase == bm->which_check) || (prey == bm->which_check)) {
 						fprintf(llogfp,
 								"pred: %s, availfish: %.20e, chrtstage: %d, prey: %s, preychrt: %d, bm->cell_vol: %e, preySN: %.20e, preyRN: %.20e, preyDEN: %.20e, preyBiom: %.20e\n",
@@ -690,7 +678,7 @@ double Avail_Fish(MSEBoxModel *bm, int guildcase, int chrt, int chrtstage, int p
 								preyage, bm->pSPVERTeat[guildcase][prey][chrtstage][preyage], eatthis, step1, prey, preystock, preyage,
 								pSTOCK[prey][preystock][preyage], prey, boxin, preyage, bm->refuge_status[prey][boxin][preyage], pHscalar, sizeScalar);
 					}
-					/*/
+					**/
 
 
 				}
@@ -1085,7 +1073,7 @@ double Do_Vertebrate_Living(MSEBoxModel *bm, FILE *llogfp, int guildcase, HABITA
 					Gain_Element(bm, boxLayerInfo, WC, LabDetIndex, 0, guildcase, cohort, VprodDLchrt, level_id, isGlobal);
 
 					/* P release due to respiration and excretion*/
-					Calculate_Element_Release(bm, boxLayerInfo, guildcase, VreleaseNHchrt, WC, level_id);
+					//Calculate_Element_Release(bm, boxLayerInfo, guildcase, VreleaseNHchrt, WC, level_id);
 				}
 
 				/* Contaminants transfer */
@@ -1295,7 +1283,7 @@ void Vertebrate_Activities(MSEBoxModel *bm, BoxLayerValues *boxLayerInfo, HABITA
 
 	spGRAZEinfo[pelagicBactIndex][0][WC] = eatBactPB;
 	spGRAZEinfo[SedBactIndex][0][SED] = eatBactBB;
-	eatBact = eatBactPB + eatBactBB + eatIceBact;
+	eatBact = eatBactPB + eatBactBB;
 	FunctGroupArray[guildcase].GrazeLive[chrt] += eatBact;
 
 

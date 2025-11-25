@@ -19,12 +19,13 @@ double k_pattern;
 double k_patches;
 double k_mismatch;
 
+double ***selectivity;
 double ***FFCDR;
 double ***SELchange;
 double ***Pchange;
 double ****Qchange;
 double ***SWEPTchange;
-//double ****mFCchange;
+double ****mFCchange;
 
 double ****DISCRDchange;
 double **OldCatchSum;

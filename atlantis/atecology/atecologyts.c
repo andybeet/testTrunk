@@ -165,7 +165,7 @@ void Ecology_Read_Enviro_Forcing(MSEBoxModel *bm, char *key, TimeSeries **ts, ch
 void Ecology_Read_LinearMortality_TS(MSEBoxModel *bm, char *key, TimeSeries **ts, char *t_units, void(*err)(char *format, ...)) {
 
 	if (verbose > 1)
-		printf("Reading in linear mortality time series forcing file\n");
+		fprintf(bm->logFile, "Reading in linear mortality time series forcing file\n");
 	Read_Ecology_Time_Series(bm, key, ts, t_units, err);
 }
 

@@ -61,17 +61,5 @@ extern int
 	AragoniteSat_i,
 	Soil_i,
     Noise_Pollution_i,
-    Light_Pollution_i,
-    Wind_i,
-    /* Phosphorous related */
-    Tfactor_i,
-    Pads_r_i,
-    r_immob_PIP_i,
-    DIP_i,
-    EFI_i,
-    PIP_i,
-    PIPI_i,
-    TIP_i,
-    PIP_Dust_i,
-    Dust_i;
+    Light_Pollution_i;
 

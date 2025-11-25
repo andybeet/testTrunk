@@ -42,8 +42,7 @@ void Manage_Output_Indices(MSEBoxModel *bm);
 extern double ***p_fishi, **k_cover, ***Effort_vdistrib, ****p_fish_origi,
 	**FC_hdistrib, **MPAendangered, **SEASONAL, **effort_scale, ***qSTOCK,
 	*oldFishEndDay, *scale_effort, *prev_mult, **FC_case, *DistPeak, *FrefAi,
-    *FrefHi, *FreStarti, *LeverUsei, *estErrori, *estCVi, *estBiasi, *FrefLimi,
-    *FlagSystCapSPi, *SystCapSPprefi, *AssessMorti;
+    *FrefHi, *FreStarti, *LeverUsei, *estErrori, *estCVi, *estBiasi;
 
 /* Per shot CPUE generation initialisation */
 void GenerateCPUEDistribution(MSEBoxModel *bm, FILE *llogfp);

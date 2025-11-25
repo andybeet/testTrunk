@@ -226,9 +226,7 @@ void Economic_Init(MSEBoxModel *bm, FILE *llogfp) {
 									+ small_num));
 						}
 						bm->QuotaAlloc[nf][b][sp][oldquota_id] = bm->QuotaAlloc[nf][b][sp][owned_id];
-                        if(!FunctGroupArray[sp].isTAC || (bm->TACamt[sp][nf][now_id] < no_quota)) {
-                            tot_TAC += bm->QuotaAlloc[nf][b][sp][owned_id];
-                        }
+						tot_TAC += bm->QuotaAlloc[nf][b][sp][owned_id];
 
 					}
 					/* Update old TAC - make sure it the TAC value reflects the Quota and TAC values. */
@@ -552,9 +550,7 @@ void Economic_Init(MSEBoxModel *bm, FILE *llogfp) {
 				in_quota = bm->inQuota[nf][sp];
 				if (in_quota && (bm->FISHERYprms[nf][flagrecfish_id] < 1)) {
 					/* Don't count recfishing in this as only want commercial quota */
-                    if(!FunctGroupArray[sp].isTAC || (bm->TACamt[sp][nf][now_id] < no_quota)) {
-                        tot_TAC += bm->TACamt[sp][nf][now_id];
-                    }
+					tot_TAC += bm->TACamt[sp][nf][now_id];
 
 					fprintf(llogfp, "%s %s TAC: %e (totTAC: %e)\n", FunctGroupArray[sp].groupCode, FisheryArray[nf].fisheryCode, bm->TACamt[sp][nf][now_id],
 							tot_TAC);
@@ -885,11 +881,13 @@ void Economic_Free(MSEBoxModel *bm) {
     
 	printf("Freeing economics arrays\n");
     
+    /* Likely already cleaned up so don't activate for now
     // Clean up if haven't already
     if(bm->EffortReScale)
         free1d(bm->EffortReScale);
     if(bm->CatchReScale)
         free1d(bm->CatchReScale);
+    */
     
 	free5d(bm->BlackBook);
 	free4d(bm->BoxAlloc);

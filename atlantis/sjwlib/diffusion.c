@@ -201,7 +201,7 @@ solvetri(double *Cm1, double *C, double *Cp1, double *rhs,
  *
  *
  */
-void free_diffusion1d(int dummy) {
+void free_diffusion1d() {
 
 	if (Cm1 != NULL) {
 		free1d(Cm1);

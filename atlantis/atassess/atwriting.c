@@ -579,7 +579,7 @@ void Write_StockNums(FILE *fid, MSEBoxModel *bm, int ij, int id) {
 	double area_correct = 0.0;
 
 	if (verbose > 1)
-        printf( "Write stock numbers\n");
+		fprintf(stderr, "Write stock numbers\n");
 
 	for (z = 0; z < bm->nfzones; z++) {
 		/* Write Time */
@@ -642,7 +642,7 @@ void Write_StockEP(FILE *fid, MSEBoxModel *bm, int ij, int id) {
 	int z;
 
 	if (verbose > 1)
-        printf( "Write stock production\n");
+		fprintf(stderr, "Write stock production\n");
 
 	for (z = 0; z < bm->nfzones; z++) {
 		/* Write Time */
@@ -695,7 +695,7 @@ void Write_StockSize(FILE *fid, MSEBoxModel *bm, int ij, int id) {
 	int z;
 
 	if (verbose > 1)
-        printf( "Write stock condition info\n");
+		fprintf(stderr, "Write stock condition info\n");
 
 	for (z = 0; z < bm->nfzones; z++) {
 		/* Write Time */
@@ -749,7 +749,7 @@ FILE *Init_StockCatch_File(MSEBoxModel *bm, char *fname) {
 void Write_StockF(FILE *fid, MSEBoxModel *bm, int ij, int id) {
 	int z, sp;
 	if (verbose > 1)
-        printf( "Stock catch info\n");
+		fprintf(stderr, "Stock catch info\n");
 
 	for (z = 0; z < bm->nfzones; z++) {
 		/* Write Time */
@@ -804,7 +804,7 @@ void Write_Individs(FILE *fid, MSEBoxModel *bm, int ij, int id) {
 	int j, z, k, sp;
 
 	if (verbose > 1)
-        printf( "Write individual info\n");
+		fprintf(stderr, "Write individual info\n");
 
 	for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
 		if (FunctGroupArray[sp].isVertebrate == TRUE) {
@@ -865,7 +865,7 @@ void Write_Ages(FILE *fid, MSEBoxModel *bm, int ij, int id) {
 	int j, z, k, sp;
 
 	if (verbose > 1)
-        printf( "Write age info\n");
+		fprintf(stderr, "Write age info\n");
 
 	for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
 		if (FunctGroupArray[sp].isVertebrate == TRUE) {
@@ -925,7 +925,7 @@ void Write_Physs(FILE *fid, MSEBoxModel *bm, int ij, int id) {
 	int j, z;
 
 	if (verbose > 1)
-        printf( "Write physics\n");
+		fprintf(stderr, "Write physics\n");
 
 	for (z = 0; z < bm->nfzones; z++) {
 
@@ -992,7 +992,7 @@ void Write_Bioms(FILE *fid, MSEBoxModel *bm, int ij, int id) {
 	double area_correct = 0.0;
 
 	if (verbose > 1)
-        printf( "Write biomasses\n");
+		fprintf(stderr, "Write biomasses\n");
 
 	for (z = 0; z < bm->nfzones; z++) {
 
@@ -1074,7 +1074,7 @@ void Write_Catchs(FILE *fid, MSEBoxModel *bm, int ij, int id) {
 	int j, z, sp;
 
 	if (verbose > 1)
-        printf( "Write invertebrate catches\n");
+		fprintf(stderr, "Write invertebrate catches\n");
 
 	for (z = 0; z < bm->nfzones; z++) {
 
@@ -1143,7 +1143,7 @@ void Write_Prods(FILE *fid, MSEBoxModel *bm, int ij, int id) {
 	int j, z;
 
 	if (verbose > 1)
-        printf( "Write production\n");
+		fprintf(stderr, "Write production\n");
 
 	for (z = 0; z < bm->nfzones; z++) {
 
@@ -1202,7 +1202,7 @@ void Write_Eats(FILE *fid, MSEBoxModel *bm, int ij, int id) {
 	int j, z;
 
 	if (verbose > 1)
-        printf( "Write consumption\n");
+		fprintf(stderr, "Write consumption\n");
 
 	for (z = 0; z < bm->nfzones; z++) {
 
@@ -1300,7 +1300,7 @@ FILE * Init_InDiet_File(MSEBoxModel *bm, char *fname) {
 void Write_InDiets(FILE *fid, MSEBoxModel *bm, int ij, double ****indiet) {
 
 	if (verbose > 1)
-        printf( "Write inshore diet information\n");
+		fprintf(stderr, "Write inshore diet information\n");
 
 	Write_Diet_Info(bm, fid, ij, indiet);
 	return;
@@ -1337,7 +1337,7 @@ FILE * Init_OffDiet_File(MSEBoxModel *bm, char *fname) {
 void Write_OffDiets(FILE *fid, MSEBoxModel *bm, int ij, double ****offdiet) {
 
 	if (verbose > 1)
-        printf( "Writing offshore diet information\n");
+		fprintf(stderr, "Writing offshore diet information\n");
 
 	Write_Diet_Info(bm, fid, ij, offdiet);
 
@@ -1380,7 +1380,7 @@ void Write_TLs(FILE *fid, MSEBoxModel *bm, int ij, double ***tl) {
 	int locationIndex;
 
 	if (verbose > 1)
-        printf( "Write trophic level information\n");
+		fprintf(stderr, "Write trophic level information\n");
 
 	for (locationIndex = 0; locationIndex <= 2; locationIndex++) {
 
@@ -1440,7 +1440,7 @@ void Write_Discards(FILE *fid, MSEBoxModel *bm, int ij) {
 	int z;
 
 	if (verbose > 1)
-        printf( "Write discards\n");
+		fprintf(stderr, "Write discards\n");
 
 	for (z = 0; z < bm->nfzones + 1; z++) {
 
@@ -1497,7 +1497,7 @@ void Write_Pbrs(FILE *fid, MSEBoxModel *bm, int ij) {
 	int sp, z;
 
 	if (verbose > 1)
-        printf( "Write PBR\n");
+		fprintf(stderr, "Write PBR\n");
 
 	for (z = 0; z < bm->nfzones + 1; z++) {
 
@@ -1551,7 +1551,7 @@ void Write_Binbioms(FILE *fid, MSEBoxModel *bm, int ij) {
 	int j, z;
 
 	if (verbose > 1)
-        printf( "Write biomass bins\n");
+		fprintf(stderr, "Write biomass bins\n");
 
 	for (z = 0; z < bm->nfzones + 1; z++) {
 
@@ -1604,7 +1604,7 @@ void Write_Bin_Abunds(FILE *fid, MSEBoxModel *bm, int ij) {
 	int j, z;
 
 	if (verbose > 1)
-        printf( "Write abundance bins\n");
+		fprintf(stderr, "Write abundance bins\n");
 
 	for (z = 0; z < bm->nfzones + 1; z++) {
 
@@ -1685,7 +1685,7 @@ void Write_Abcs(FILE *fid, MSEBoxModel *bm, int ij) {
 	int index;
 
 	if (verbose > 1)
-        printf( "Write abc bins\n");
+		fprintf(stderr, "Write abc bins\n");
 
 	for (z = 0; z < bm->nfzones + 1; z++) {
 
@@ -1757,7 +1757,7 @@ void Write_Cvts(FILE *fid, MSEBoxModel *bm, int ij) {
 	int z;
 
 	if (verbose > 1)
-        printf( "Write CVt information\n");
+		fprintf(stderr, "Write CVt information\n");
 
 	for (z = 0; z < bm->nfzones + 1; z++) {
 
@@ -1806,7 +1806,7 @@ void Write_Divs(FILE *fid, MSEBoxModel *bm, int ij) {
 	int j, z;
 
 	if (verbose > 1)
-        printf( "Write diversity information\n");
+		fprintf(stderr, "Write diversity information\n");
 
 	for (z = 0; z < bm->nfzones + 1; z++) {
 
@@ -1857,7 +1857,7 @@ void Write_Habs(FILE *fid, MSEBoxModel *bm, int ij) {
 	int j, z;
 
 	if (verbose > 1)
-        printf( "Write habitat information\n");
+		fprintf(stderr, "Write habitat information\n");
 
 	for (z = 0; z < bm->nfzones + 1; z++) {
 
@@ -1924,7 +1924,7 @@ void Write_Fledges(FILE *fid, MSEBoxModel *bm, int ij) {
 	int sp, z;
 
 	if (verbose > 1)
-        printf( "Write fledge information\n");
+		fprintf(stderr, "Write fledge information\n");
 
 	for (z = 0; z < bm->nfzones + 1; z++) {
 
@@ -1984,7 +1984,7 @@ void Write_Monbets(FILE *fid, MSEBoxModel *bm, int ij) {
 	int j, z;
 
 	if (verbose > 1)
-        printf( "Write monbet information\n");
+		fprintf(stderr, "Write monbet information\n");
 
 	for (z = 0; z < bm->nfzones + 1; z++) {
 
@@ -2035,7 +2035,7 @@ void Write_Pds(FILE *fid, MSEBoxModel *bm, int ij) {
 	int j, z;
 
 	if (verbose > 1)
-        printf( "Write p:d ratio information\n");
+		fprintf(stderr, "Write p:d ratio information\n");
 
 	for (z = 0; z < bm->nfzones + 1; z++) {
 
@@ -2088,7 +2088,7 @@ void Write_Nppbs(FILE *fid, MSEBoxModel *bm, int ij) {
 	int z;
 
 	if (verbose > 1)
-        printf( "Write NPP/B information\n");
+		fprintf(stderr, "Write NPP/B information\n");
 
 	for (z = 0; z < bm->nfzones + 1; z++) {
 
@@ -2137,7 +2137,7 @@ void Write_Avgtls(FILE *fid, MSEBoxModel *bm, int ij) {
 	int j, z;
 
 	if (verbose > 1)
-        printf( "Write average trophic level information\n");
+		fprintf(stderr, "Write average trophic level information\n");
 
 	for (z = 0; z < bm->nfzones + 1; z++) {
 
@@ -2187,7 +2187,7 @@ void Write_TrophSpec(FILE *fid, MSEBoxModel *bm, int ij) {
 	int j, z, k;
 
 	if (verbose > 1)
-        printf( "Write average trophic level information\n");
+		fprintf(stderr, "Write average trophic level information\n");
 
 	for (z = 0; z < bm->nfzones + 2; z++) {
 		for (k = 0; k < 2; k++) {
@@ -2254,7 +2254,7 @@ void Write_PopFracts(FILE *fid, MSEBoxModel *bm, int ij) {
 	int z, i, j;
 
 	if (verbose > 1)
-        printf( "Write population fractions\n");
+		fprintf(stderr, "Write population fractions\n");
 
 	for (z = 0; z < bm->nfzones; z++) {
 
@@ -2308,7 +2308,7 @@ void Write_NetwkInfos(FILE *fid, MSEBoxModel *bm, int ij) {
 	int z, i;
 
 	if (verbose > 1)
-        printf( "Write totalnetwork information\n");
+		fprintf(stderr, "Write totalnetwork information\n");
 
 	for (z = 0; z < bm->nfzones + 1; z++) {
 
@@ -2358,7 +2358,7 @@ void Write_Sois(FILE *fid, MSEBoxModel *bm, int ij) {
 	int z;
 
 	if (verbose > 1)
-        printf( "Write SOI\n");
+		fprintf(stderr, "Write SOI\n");
 
 	for (z = 0; z < bm->nfzones + 1; z++) {
 
@@ -2425,7 +2425,7 @@ void Write_Ois(FILE *fid, MSEBoxModel *bm, int ij) {
 		{ "In", "Off", "Tot" };
 
 	if (verbose > 1)
-        printf( "Write OI\n");
+		fprintf(stderr, "Write OI\n");
 
 	for (locationIndex = 0; locationIndex < 3; locationIndex++) {
 		/* Write Time */
@@ -2503,7 +2503,7 @@ void Write_Morts(FILE *fid, MSEBoxModel *bm, int ij) {
 	int z, sp;
 
 	if (verbose > 1)
-        printf( "Write mortality information\n");
+		fprintf(stderr, "Write mortality information\n");
 
 	for (z = 0; z < bm->nfzones + 1; z++) {
 
@@ -2561,7 +2561,7 @@ void Write_TotBioms(FILE *fid, MSEBoxModel *bm, int ij) {
 	int z, j;
 
 	if (verbose > 1)
-        printf( "Write total biomass information\n");
+		fprintf(stderr, "Write total biomass information\n");
 
 	for (z = 0; z < bm->nfzones + 1; z++) {
 
@@ -2612,7 +2612,7 @@ void Write_MaxLs(FILE *fid, MSEBoxModel *bm, int ij) {
 	int z, i;
 
 	if (verbose > 1)
-        printf( "Write maximum length information\n");
+		fprintf(stderr, "Write maximum length information\n");
 
 	for (z = 0; z < bm->nfzones + 1; z++) {
 
@@ -2715,7 +2715,7 @@ void Write_Assess_Results(FILE *fid, MSEBoxModel *bm, int ij) {
 	int sp, k, assess_flag_sp;
 
 	if (verbose > 1)
-        printf( "Write stock numbers\n");
+		fprintf(stderr, "Write stock numbers\n");
 
 	for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
 		if (FunctGroupArray[sp].isFished == TRUE) {
@@ -2790,7 +2790,7 @@ void Write_RandNum(FILE *fid, MSEBoxModel *bm, int numyr, int numsamples) {
 	int b, sp;
 
 	if (verbose > 1)
-        printf( "Write rand number log file\n");
+		fprintf(stderr, "Write rand number log file\n");
 
 	fprintf(fid, "# Frequency of sampling scalars (multiply tassessinc by these to get frequency of sampling)\n");
 	for (b = 0; b < numsamples; b++) {

@@ -69,6 +69,10 @@ void Ecology_Land_Biology_Process(MSEBoxModel *bm, Box *pBox) {
 	int k;
 	int maxdeep = bm->wcnz;
 	int totaldeep = pBox->nz;
+	BoxLayerValues *boxLayerInfo = (BoxLayerValues *) malloc(sizeof(BoxLayerValues));
+
+	boxLayerInfo->localWCTracers = Util_Alloc_Init_1D_Double(2 * numwcvar + numepivar, 0.0);
+	boxLayerInfo->localWCFlux = Util_Alloc_Init_1D_Double(2 * numwcvar + numepivar, 0.0);
 
 	/* Set current box */
 	bm->current_box = pBox->n;
@@ -86,4 +90,7 @@ void Ecology_Land_Biology_Process(MSEBoxModel *bm, Box *pBox) {
 	for (k = 0; k < numwcvar; k++)
 		newwctr[bm->current_box][0][k] = boxLayerInfo->localWCTracers[k]; /* To WC */
 
+	free1d(boxLayerInfo->localWCTracers);
+	free1d(boxLayerInfo->localWCFlux);
+	free(boxLayerInfo);
 }

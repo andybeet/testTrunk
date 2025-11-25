@@ -40,8 +40,7 @@ double Read_SS3_Report_File(MSEBoxModel *bm, int species, int year, char *folder
 	char buf[STRLEN];
     char buffer[1000]; // TODO: Set this to sensible value
 	char seps[] = " ";
-    int n, j, thisID;
-    //int yy;
+    int n, yy, j, thisID;
 	char *varStr;
 	int fleetIndex;
 	double catch;
@@ -49,7 +48,7 @@ double Read_SS3_Report_File(MSEBoxModel *bm, int species, int year, char *folder
     //char *line_buf = NULL;
     //size_t line_buf_size = 0;
     //size_t line_size;
-    //int found_LAA = 0;
+    int found_LAA = 0;
     int size = 100;  // TODO: Set this to sensible value
     double Len_mid, Len_SD, wt_beg, wt_mid;
 
@@ -87,12 +86,10 @@ double Read_SS3_Report_File(MSEBoxModel *bm, int species, int year, char *folder
 				varStr = strtok(NULL, seps);
 				n++;
                 
-                /*
                 if ( n == year) {
                     yy = atof(varStr);
                 }
-                 */
-                
+
 				/* The 'bio-all' column */
 				if (n == EstBcurrIndex) {
 					bm->RBCestimation.RBCspeciesParam[species][EstBcurr_id] = atof(varStr);
@@ -137,14 +134,14 @@ double Read_SS3_Report_File(MSEBoxModel *bm, int species, int year, char *folder
 					n = 0;
 				}
                 
-                bm->RBCestimation.RBCspeciesArray[species].RBC_by_year[year] = RBC;
+                bm->RBCestimation.RBCspeciesArray[species].RBC_by_year[year][yy] = RBC;
                 bm->RBCestimation.RBCspeciesParam[species][RBCest_id] = RBC;
 			}
         }
         
         // Check on fit
         if (strstr(buf, "Biology_at_age_in_endyr_with_CV=f(LAA)") != NULL) {
-            //found_LAA = 1;
+            found_LAA = 1;
             
             for (int sex = 0; sex < bm->RBCestimation.RBCspeciesParam[species][Nsexes_id]; sex++) {
                 for (int age = 0; age < bm->RBCestimation.RBCspeciesParam[species][AccumAge_id]; age++) {
@@ -592,25 +589,22 @@ void Write_SS_Data_File(MSEBoxModel *bm, char *dirName, char *fileName, int maxy
 	//int nAgeBins;
 	//int Nsexes = bm->K_num_sexes;
 	//int AccumAge = (int)FunctGroupArray[groupIndex].speciesParams[AccumAge_id];  // TODO: Or should this be bm->RBCestimation.RBCspeciesParam[groupIndex][AccumAge_id] ?
-	//int HistYrMin;
-	int num, it, s, part = 0, gender, l, nfltdisc;
-    //int numYears;
+	int HistYrMin;
+	int numYears, num, it, s, part = 0, gender, l, nfltdisc;
 	double cpcv, disccv;
 	double *emptySex;
 	//double Nsex_samp = 1;
     int allregion = (int)(bm->RBCestimation.RBCspeciesParam[groupIndex][NumRegions_id]);
 
-    /*
     if (bm->RBCestimation.RBCspeciesArray[groupIndex].CurrentYear == (bm->RBCestimation.RBCspeciesParam[groupIndex][HistYrMax_id] - 1)) {
 		HistYrMin = (int)bm->RBCestimation.RBCspeciesParam[groupIndex][HistYrMin_id];
         //HistYrMin = 0;
     } else {
 		HistYrMin = (int)bm->RBCestimation.RBCspeciesArray[groupIndex].CurrentYear + 1 - (int)bm->RBCestimation.RBCspeciesParam[groupIndex][HistYrMin_id];
     }
-     */
-    
+
 	//printf(bm->logFile, "maxyr = %d\n", maxyr);
-	//numYears = maxyr + 1;	// - HistYrMin + 1;
+	numYears = maxyr + 1;	// - HistYrMin + 1;
 
 	//fprintf(bm->logFile, "bm->RBCestimation.RBCspeciesParam[groupIndex][HistYrMax_id] = %d\n", (int) bm->RBCestimation.RBCspeciesParam[groupIndex][HistYrMax_id]);
 	//printf(bm->logFile, "bm->RBCestimation.RBCspeciesArray[groupIndex].CurrentYear = %d\n", bm->RBCestimation.RBCspeciesArray[groupIndex].CurrentYear);
@@ -1140,7 +1134,7 @@ void WriteSS330Files(MSEBoxModel *bm, int sp, int maxyr, char *baseFolder, char 
     
     // SS dat file
     sprintf(outputFileName, "%s/%s%s.dat", baseFolder, FunctGroupArray[sp].groupCode, fileName);
-    if ((fiddat = fopen(outputFileName, "w")) == NULL) {
+    if ((fiddat = fopen(outputFileName, "r")) == NULL) {
         quit("Error opening dat file for  %s\n", FunctGroupArray[sp].groupCode);
     }
 
@@ -1149,7 +1143,7 @@ void WriteSS330Files(MSEBoxModel *bm, int sp, int maxyr, char *baseFolder, char 
 
     // SS control file
     sprintf(outputFileName, "%s/%s%s.ctl", baseFolder,FunctGroupArray[sp].groupCode, fileName);
-    if ((fidctl = fopen(outputFileName, "w")) == NULL) {
+    if ((fidctl = fopen(outputFileName, "r")) == NULL) {
         quit("Error opening ctl control file for  %s\n", FunctGroupArray[sp].groupCode);
     }
     WriteSSCtl(bm, fidctl, sp, maxyr);
@@ -1158,7 +1152,7 @@ void WriteSS330Files(MSEBoxModel *bm, int sp, int maxyr, char *baseFolder, char 
     //  SS forecast file
     sprintf(outputFileName, "%s/forecast.ss", baseFolder);
 
-    if ((fidss = fopen(outputFileName, "w")) == NULL) {
+    if ((fidss = fopen(outputFileName, "r")) == NULL) {
         quit("Error opening forecast file for  %s\n", FunctGroupArray[sp].groupCode);
     }
     WriteSSFor(bm, fidss, sp, maxyr);
@@ -2135,7 +2129,7 @@ void WriteSSCtl(MSEBoxModel *bm, FILE *fid, int sp, int maxyr) {
         else if (bm->RBCestimation.RBCspeciesArray[sp].Sel_Pattern[f] == 5){        // mirrored
             nsp = 2;
         } else  {                            // stop because not coded yet
-            quit("SS selectivity pattern (%d) for %s fleet %d not coded in\n", bm->RBCestimation.RBCspeciesArray[sp].Sel_Pattern[f], FunctGroupArray[sp].groupCode, f);
+            quit("SS selectivity pattern not coded in\n");
         }
 
         if (bm->RBCestimation.RBCspeciesArray[sp].Sel_Pattern[f] == 5) { // mirror

@@ -249,9 +249,6 @@ double Get_Biomass_Correction(MSEBoxModel *bm, int sp, HABITAT_TYPES habitatType
 		case ICE_BASED:
 			biomass_correction =  bm->boxes[bm->current_box].ice.dz[bm->current_icelayer] * bm->boxes[bm->current_box].area;
 			break;
-        case MIXED:
-            quit("How did we get here as should come through a primary habitat\n");
-            break;
 	}
 	return biomass_correction;
 }
@@ -283,9 +280,6 @@ double *getTracerArray(BoxLayerValues *boxLayerInfo, HABITAT_TYPES habitatType) 
 	case ICE_BASED:
 		tracerArray = boxLayerInfo->localICETracers;
 		break;
-    case MIXED:
-        quit("How did we get here as should come through a primary habitat\n");
-        break;
 	}
 	return tracerArray;
 

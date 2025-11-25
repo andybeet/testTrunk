@@ -68,15 +68,11 @@ void Ecology_Assign_Physio_Chem(MSEBoxModel *bm, FILE *llogfp)
 		bm->K_num_physiochem++;
 	}
 	if(bm->track_atomic_ratio == TRUE){
-		bm->K_num_physiochem += 14;  // The raw C and P nutrient tracers
+		bm->K_num_physiochem += 4;
 	}
 	if(bm->track_rugosity_arag) {
 		bm->K_num_physiochem += 2;
 	}
-    
-    if (bm->track_wind) {
-        bm->K_num_physiochem++;
-    }
 
 	PhysioChemArray = (PhysioChemStruct *)malloc(sizeof(PhysioChemStruct) * (size_t)bm->K_num_physiochem);
 
@@ -115,28 +111,12 @@ void Ecology_Assign_Physio_Chem(MSEBoxModel *bm, FILE *llogfp)
 		Add_Phyio_Chem_Tracer(bm, llogfp, i++, "TOP", &TOP_i, 0, 1, 0, NULL, TOP_ROC);
 		Add_Phyio_Chem_Tracer(bm, llogfp, i++, "Carbon", &C_i, 0, 1, 0, NULL, Carbon_ROC);
 		Add_Phyio_Chem_Tracer(bm, llogfp, i++, "CO2", &CO2_i, 0, 1, 0, NULL, NULL);
-        Add_Phyio_Chem_Tracer(bm, llogfp, i++, "Tfactor", &Tfactor_i, 0, 1, 0, NULL, NULL);
-        
-        Add_Phyio_Chem_Tracer(bm, llogfp, i++, "Pads_r", &Pads_r_i, 0, 1, 0, NULL, NULL);
-        Add_Phyio_Chem_Tracer(bm, llogfp, i++, "r_immob_PIP", &r_immob_PIP_i, 0, 1, 0, NULL, NULL);
-        Add_Phyio_Chem_Tracer(bm, llogfp, i++, "DIP", &DIP_i, 0, 1, 0, NULL, NULL);
-        Add_Phyio_Chem_Tracer(bm, llogfp, i++, "EFI", &EFI_i, 0, 1, 0, NULL, NULL);
-        Add_Phyio_Chem_Tracer(bm, llogfp, i++, "PIP", &PIP_i, 0, 1, 0, NULL, NULL);
-        Add_Phyio_Chem_Tracer(bm, llogfp, i++, "PIPI", &PIPI_i, 0, 1, 0, NULL, NULL);
-        Add_Phyio_Chem_Tracer(bm, llogfp, i++, "TIP", &TIP_i, 0, 1, 0, NULL, NULL);
-        Add_Phyio_Chem_Tracer(bm, llogfp, i++, "PIP_Dust", &PIP_Dust_i, 0, 1, 0, NULL, NULL);
-        Add_Phyio_Chem_Tracer(bm, llogfp, i++, "Dust", &Dust_i, 0, 1, 0, NULL, NULL);
-        
 	}
 
 	if(bm->track_rugosity_arag == TRUE) {
 		Add_Phyio_Chem_Tracer(bm, llogfp, i++, "Rugosity", &Rugosity_i, 0, 0, 0, NULL, NULL);
 		Add_Phyio_Chem_Tracer(bm, llogfp, i++, "AragoniteSaturation", &AragoniteSat_i, 0, 0, 0, NULL, NULL);
 	}
-    
-    if (bm->track_wind) {
-        Add_Phyio_Chem_Tracer(bm, llogfp, i++, "Wind", &Wind_i, 0, 0, 0, NULL, NULL);
-    }
     
 	return;
 }

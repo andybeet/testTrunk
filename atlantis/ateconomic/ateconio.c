@@ -188,7 +188,7 @@ void Write_Econ_Ind(FILE *fid, MSEBoxModel *bm) {
 	int sp, nf, ns;
 
 	if (verbose > 1)
-        printf( "Write subfleet economic indices\n");
+		fprintf(stderr, "Write subfleet economic indices\n");
 
 	/* Write catch values */
 	for (nf = 0; nf < bm->K_num_fisheries; nf++) {
@@ -283,7 +283,7 @@ void Write_Effort_Schedule(FILE *fid, MSEBoxModel *bm) {
 	int nf, ns, month;
 
 	if (verbose > 1)
-        printf( "Write gross effort schedule\n");
+		fprintf(stderr, "Write gross effort schedule\n");
 
 	/* Write effort schedule values */
 	for (nf = 0; nf < bm->K_num_fisheries; nf++) {
@@ -308,7 +308,7 @@ void Write_Real_Effort_Schedule(FILE *fid, MSEBoxModel *bm) {
 	int nf, ns, month;
 
 	if (verbose > 1)
-        printf( "Write realised gross effort schedule\n");
+		fprintf(stderr, "Write realised gross effort schedule\n");
 
 	/* Write predicted effort schedule values */
 	for (nf = 0; nf < bm->K_num_fisheries; nf++) {
@@ -388,7 +388,7 @@ void Write_Trades(FILE *fid, MSEBoxModel *bm) {
 	int sp, month;
 
 	if (verbose > 1)
-        printf( "Write gross trades\n");
+		fprintf(stderr, "Write gross trades\n");
 
 	/* Write Trades */
 	for (sp = 0; sp < bm->K_num_tot_sp; sp++) {
@@ -458,7 +458,7 @@ void Write_Econ_Meas(FILE *fid, MSEBoxModel *bm) {
 	int sp, nf;
 
 	if (verbose > 1)
-        printf( "Write economic indices\n");
+		fprintf(stderr, "Write economic indices\n");
 
 	/* Write catch values */
 	for (nf = 0; nf < bm->K_num_fisheries; nf++) {
@@ -537,7 +537,7 @@ void Write_Port_Meas(FILE *fid, MSEBoxModel *bm) {
 	int sp, nm;
 
 	if (verbose > 1)
-        printf( "Write market performance measures\n");
+		fprintf(stderr, "Write market performance measures\n");
 
 	/* Write catch values */
 	for (nm = 0; nm < bm->K_num_ports; nm++) {
@@ -608,7 +608,7 @@ void Write_Prices(FILE *fid, MSEBoxModel *bm) {
 	int sp, nf, ns;
 
 	if (verbose > 1)
-        printf( "Write market performance measures\n");
+		fprintf(stderr, "Write market performance measures\n");
 
 	/* Write prices */
 	for (nf = 0; nf < bm->K_num_fisheries; nf++) {
@@ -683,7 +683,7 @@ void Write_Deemed_Values(FILE *fid, MSEBoxModel *bm) {
 	int sp = 0, nf = 0, ns = 0;
 
 	if (verbose > 1)
-        printf( "Write market performance measures\n");
+		fprintf(stderr, "Write market performance measures\n");
 
 	/* Write prices */
 	for (nf = 0; nf < bm->K_num_fisheries; nf++) {
@@ -758,7 +758,7 @@ void Write_QuotaAlloc(FILE *fid, MSEBoxModel *bm, FILE *llogfp) {
 	double value_2_print, prop_olease, prop_tlease;
 
 	if (verbose > 1)
-        printf( "Write quotas\n");
+		fprintf(stderr, "Write quotas\n");
 
 	/* Write Quota Allocations */
 	for (fishery_id = 0; fishery_id < bm->K_num_fisheries; fishery_id++) {
@@ -852,7 +852,7 @@ void Write_Trade_Matrix(FILE *fid, MSEBoxModel *bm, FILE *llogfp) {
 	int sp, sellernf, buyernf, flag_sp, nf, nf2;
 
 	if (verbose > 1)
-        printf( "Write trade matrix measures\n");
+		fprintf(stderr, "Write trade matrix measures\n");
 
 	/* Write trades */
 	for (sellernf = 0; sellernf < bm->K_num_fisheries; sellernf++) {
@@ -945,7 +945,7 @@ void Write_Temporal_Catches(FILE *fid, MSEBoxModel *bm) {
 	int sp, nf, ns;
 
 	if (verbose > 1)
-        printf( "Write market performance measures\n");
+		fprintf(stderr, "Write market performance measures\n");
 
 	/* Write catches */
 	for (nf = 0; nf < bm->K_num_fisheries; nf++) {

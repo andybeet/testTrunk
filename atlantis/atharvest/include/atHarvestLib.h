@@ -54,7 +54,7 @@ void Harvest_Update_Total_Catch(MSEBoxModel *bm, double *FishTracers, int habita
 void Harvest_Allocate_FStat_Arrays(MSEBoxModel *bm);
 void Harvest_Skip_biology(MSEBoxModel *bm, FILE *llogfp); /* Dummy routine to use when biology turned off so can quickly test fisheries */
 void Harvest_Update_Habitat_Overlap(MSEBoxModel *bm, int b);
-void Harvest_Scale_Q(MSEBoxModel *bm, int species, int fishery, double start, double period, double mult ,FILE *llogfp);
+void 	Harvest_Scale_Q(MSEBoxModel *bm, int species, int fishery, double start, double period, double mult ,FILE *llogfp);
 
 
 /* Discards information */
@@ -75,11 +75,7 @@ void Update_Harvest_Index_Values(MSEBoxModel *bm, FILE *llogfp);
 void Harvest_Report_Fisheries_Stats(MSEBoxModel *bm, FILE *llogfp);
 void Harvest_Refresh_Fishing_Stats(MSEBoxModel *bm);
 void Harvest_Report_Annual_Stats(MSEBoxModel *bm, FILE *llogfp);
-void Harvest_Report_Monthly_Stats(MSEBoxModel *bm, FILE *llogfp);
-
-/* Needed in Annual Management for Ecosytem Cap calculations too */
-double Get_Fishery_Group_Change_Scale(MSEBoxModel *bm, int nf, int sp, int paramID, int numChangeParamID, double ***changeArray);
-double Get_Catch_Selectivity(MSEBoxModel *bm, int sp, int stage, int nf, double li, double *gear_change_scale, int *sel_curve);
 
 /* Array needed for tracking fisheries interactions */
 extern int **FisherySpeciesCatchFlags; /* Array to hold a flag for each fishery/species combinations to indicate which species are fished by which fisheries */
+

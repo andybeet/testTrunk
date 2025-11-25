@@ -402,8 +402,8 @@ int Harvest_Do_Fishing_And_ByCatch(MSEBoxModel *bm, FILE *llogfp, int guildcase,
 	//fprintf(llogfp,"Time: %e, %s, do_debug_orig: %d (debug: %d which_check: %s, checkbox: %d, checkstart: %e, checkstop: %e\n",
 	//	bm->dayt, bm->spNAME[guildcase], do_debug_orig, bm->debug, bm->spNAME[bm->which_check], bm->checkbox, bm->checkstart, bm->checkstop);
 
-	//if (verbose > 3)
-	//	printf("Fishing and Bycatch\n");
+	if (verbose > 3)
+		printf("Fishing and Bycatch\n");
 
 	if (do_debug_orig || do_debug_dis_orig)
 		fprintf(llogfp, "Fishing and bycatch %d:%d, SC = %.20e, RC = %.20e, NUMS = %.20e\n", guildcase, chrt, SC, RC, NUMS);
@@ -1569,7 +1569,7 @@ void Harvest_Skip_biology(MSEBoxModel *bm, FILE *llogfp) {
 								spbiom = (bm->boxes[ij].tr[k][sn] + bm->boxes[ij].tr[k][rn]) * bm->boxes[ij].tr[k][den];
 
 								/* Get catch per fishery */
-								sel = bm->selectivity[sp][nf][stage];
+								sel = selectivity[sp][nf][stage];
 								q = bm->SP_FISHERYprms[sp][nf][q_id];
 								loadDetFC = bm->SP_FISHERYprms[sp][nf][FFCDR_id];
 								spfishing = FCpressure * sel * q * spbiom * (1.0 - loadDetFC) * swept_area;
@@ -1584,7 +1584,7 @@ void Harvest_Skip_biology(MSEBoxModel *bm, FILE *llogfp) {
 								spbiom = bm->boxes[ij].tr[k][pid];
 
 								/* Get catch per fishery */
-								sel = bm->selectivity[sp][nf][stage];
+								sel = selectivity[sp][nf][n];
 								q = bm->SP_FISHERYprms[sp][nf][q_id];
 								loadDetFC = bm->SP_FISHERYprms[sp][nf][FFCDR_id];
 								spfishing = FCpressure * sel * q * spbiom * (1.0 - loadDetFC) * swept_area;
@@ -1613,10 +1613,9 @@ void Harvest_Skip_biology(MSEBoxModel *bm, FILE *llogfp) {
 						for (n = 0; n < FunctGroupArray[sp].numCohortsXnumGenes; n++) {
 							pid = FunctGroupArray[sp].totNTracers[n];
 							spbiom = bm->boxes[ij].epi[pid];
-                            stage = FunctGroupArray[sp].cohort_stage[n];
 
 							/* Get catch per fishery */
-							sel = bm->selectivity[sp][nf][stage];
+							sel = selectivity[sp][nf][n];
 							q = bm->SP_FISHERYprms[sp][nf][q_id];
 							loadDetFC = bm->SP_FISHERYprms[sp][nf][FFCDR_id];
 							spfishing = FCpressure * sel * q * spbiom * (1.0 - loadDetFC) * swept_area;
@@ -1660,7 +1659,7 @@ double Get_Selectivity(MSEBoxModel *bm, int sp, int stage, int nf, double li, in
 		sel = bm->SP_FISHERYprms[sp][nf][sel_id] + addlsm;
 		break;
 	case q_ageconst_id: /* Constant proportion of maturity stage - also used for stages in cephalopods */
-		sel = bm->selectivity[sp][nf][stage] + addlsm;
+		sel = selectivity[sp][nf][stage] + addlsm;
 		break;
 	case q_logistic_id: /* Dynamic so selectivity based on size, logistic */
 		sel_b = bm->FISHERYprms[nf][sel_b_id] + addsigma;
@@ -1689,12 +1688,12 @@ double Get_Selectivity(MSEBoxModel *bm, int sp, int stage, int nf, double li, in
 	case q_knife_id: /* Knife edged */
 		if (FunctGroupArray[sp].isVertebrate == TRUE) {
 			/* For vertebrates check to see if over minimum length */
-			sel_lsm = bm->selectivity[sp][nf][juv_id];
+			sel_lsm = selectivity[sp][nf][juv_id];
 			
 			if (li < sel_lsm)
 				sel = 0.0;
 			else
-				sel = bm->selectivity[sp][nf][adult_id] + addlsm;
+				sel = selectivity[sp][nf][adult_id] + addlsm;
 		} else {
 			/* For invertebrates assume all equally available as no size check possible */
 			sel = bm->SP_FISHERYprms[sp][nf][sel_id] + addlsm;

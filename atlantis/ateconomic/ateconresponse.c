@@ -887,8 +887,7 @@ void Annual_Quota_Allocation(MSEBoxModel *bm, FILE *llogfp) {
  *	Distribute realised catch amongst subfleets
  */
 void Allocate_Catch(MSEBoxModel *bm, FILE *llogfp) {
-    int nf, ns, sp, b, ij, do_debug, do_debug_base, nreg;
-   // int do_debug_quota = 0;
+	int nf, ns, sp, b, ij, do_debug, do_debug_base, nreg, do_debug_quota;
 	double cpueval, totcatch, thiscatch, oldcpue, newcpue, target_scale, sp_catchkg, cumCatch, prop_olease, prop_tlease, ownQuota, leaseQuota, sp_avail,
 			propstop, spareend, tottotcatch, totdiscard, totthisspcatch, thisspcatch, sp_bycatchkg, oldDISpue, newDISpue, thisspdiscard,
 			totthisspdiscard, newVpue, oldVpue, totval;
@@ -899,13 +898,11 @@ void Allocate_Catch(MSEBoxModel *bm, FILE *llogfp) {
 	} else
 		do_debug_base = 0;
 
-    /*
 	if ((bm->debug == debug_quota) && (bm->dayt > bm->checkstart)) {
 		do_debug_quota = 1;
 	} else
 		do_debug_quota = 0;
-     */
-    
+
 	if (verbose > 1) {
 		printf("Allocating catch to subfleets\n");
 		fprintf(llogfp, "Time: %e allocating catch to subfleets\n", bm->dayt);

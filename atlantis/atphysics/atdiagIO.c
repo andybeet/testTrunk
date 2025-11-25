@@ -254,9 +254,9 @@ void writeBMDiagData(int fid, int dump, MSEBoxModel *bm, int dtype) {
 	long count[2];
 
 	if (verbose > 0)
-		printf("Entering writeBMDiagData\n");
+		fprintf(stderr, "Entering writeBMDiagData\n");
 
-   /* Set netCDF library error handling */
+	/* Set netCDF library error handling */
 	ncopts = NC_VERBOSE | NC_FATAL;
 
 	/* Allocate temporary storage for one diagnostic */
@@ -267,8 +267,8 @@ void writeBMDiagData(int fid, int dump, MSEBoxModel *bm, int dtype) {
 	start[1] = 0;
 	count[0] = 1;
 	count[1] = bm->nbox;
-    
-    /* Loop over each diagnostic */
+
+	/* Loop over each diagnostic */
 	for (i = 0; i < bm->ndiag; i++) {
 		int vid;
 		int b;
